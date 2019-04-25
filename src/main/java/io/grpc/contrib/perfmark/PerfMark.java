@@ -5,10 +5,12 @@ import javax.annotation.CheckReturnValue;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.VolatileCallSite;
 
 public final class PerfMark {
-    private static final long INCREMENT = 1L << 32;
-    private static final long FAILURE = (-2L) << 32;
+    static final int GEN_OFFSET = 8;
+    private static final long INCREMENT = 1L << GEN_OFFSET;
+    private static final long FAILURE = (-2L) << GEN_OFFSET;
 
     private static long actualGeneration;
     private static final MutableCallSite currentGeneration = new MutableCallSite(MethodHandles.constant(long.class, 0));
@@ -30,6 +32,10 @@ public final class PerfMark {
         MutableCallSite.syncAll(currentGenerations);
     }
 
+    // For Testing
+    static synchronized long getActualGeneration() {
+        return actualGeneration;
+    }
 
     public static void startTask(@CompileTimeConstant String taskName) {
         final long gen = getGen();
@@ -47,7 +53,7 @@ public final class PerfMark {
         PerfMarkStorage.startAnyways(gen, taskName, tag, Marker.NONE);
     }
 
-    public static final void stopTask() {
+    public static void stopTask() {
         final long gen = getGen();
         if (!isEnabled(gen)) {
             return;
@@ -55,9 +61,15 @@ public final class PerfMark {
         PerfMarkStorage.stopAnyways(gen, Marker.NONE);
     }
 
+    /**
+     * A link connects between two tasks that start asynchronously.  When {@link #link()} is
+     * called, an association between the most recently started task and a yet to be named
+     * task on another thread, is created.  Links are a one-to-many relationship.  A single
+     * started task can have multiple associated tasks on other threads.
+     */
     public static Link link() {
         long gen = getGen();
-        if (isEnabled(gen)) {
+        if (!isEnabled(gen)) {
             return Link.NONE;
         }
         long inboundLinkId = Link.linkIdAlloc.incrementAndGet();
@@ -115,7 +127,7 @@ public final class PerfMark {
 
     static void link(long linkId) {
         long gen = getGen();
-        if (isEnabled(gen)) {
+        if (!isEnabled(gen)) {
             return;
         }
         PerfMarkStorage.linkAnyways(gen, -linkId, Marker.NONE);
@@ -132,6 +144,6 @@ public final class PerfMark {
     }
 
     private static boolean isEnabled(long gen) {
-        return ((gen >>> 32) & 0x1L) != 0L;
+        return ((gen >>> GEN_OFFSET) & 0x1L) != 0L;
     }
 }

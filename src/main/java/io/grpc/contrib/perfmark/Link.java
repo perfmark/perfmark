@@ -16,4 +16,9 @@ public final class Link {
     public void link() {
         PerfMark.link(id);
     }
+
+    // For Testing
+    long getId() {
+        return id;
+    }
 }

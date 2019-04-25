@@ -4,51 +4,52 @@ package io.grpc.contrib.perfmark;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * PerfMark storage is where perfmark events are stored.  It is a thread local repository of the last N events.
+ * PerfMark storage is where perfmark events are stored.  It is a thread local repository of the
+ * last N events.
  */
 final class PerfMarkStorage {
 
-    private static final long NO_NANOTIME = 123456789876543210L;
+  private static final long NO_NANOTIME = 123456789876543210L;
 
-    static void startAnyways(long gen, String taskName, Tag tag, Marker marker) {
-        SpanHolder.current().start(gen, taskName, tag.tagName, tag.tagId, marker, System.nanoTime());
-    }
+  static void startAnyways(long gen, String taskName, Tag tag, Marker marker) {
+    SpanHolder.current().start(gen, taskName, tag.tagName, tag.tagId, marker, System.nanoTime());
+  }
 
-    static void stopAnyways(long gen, Marker marker) {
-        long nanoTime = System.nanoTime();
-        SpanHolder.current().stop(gen, nanoTime, marker);
-    }
+  static void stopAnyways(long gen, Marker marker) {
+    long nanoTime = System.nanoTime();
+    SpanHolder.current().stop(gen, nanoTime, marker);
+  }
 
-    static void linkAnyways(long gen, long linkId, Marker marker) {
-        SpanHolder.current().link(gen, linkId, marker);
-    }
+  static void linkAnyways(long gen, long linkId, Marker marker) {
+    SpanHolder.current().link(gen, linkId, marker);
+  }
+
+  static void reset() {
+    SpanHolder.current().reset();
+  }
+
+  static List<Mark> read() {
+    return SpanHolder.current().read();
+  }
 
     private static final class SpanHolder {
         private static final int MAX_EVENTS = 20000;
 
-        private static final long START_OP = Op.START.ordinal();
-        private static final long STOP_OP = Op.STOP.ordinal();
-        private static final long LINK_OP = Op.LINK.ordinal();
-
-        enum Op {
-            NONE,
-            START,
-            STOP,
-            LINK,
-            ;
-        }
+        private static final long START_OP = Mark.Operation.TASK_START.ordinal();
+        private static final long STOP_OP = Mark.Operation.TASK_END.ordinal();
+        private static final long LINK_OP = Mark.Operation.LINK.ordinal();
 
         private static final ConcurrentMap<SpanHolderRef, SpanHolderRef> allSpans =
-                new ConcurrentHashMap<>();
+            new ConcurrentHashMap<>();
         private static final ThreadLocal<SpanHolder> localSpan = new ThreadLocal<SpanHolder>() {
             @Override
             protected SpanHolder initialValue() {
-                return new SpanHolder();
+            return new SpanHolder();
             }
         };
 
@@ -113,24 +114,53 @@ final class PerfMarkStorage {
             }
         }
 
-        void read() {
-            final int idx;
-            final String[] taskNames = new String[MAX_EVENTS];
-            final String[] tagNames = new String[MAX_EVENTS];
-            final long[] tagIds= new long[MAX_EVENTS];
-            final Marker[] markers = new Marker[MAX_EVENTS];
-            final long[] nanoTimes = new long[MAX_EVENTS];
-            final long[] genOps = new long[MAX_EVENTS];
-            synchronized (this) {
-                idx = this.idx;
-                System.arraycopy(this.taskNames, 0, taskNames, 0, MAX_EVENTS);
-                System.arraycopy(this.tagNames, 0, tagNames, 0, MAX_EVENTS);
-                System.arraycopy(this.tagIds, 0, tagIds, 0, MAX_EVENTS);
-                System.arraycopy(this.markers, 0, markers, 0, MAX_EVENTS);
-                System.arraycopy(this.nanoTimes, 0, nanoTimes, 0, MAX_EVENTS);
-                System.arraycopy(this.genOps, 0, genOps, 0, MAX_EVENTS);
-            }
+        synchronized void reset() {
+            Arrays.fill(taskNames, null);
+            Arrays.fill(tagNames, null);
+            Arrays.fill(tagIds, 0);
+            Arrays.fill(markers, null);
+            Arrays.fill(nanoTimes, 0);
+            Arrays.fill(genOps, 0);
+            idx = 0;
+        }
 
+        List<Mark> read() {
+          Deque<Mark> marks = new ArrayDeque<>(MAX_EVENTS);
+            int localIdx;
+            final String[] localTaskNames = new String[MAX_EVENTS];
+            final String[] localTagNames = new String[MAX_EVENTS];
+            final long[] localTagIds= new long[MAX_EVENTS];
+            final Marker[] localMarkers = new Marker[MAX_EVENTS];
+            final long[] localNanoTimes = new long[MAX_EVENTS];
+            final long[] localGenOps = new long[MAX_EVENTS];
+            synchronized (this) {
+              localIdx = this.idx;
+                System.arraycopy(this.taskNames, 0, localTaskNames, 0, MAX_EVENTS);
+                System.arraycopy(this.tagNames, 0, localTagNames, 0, MAX_EVENTS);
+                System.arraycopy(this.tagIds, 0, localTagIds, 0, MAX_EVENTS);
+                System.arraycopy(this.markers, 0, localMarkers, 0, MAX_EVENTS);
+                System.arraycopy(this.nanoTimes, 0, localNanoTimes, 0, MAX_EVENTS);
+                System.arraycopy(this.genOps, 0, localGenOps, 0, MAX_EVENTS);
+            }
+            for (int i = 0; i < MAX_EVENTS; i++) {
+              if (localIdx-- == 0) {
+                localIdx += MAX_EVENTS;
+              }
+              long gen = localGenOps[localIdx] & ~0xFFL;
+              Mark.Operation op = Mark.Operation.valueOf((int) (genOps[localIdx] & 0xFFL));
+              if (op == Mark.Operation.NONE) {
+                break;
+              }
+              marks.addFirst(new Mark(
+                  localTaskNames[localIdx],
+                  localTagNames[localIdx],
+                  localTagIds[localIdx],
+                  localMarkers[localIdx],
+                  localNanoTimes[localIdx],
+                  gen,
+                  op));
+            }
+          return Collections.unmodifiableList(new ArrayList<>(marks));
         }
     }
 
