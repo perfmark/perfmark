@@ -1,8 +1,8 @@
 package io.grpc.contrib.perfmark;
 
-import static io.grpc.contrib.perfmark.Mark.Operation.LINK;
-import static io.grpc.contrib.perfmark.Mark.Operation.TASK_END;
-import static io.grpc.contrib.perfmark.Mark.Operation.TASK_START;
+import static io.grpc.contrib.perfmark.MarkList.Mark.Operation.LINK;
+import static io.grpc.contrib.perfmark.MarkList.Mark.Operation.TASK_END;
+import static io.grpc.contrib.perfmark.MarkList.Mark.Operation.TASK_START;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
@@ -34,12 +34,12 @@ public class PerfMarkStorageTest {
     PerfMarkStorage.startAnyways(gen, "task", Tag.NO_TAG, Marker.NONE);
     PerfMarkStorage.stopAnyways(gen, Marker.NONE);
 
-    List<Mark> marks = PerfMarkStorage.read();
+    List<MarkList.Mark> marks = PerfMarkStorage.read().getMarks();
 
     assertEquals(marks.size(), 2);
-    List<Mark> expected = Arrays.asList(
-        new Mark("task", null, 0, Marker.NONE, marks.get(0).getNanoTime(), gen, TASK_START),
-        new Mark(null, null, 0, Marker.NONE, marks.get(1).getNanoTime(), gen, TASK_END));
+    List<MarkList.Mark> expected = Arrays.asList(
+        new MarkList.Mark("task", null, 0, Marker.NONE, marks.get(0).getNanoTime(), gen, TASK_START),
+        new MarkList.Mark(null, null, 0, Marker.NONE, marks.get(1).getNanoTime(), gen, TASK_END));
     assertEquals(expected, marks);
   }
 
@@ -50,14 +50,14 @@ public class PerfMarkStorageTest {
     PerfMarkStorage.stopAnyways(gen, Marker.NONE);
     PerfMarkStorage.stopAnyways(gen, Marker.NONE);
 
-    List<Mark> marks = PerfMarkStorage.read();
+    List<MarkList.Mark> marks = PerfMarkStorage.read().getMarks();
 
     assertEquals(marks.size(), 4);
-    List<Mark> expected = Arrays.asList(
-        new Mark("task1", null, 0, Marker.NONE, marks.get(0).getNanoTime(), gen, TASK_START),
-        new Mark("task2", null, 0, Marker.NONE, marks.get(1).getNanoTime(), gen, TASK_START),
-        new Mark(null, null, 0, Marker.NONE, marks.get(2).getNanoTime(), gen, TASK_END),
-        new Mark(null, null, 0, Marker.NONE, marks.get(3).getNanoTime(), gen, TASK_END));
+    List<MarkList.Mark> expected = Arrays.asList(
+        new MarkList.Mark("task1", null, 0, Marker.NONE, marks.get(0).getNanoTime(), gen, TASK_START),
+        new MarkList.Mark("task2", null, 0, Marker.NONE, marks.get(1).getNanoTime(), gen, TASK_START),
+        new MarkList.Mark(null, null, 0, Marker.NONE, marks.get(2).getNanoTime(), gen, TASK_END),
+        new MarkList.Mark(null, null, 0, Marker.NONE, marks.get(3).getNanoTime(), gen, TASK_END));
     assertEquals(expected, marks);
   }
 
@@ -68,14 +68,14 @@ public class PerfMarkStorageTest {
     link.link();
     PerfMarkStorage.stopAnyways(gen, Marker.NONE);
 
-    List<Mark> marks = PerfMarkStorage.read();
+    List<MarkList.Mark> marks = PerfMarkStorage.read().getMarks();
 
     assertEquals(marks.size(), 4);
-    List<Mark> expected = Arrays.asList(
-        new Mark("task", null, 0, Marker.NONE, marks.get(0).getNanoTime(), gen, TASK_START),
-        new Mark(null, null, link.getId(), Marker.NONE, marks.get(1).getNanoTime(), gen, LINK),
-        new Mark(null, null, -link.getId(), Marker.NONE, marks.get(2).getNanoTime(), gen, LINK),
-        new Mark(null, null, 0, Marker.NONE, marks.get(3).getNanoTime(), gen, TASK_END));
+    List<MarkList.Mark> expected = Arrays.asList(
+        new MarkList.Mark("task", null, 0, Marker.NONE, marks.get(0).getNanoTime(), gen, TASK_START),
+        new MarkList.Mark(null, null, link.getId(), Marker.NONE, marks.get(1).getNanoTime(), gen, LINK),
+        new MarkList.Mark(null, null, -link.getId(), Marker.NONE, marks.get(2).getNanoTime(), gen, LINK),
+        new MarkList.Mark(null, null, 0, Marker.NONE, marks.get(3).getNanoTime(), gen, TASK_END));
     assertEquals(expected, marks);
   }
 }
