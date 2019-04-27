@@ -11,51 +11,75 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 
 import java.util.concurrent.TimeUnit;
 
-@State(Scope.Benchmark)
+
 public class PerfMarkBenchmark {
-    @Param({"false", "true"})
-    public boolean enabled;
 
-    @Setup
-    public void setup() {
-        PerfMark.setEnabled(enabled);
+    @State(Scope.Benchmark)
+    public static class ASpanHolderBenchmark {
+        PerfMarkStorage.SpanHolder spanHolder = new PerfMarkStorage.SpanHolder();
+
+        @Benchmark
+        @BenchmarkMode(Mode.AverageTime)
+        @OutputTimeUnit(TimeUnit.NANOSECONDS)
+        public void start() {
+            spanHolder.start(1, "hi", null, 0, Marker.NONE, 1234);
+        }
+
+        @Benchmark
+        @BenchmarkMode(Mode.AverageTime)
+        @OutputTimeUnit(TimeUnit.NANOSECONDS)
+        public void stop() {
+            spanHolder.stop(1, 1234, Marker.NONE);
+        }
+
+        @Benchmark
+        @BenchmarkMode(Mode.AverageTime)
+        @OutputTimeUnit(TimeUnit.NANOSECONDS)
+        public void link() {
+            spanHolder.link(1, 9999, Marker.NONE);
+        }
+
     }
 
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void nothing() {
-    }
+    @State(Scope.Benchmark)
+    public static class EnabledBenchmark {
+        @Param({"false", "true"})
+        public boolean enabled;
 
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void startStop() {
-        PerfMark.startTask("hi");
-        PerfMark.stopTask();
-    }
+        @Setup
+        public void setup() {
+            PerfMark.setEnabled(enabled);
+        }
 
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void startStopClosable() {
-        try (PerfMarkCloseable pc = PerfMark.record("hi")) {
+        @Benchmark
+        @BenchmarkMode(Mode.AverageTime)
+        @OutputTimeUnit(TimeUnit.NANOSECONDS)
+        public void startStop() {
+            PerfMark.startTask("hi");
+            PerfMark.stopTask();
+        }
+
+        @Benchmark
+        @BenchmarkMode(Mode.AverageTime)
+        @OutputTimeUnit(TimeUnit.NANOSECONDS)
+        public void startStopClosable() {
+            try (PerfMarkCloseable pc = PerfMark.record("hi")) {
+            }
+        }
+
+        @Benchmark
+        @BenchmarkMode(Mode.AverageTime)
+        @OutputTimeUnit(TimeUnit.NANOSECONDS)
+        public Tag createTag() {
+            return PerfMark.createTag(1);
+        }
+
+        @Benchmark
+        @BenchmarkMode(Mode.AverageTime)
+        @OutputTimeUnit(TimeUnit.NANOSECONDS)
+        public void link() {
+            Link link = PerfMark.link();
+            link.link();
         }
     }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public Tag createTag() {
-        return PerfMark.createTag(1);
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void link() {
-        Link link = PerfMark.link();
-        link.link();
-    }
-
 }

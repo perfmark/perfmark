@@ -38,7 +38,7 @@ final class PerfMarkStorage {
     return SpanHolder.current().read();
   }
 
-  private static final class SpanHolder {
+  static final class SpanHolder {
     private static final int MAX_EVENTS = 20000;
 
     private static final long START_OP = Operation.TASK_START.ordinal();
