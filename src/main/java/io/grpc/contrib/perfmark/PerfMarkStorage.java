@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import javax.annotation.Nullable;
 
 /**
  * PerfMark storage is where perfmark events are stored.  It is a thread local repository of the
@@ -28,9 +29,9 @@ final class PerfMarkStorage {
     SpanHolder.current().start(gen, taskName, tag.tagName, tag.tagId, marker, System.nanoTime());
   }
 
-  static void stopAnyways(long gen, Marker marker) {
+  static void stopAnyways(long gen, @Nullable String taskName, Tag tag, Marker marker) {
     long nanoTime = System.nanoTime();
-    SpanHolder.current().stop(gen, nanoTime, marker);
+    SpanHolder.current().stop(gen, taskName, tag.tagName, tag.tagId, marker, nanoTime);
   }
 
   static void linkAnyways(long gen, long linkId, Marker marker) {
@@ -93,7 +94,13 @@ final class PerfMarkStorage {
       return localSpan.get();
     }
 
-    void start(long gen, String taskName, String tagName, long tagId, Marker marker, long nanoTime) {
+    void start(
+        long gen,
+        String taskName,
+        String tagName,
+        long tagId,
+        Marker marker,
+        long nanoTime) {
       long localIdx = idxHandle.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
       taskNames[i] = taskName;
@@ -117,12 +124,18 @@ final class PerfMarkStorage {
       idxHandle.lazySet(this, localIdx + 1);
     }
 
-    void stop(long gen, long nanoTime, Marker marker) {
+    void stop(
+        long gen,
+        @Nullable String taskName,
+        @Nullable String tagName,
+        long tagId,
+        Marker marker,
+        long nanoTime) {
       long localIdx = idxHandle.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
-      taskNames[i] = null;
-      tagNames[i] = null;
-      tagIds[i] = 0;
+      taskNames[i] = taskName;
+      tagNames[i] = tagName;
+      tagIds[i] = tagId;
       markers[i] = marker;
       nanoTimes[i] = nanoTime;
       genOps[i] = gen | STOP_OP;

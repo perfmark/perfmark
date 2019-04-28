@@ -29,7 +29,7 @@ public class PerfMarkBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void stop() {
-      spanHolder.stop(1, 1234, Marker.NONE);
+      spanHolder.stop(1, "hi", null, 0, Marker.NONE, 1234);
     }
 
     @Benchmark

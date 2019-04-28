@@ -127,7 +127,7 @@ public final class PerfMark {
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.stopAnyways(gen, Marker.NONE);
+    PerfMarkStorage.stopAnyways(gen, /*taskName=*/ null, /*tag=*/Tag.NO_TAG, Marker.NONE);
   }
 
   /**
