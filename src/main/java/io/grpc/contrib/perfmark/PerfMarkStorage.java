@@ -2,8 +2,6 @@ package io.grpc.contrib.perfmark;
 
 
 import io.grpc.contrib.perfmark.MarkList.Mark.Operation;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -16,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
  * PerfMark storage is where perfmark events are stored.  It is a thread local repository of the
@@ -56,15 +55,8 @@ final class PerfMarkStorage {
     private static final long STOP_OP = Operation.TASK_END.ordinal();
     private static final long LINK_OP = Operation.LINK.ordinal();
 
-    private static final VarHandle idxHandle;
-
-    static {
-      try {
-        idxHandle = MethodHandles.lookup().findVarHandle(SpanHolder.class, "idx", long.class);
-      } catch (NoSuchFieldException | IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
-    }
+    private static final AtomicLongFieldUpdater<SpanHolder> idxHandle =
+        AtomicLongFieldUpdater.newUpdater(SpanHolder.class, "idx");
 
     private static final ConcurrentMap<SpanHolderRef, SpanHolderRef> allSpans =
         new ConcurrentHashMap<>();
@@ -81,7 +73,7 @@ final class PerfMarkStorage {
 
     // where to write to next
     @SuppressWarnings("unused") // Used Reflectively
-    private long idx;
+    private volatile long idx;
     private final String[] taskNames = new String[MAX_EVENTS];
     private final String[] tagNames = new String[MAX_EVENTS];
     private final long[] tagIds= new long[MAX_EVENTS];
@@ -102,7 +94,7 @@ final class PerfMarkStorage {
     }
 
     void start(long gen, String taskName, String tagName, long tagId, Marker marker, long nanoTime) {
-      long localIdx = (long) idxHandle.get(this);
+      long localIdx = idxHandle.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
       taskNames[i] = taskName;
       tagNames[i] = tagName;
@@ -110,11 +102,11 @@ final class PerfMarkStorage {
       markers[i] = marker;
       nanoTimes[i] = nanoTime;
       genOps[i] = gen | START_OP;
-      idxHandle.setRelease(this, localIdx + 1);
+      idxHandle.lazySet(this, localIdx + 1);
     }
 
     void link(long gen, long linkId, Marker marker) {
-      long localIdx = (long) idxHandle.get(this);
+      long localIdx = idxHandle.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
       taskNames[i] = null;
       tagNames[i] = null;
@@ -122,11 +114,11 @@ final class PerfMarkStorage {
       markers[i] = marker;
       nanoTimes[i] = NO_NANOTIME;
       genOps[i] = gen | LINK_OP;
-      idxHandle.setRelease(this, localIdx + 1);
+      idxHandle.lazySet(this, localIdx + 1);
     }
 
     void stop(long gen, long nanoTime, Marker marker) {
-      long localIdx = (long) idxHandle.get(this);
+      long localIdx = idxHandle.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
       taskNames[i] = null;
       tagNames[i] = null;
@@ -134,7 +126,7 @@ final class PerfMarkStorage {
       markers[i] = marker;
       nanoTimes[i] = nanoTime;
       genOps[i] = gen | STOP_OP;
-      idxHandle.setRelease(this, localIdx + 1);
+      idxHandle.lazySet(this, localIdx + 1);
     }
 
     void resetForTest() {
@@ -145,7 +137,7 @@ final class PerfMarkStorage {
       Arrays.fill(markers, null);
       Arrays.fill(nanoTimes, 0);
       Arrays.fill(genOps, 0);
-      idxHandle.setRelease(this, 0L);
+      idxHandle.lazySet(this, 0L);
     }
 
     static List<MarkList> readAll() {
@@ -162,8 +154,8 @@ final class PerfMarkStorage {
     }
 
     private MarkList read() {
-      boolean selfRead = Thread.currentThread() == this.currentThread;
-      Deque<MarkList.Mark> marks = new ArrayDeque<>(MAX_EVENTS);
+      final boolean selfRead = Thread.currentThread() == this.currentThread;
+      final Deque<MarkList.Mark> marks = new ArrayDeque<>(MAX_EVENTS);
       final String[] localTaskNames = new String[MAX_EVENTS];
       final String[] localTagNames = new String[MAX_EVENTS];
       final long[] localTagIds= new long[MAX_EVENTS];
@@ -171,7 +163,7 @@ final class PerfMarkStorage {
       final long[] localNanoTimes = new long[MAX_EVENTS];
       final long[] localGenOps = new long[MAX_EVENTS];
 
-      long startIdx = ((long) idxHandle.getAcquire(this));
+      long startIdx = idxHandle.get(this);
       int copy = (int) Math.min(startIdx, MAX_EVENTS);
       System.arraycopy(this.taskNames, 0, localTaskNames, 0, copy);
       System.arraycopy(this.tagNames, 0, localTagNames, 0, copy);
@@ -179,7 +171,7 @@ final class PerfMarkStorage {
       System.arraycopy(this.markers, 0, localMarkers, 0, copy);
       System.arraycopy(this.nanoTimes, 0, localNanoTimes, 0, copy);
       System.arraycopy(this.genOps, 0, localGenOps, 0, copy);
-      long endIdx = ((long) idxHandle.getAcquire(this));
+      long endIdx = idxHandle.get(this);
       if (endIdx < startIdx) {
         throw new AssertionError();
       }

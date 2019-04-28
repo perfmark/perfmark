@@ -6,7 +6,7 @@ plugins {
 group 'io.grpc.contrib'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 1.9
+sourceCompatibility = 1.7
 
 repositories {
     mavenCentral()
@@ -18,7 +18,9 @@ jmh {
     fork = 1
     warmupIterations = 10
 
+    /*
     profilers = ["perfasm"]
+
     jvmArgs = [
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+LogCompilation",
@@ -35,6 +37,8 @@ jmh {
             "-XX:+TraceClassLoading",
             "-XX:PrintAssemblyOptions=syntax"
     ]
+
+     */
 }
 
 dependencies {
