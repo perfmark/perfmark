@@ -18,8 +18,12 @@ public final class MarkList {
     this.threadName = thread.getName();
   }
 
-  List<Mark> getMarks() {
+  public List<Mark> getMarks() {
     return marks;
+  }
+
+  public long getThreadId() {
+    return threadId;
   }
 
   @Override

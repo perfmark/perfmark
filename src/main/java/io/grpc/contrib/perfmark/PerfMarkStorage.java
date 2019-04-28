@@ -2,10 +2,18 @@ package io.grpc.contrib.perfmark;
 
 
 import io.grpc.contrib.perfmark.MarkList.Mark.Operation;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -30,20 +38,33 @@ final class PerfMarkStorage {
     SpanHolder.current().link(gen, linkId, marker);
   }
 
-  static void reset() {
-    SpanHolder.current().reset();
+  static void resetForTest() {
+    SpanHolder.current().resetForTest();
   }
 
-  static MarkList read() {
-    return SpanHolder.current().read();
+  static List<MarkList> read() {
+    return SpanHolder.readAll();
   }
 
   static final class SpanHolder {
-    private static final int MAX_EVENTS = 20000;
+    private static final int MAX_EVENTS_BITS = 15;
+    private static final int MAX_EVENTS = 1 << MAX_EVENTS_BITS;
+    private static final long MAX_EVENTS_MASK = MAX_EVENTS - 1;
+    private static final long GEN_MASK = (1 << PerfMark.GEN_OFFSET) - 1;
 
     private static final long START_OP = Operation.TASK_START.ordinal();
     private static final long STOP_OP = Operation.TASK_END.ordinal();
     private static final long LINK_OP = Operation.LINK.ordinal();
+
+    private static final VarHandle idxHandle;
+
+    static {
+      try {
+        idxHandle = MethodHandles.lookup().findVarHandle(SpanHolder.class, "idx", long.class);
+      } catch (NoSuchFieldException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
 
     private static final ConcurrentMap<SpanHolderRef, SpanHolderRef> allSpans =
         new ConcurrentHashMap<>();
@@ -59,7 +80,8 @@ final class PerfMarkStorage {
     private final long startTime;
 
     // where to write to next
-    private int idx;
+    @SuppressWarnings("unused") // Used Reflectively
+    private long idx;
     private final String[] taskNames = new String[MAX_EVENTS];
     private final String[] tagNames = new String[MAX_EVENTS];
     private final long[] tagIds= new long[MAX_EVENTS];
@@ -79,55 +101,70 @@ final class PerfMarkStorage {
       return localSpan.get();
     }
 
-    synchronized void start(long gen, String taskName, String tagName, long tagId, Marker marker, long nanoTime) {
-      taskNames[idx] = taskName;
-      tagNames[idx] = tagName;
-      tagIds[idx] = tagId;
-      markers[idx] = marker;
-      nanoTimes[idx] = nanoTime;
-      genOps[idx] = gen | START_OP;
-      if (++idx == MAX_EVENTS) {
-        idx = 0;
-      }
+    void start(long gen, String taskName, String tagName, long tagId, Marker marker, long nanoTime) {
+      long localIdx = (long) idxHandle.get(this);
+      int i = (int) (localIdx & MAX_EVENTS_MASK);
+      taskNames[i] = taskName;
+      tagNames[i] = tagName;
+      tagIds[i] = tagId;
+      markers[i] = marker;
+      nanoTimes[i] = nanoTime;
+      genOps[i] = gen | START_OP;
+      idxHandle.setRelease(this, localIdx + 1);
     }
 
-    synchronized void link(long gen, long linkId, Marker marker) {
-      taskNames[idx] = null;
-      tagNames[idx] = null;
-      tagIds[idx] = linkId;
-      markers[idx] = marker;
-      nanoTimes[idx] = NO_NANOTIME;
-      genOps[idx] = gen | LINK_OP;
-      if (++idx == MAX_EVENTS) {
-        idx = 0;
-      }
+    void link(long gen, long linkId, Marker marker) {
+      long localIdx = (long) idxHandle.get(this);
+      int i = (int) (localIdx & MAX_EVENTS_MASK);
+      taskNames[i] = null;
+      tagNames[i] = null;
+      tagIds[i] = linkId;
+      markers[i] = marker;
+      nanoTimes[i] = NO_NANOTIME;
+      genOps[i] = gen | LINK_OP;
+      idxHandle.setRelease(this, localIdx + 1);
     }
 
-    synchronized void stop(long gen, long nanoTime, Marker marker) {
-      taskNames[idx] = null;
-      tagNames[idx] = null;
-      tagIds[idx] = 0;
-      markers[idx] = marker;
-      nanoTimes[idx] = nanoTime;
-      genOps[idx] = gen | STOP_OP;
-      if (++idx == MAX_EVENTS) {
-        idx = 0;
-      }
+    void stop(long gen, long nanoTime, Marker marker) {
+      long localIdx = (long) idxHandle.get(this);
+      int i = (int) (localIdx & MAX_EVENTS_MASK);
+      taskNames[i] = null;
+      tagNames[i] = null;
+      tagIds[i] = 0;
+      markers[i] = marker;
+      nanoTimes[i] = nanoTime;
+      genOps[i] = gen | STOP_OP;
+      idxHandle.setRelease(this, localIdx + 1);
     }
 
-    synchronized void reset() {
+    void resetForTest() {
+      assert Thread.currentThread() == this.currentThread;
       Arrays.fill(taskNames, null);
       Arrays.fill(tagNames, null);
       Arrays.fill(tagIds, 0);
       Arrays.fill(markers, null);
       Arrays.fill(nanoTimes, 0);
       Arrays.fill(genOps, 0);
-      idx = 0;
+      idxHandle.setRelease(this, 0L);
     }
 
-    MarkList read() {
+
+    static List<MarkList> readAll() {
+      List<MarkList> markLists = new ArrayList<>(allSpans.size());
+      SpanHolderRef.cleanQueue(allSpans);
+      for (SpanHolderRef ref : allSpans.keySet()) {
+        SpanHolder sh = ref.get();
+        if (sh == null) {
+          continue;
+        }
+        markLists.add(sh.read());
+      }
+      return Collections.unmodifiableList(markLists);
+    }
+
+    private MarkList read() {
+      boolean selfRead = Thread.currentThread() == this.currentThread;
       Deque<MarkList.Mark> marks = new ArrayDeque<>(MAX_EVENTS);
-      int localIdx;
       final String[] localTaskNames = new String[MAX_EVENTS];
       final String[] localTagNames = new String[MAX_EVENTS];
       final long[] localTagIds= new long[MAX_EVENTS];
@@ -135,47 +172,49 @@ final class PerfMarkStorage {
       final long[] localNanoTimes = new long[MAX_EVENTS];
       final long[] localGenOps = new long[MAX_EVENTS];
 
-      synchronized (this) {
-        localIdx = this.idx;
-        System.arraycopy(this.taskNames, 0, localTaskNames, 0, MAX_EVENTS);
-        System.arraycopy(this.tagNames, 0, localTagNames, 0, MAX_EVENTS);
-        System.arraycopy(this.tagIds, 0, localTagIds, 0, MAX_EVENTS);
-        System.arraycopy(this.markers, 0, localMarkers, 0, MAX_EVENTS);
-        System.arraycopy(this.nanoTimes, 0, localNanoTimes, 0, MAX_EVENTS);
-        System.arraycopy(this.genOps, 0, localGenOps, 0, MAX_EVENTS);
+      long startIdx = ((long) idxHandle.getAcquire(this));
+      int copy = (int) Math.min(startIdx, MAX_EVENTS);
+      System.arraycopy(this.taskNames, 0, localTaskNames, 0, copy);
+      System.arraycopy(this.tagNames, 0, localTagNames, 0, copy);
+      System.arraycopy(this.tagIds, 0, localTagIds, 0, copy);
+      System.arraycopy(this.markers, 0, localMarkers, 0, copy);
+      System.arraycopy(this.nanoTimes, 0, localNanoTimes, 0, copy);
+      System.arraycopy(this.genOps, 0, localGenOps, 0, copy);
+      long endIdx = ((long) idxHandle.getAcquire(this));
+      if (endIdx < startIdx) {
+        throw new AssertionError();
       }
-      for (int i = 0; i < MAX_EVENTS; i++) {
-        if (localIdx-- == 0) {
-          localIdx += MAX_EVENTS;
-        }
-        long gen = localGenOps[localIdx] & ~0xFFL;
-        Operation op = Operation.valueOf((int) (localGenOps[localIdx] & 0xFFL));
+      // If we are reading from ourselves (such as in a test), we can assume there isn't an in
+      // progress write modifying the oldest entry.
+      endIdx += !selfRead ? 1 : 0;
+      long eventsToDrop = endIdx - startIdx;
+      for (int i = 0; i < copy - eventsToDrop; i++) {
+        int readIdx = (int) ((startIdx - i - 1) & MAX_EVENTS_MASK);
+        long gen = localGenOps[readIdx] & ~GEN_MASK;
+        Operation op = Operation.valueOf((int) (localGenOps[readIdx] & GEN_MASK));
         if (op == Operation.NONE) {
-          break;
+          break; // this should be impossible, unless resetForTest was called.
         }
         marks.addFirst(new MarkList.Mark(
-            localTaskNames[localIdx],
-            localTagNames[localIdx],
-            localTagIds[localIdx],
-            localMarkers[localIdx],
-            localNanoTimes[localIdx],
+            localTaskNames[readIdx],
+            localTagNames[readIdx],
+            localTagIds[readIdx],
+            localMarkers[readIdx],
+            localNanoTimes[readIdx],
             gen,
             op));
       }
+
       return new MarkList(
           Collections.unmodifiableList(new ArrayList<>(marks)), startTime, currentThread);
     }
   }
 
   private static final class SpanHolderRef extends WeakReference<SpanHolder> {
-    static final ReferenceQueue<SpanHolder> spanHolderQueue = new ReferenceQueue<>();
+    private static final ReferenceQueue<SpanHolder> spanHolderQueue = new ReferenceQueue<>();
 
     SpanHolderRef(SpanHolder holder) {
       super(holder, spanHolderQueue);
-    }
-
-    private SpanHolderRef() {
-      super(null, null);
     }
 
     static void cleanQueue(Map<SpanHolderRef, SpanHolderRef> allSpans) {

@@ -24,17 +24,13 @@ public class PerfMarkStorageTest {
     gen = PerfMark.getActualGeneration();
   }
 
-  @Before
-  public void setUp() {
-    PerfMarkStorage.reset();
-  }
-
   @Test
   public void taskStartStop() {
+    PerfMarkStorage.resetForTest();
     PerfMarkStorage.startAnyways(gen, "task", Tag.NO_TAG, Marker.NONE);
     PerfMarkStorage.stopAnyways(gen, Marker.NONE);
 
-    List<MarkList.Mark> marks = PerfMarkStorage.read().getMarks();
+    List<MarkList.Mark> marks = getMine(PerfMarkStorage.read()).getMarks();
 
     assertEquals(marks.size(), 2);
     List<MarkList.Mark> expected = Arrays.asList(
@@ -45,12 +41,13 @@ public class PerfMarkStorageTest {
 
   @Test
   public void taskStartStartStopStop() {
+    PerfMarkStorage.resetForTest();
     PerfMarkStorage.startAnyways(gen, "task1", Tag.NO_TAG, Marker.NONE);
     PerfMarkStorage.startAnyways(gen, "task2", Tag.NO_TAG, Marker.NONE);
     PerfMarkStorage.stopAnyways(gen, Marker.NONE);
     PerfMarkStorage.stopAnyways(gen, Marker.NONE);
 
-    List<MarkList.Mark> marks = PerfMarkStorage.read().getMarks();
+    List<MarkList.Mark> marks = getMine(PerfMarkStorage.read()).getMarks();
 
     assertEquals(marks.size(), 4);
     List<MarkList.Mark> expected = Arrays.asList(
@@ -63,12 +60,13 @@ public class PerfMarkStorageTest {
 
   @Test
   public void linkInLinkOut() {
+    PerfMarkStorage.resetForTest();
     PerfMarkStorage.startAnyways(gen, "task", Tag.NO_TAG, Marker.NONE);
     Link link = PerfMark.link();
     link.link();
     PerfMarkStorage.stopAnyways(gen, Marker.NONE);
 
-    List<MarkList.Mark> marks = PerfMarkStorage.read().getMarks();
+    List<MarkList.Mark> marks = getMine(PerfMarkStorage.read()).getMarks();
 
     assertEquals(marks.size(), 4);
     List<MarkList.Mark> expected = Arrays.asList(
@@ -77,5 +75,14 @@ public class PerfMarkStorageTest {
         new MarkList.Mark(null, null, -link.getId(), Marker.NONE, marks.get(2).getNanoTime(), gen, LINK),
         new MarkList.Mark(null, null, 0, Marker.NONE, marks.get(3).getNanoTime(), gen, TASK_END));
     assertEquals(expected, marks);
+  }
+
+  private static MarkList getMine(List<MarkList> markLists) {
+    for (MarkList list : markLists) {
+      if (list.getThreadId() == Thread.currentThread().getId()) {
+        return list;
+      }
+    }
+    throw new AssertionError("can't find my marks!");
   }
 }
