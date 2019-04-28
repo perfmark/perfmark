@@ -94,8 +94,16 @@ public final class MarkList {
       }
     }
 
-    long getNanoTime() {
+    public long getNanoTime() {
       return nanoTime;
+    }
+
+    public long getGeneration() {
+      return generation;
+    }
+
+    public Operation getOperation() {
+      return operation;
     }
 
     @Override
