@@ -1,23 +1,91 @@
 package io.grpc.contrib.perfmark;
 
 import com.google.errorprone.annotations.CompileTimeConstant;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.CheckReturnValue;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MutableCallSite;
-import java.lang.invoke.VolatileCallSite;
 
 public final class PerfMark {
   static final int GEN_OFFSET = 8;
-  private static final long INCREMENT = 1L << GEN_OFFSET;
-  private static final long FAILURE = (-2L) << GEN_OFFSET;
+  static final long INCREMENT = 1L << GEN_OFFSET;
+  static final long FAILURE = (-2L) << GEN_OFFSET;
+
+  private static final Generation generation;
+
+  static {
+    Generation gen = null;
+    Throwable failure = null;
+    try {
+      gen = MethodHandleGeneration.INSTANCE;
+    } catch (Throwable t) {
+      failure = t;
+      gen = VolatileGeneration.INSTANCE;
+    } finally {
+      generation = gen;
+      if (failure != null) {
+        Logger.getLogger(PerfMark.class.getName())
+            .log(Level.SEVERE, "PerfMark init failure", failure);
+      }
+    }
+  }
 
   private static long actualGeneration;
-  private static final MutableCallSite currentGeneration =
-      new MutableCallSite(MethodHandles.constant(long.class, 0));
-  private static final MutableCallSite[] currentGenerations =
-      new MutableCallSite[] {currentGeneration};
-  private static final MethodHandle currentGenerationGetter = currentGeneration.dynamicInvoker();
+
+  abstract static class Generation {
+    protected abstract void setGeneration(long generation);
+
+    protected abstract long getGeneration();
+  }
+
+  private static final class MethodHandleGeneration extends Generation {
+    private static final MutableCallSite currentGeneration =
+        new MutableCallSite(MethodHandles.constant(long.class, 0));
+    private static final MutableCallSite[] currentGenerations =
+        new MutableCallSite[] {currentGeneration};
+    private static final MethodHandle currentGenerationGetter = currentGeneration.dynamicInvoker();
+
+    static final MethodHandleGeneration INSTANCE = new MethodHandleGeneration();
+
+    private MethodHandleGeneration() {}
+
+    @Override
+    protected long getGeneration() {
+      try {
+        return (long) currentGenerationGetter.invoke();
+      } catch (Throwable throwable) {
+        return FAILURE;
+      }
+    }
+
+    @Override
+    protected void setGeneration(long generation) {
+      currentGeneration.setTarget(MethodHandles.constant(long.class, generation));
+      MutableCallSite.syncAll(currentGenerations);
+    }
+  }
+
+  private static final class VolatileGeneration extends Generation {
+    private static volatile long gen;
+
+    static final VolatileGeneration INSTANCE = new VolatileGeneration();
+
+    private VolatileGeneration() {}
+
+    @Override
+    protected long getGeneration() {
+      return gen;
+    }
+
+    @Override
+    protected void setGeneration(long generation) {
+      gen = generation;
+    }
+  }
+
+
 
   /**
    * Turns on or off PerfMark recording.  Don't call this method too frequently; while neither on
@@ -30,9 +98,7 @@ public final class PerfMark {
     if (actualGeneration == FAILURE) {
       return;
     }
-    currentGeneration.setTarget(
-        MethodHandles.constant(long.class, (actualGeneration += INCREMENT)));
-    MutableCallSite.syncAll(currentGenerations);
+    generation.setGeneration(actualGeneration += INCREMENT);
   }
 
   // For Testing
@@ -139,11 +205,7 @@ public final class PerfMark {
   private PerfMark() {}
 
   private static long getGen() {
-    try {
-      return (long) currentGenerationGetter.invoke();
-    } catch (Throwable throwable) {
-      return FAILURE;
-    }
+    return generation.getGeneration();
   }
 
   private static boolean isEnabled(long gen) {
