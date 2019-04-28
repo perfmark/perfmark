@@ -148,7 +148,6 @@ final class PerfMarkStorage {
       idxHandle.setRelease(this, 0L);
     }
 
-
     static List<MarkList> readAll() {
       List<MarkList> markLists = new ArrayList<>(allSpans.size());
       SpanHolderRef.cleanQueue(allSpans);

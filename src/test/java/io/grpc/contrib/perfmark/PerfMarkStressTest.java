@@ -1,5 +1,6 @@
 package io.grpc.contrib.perfmark;
 
+import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
@@ -13,12 +14,12 @@ public class PerfMarkStressTest {
   @Test
   public void fibonacci() {
     ForkJoinPool fjp = new ForkJoinPool(8);
-    final class FibTask extends RecursiveTask<Long> {
+    final class Fibonacci extends RecursiveTask<Long> {
 
       private final long input;
       private final Link link;
 
-      FibTask(long input, Link link) {
+      Fibonacci(long input, Link link) {
         this.input = input;
         this.link = link;
       }
@@ -29,10 +30,10 @@ public class PerfMarkStressTest {
         PerfMark.startTask("compute", tag);
         link.link();
         try {
-          if (input >= 12) {
+          if (input >= 20) {
             Link link2 = PerfMark.link();
-            ForkJoinTask<Long> task1 = new FibTask(input - 1, link2).fork();
-            FibTask task2 = new FibTask(input - 2, link2);
+            ForkJoinTask<Long> task1 = new Fibonacci(input - 1, link2).fork();
+            Fibonacci task2 = new Fibonacci(input - 2, link2);
             return task2.compute() + task1.join();
           } else {
             return computeUnboxed(input);
@@ -52,9 +53,15 @@ public class PerfMarkStressTest {
     PerfMark.setEnabled(true);
     PerfMark.startTask("calc");
     Link link = PerfMark.link();
-    Long res = fjp.invoke(new FibTask(49, link));
+    Long res = fjp.invoke(new Fibonacci(49, link));
     PerfMark.stopTask();
+    for (MarkList markList : PerfMarkStorage.read()) {
+      List<MarkList.Mark> marks = markList.getMarks();
+      System.err.println("Thread " + markList.getThreadId() + " " + marks.size());
+      for (int i = marks.size() - 1; i >= marks.size() - 100 && i >= 0; i--) {
+        System.err.println(marks.get(i));
+      }
+    }
     fjp.shutdown();
-    System.err.println(res);
   }
 }
