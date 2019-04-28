@@ -149,7 +149,7 @@ final class PerfMarkStorage {
           localIdx += MAX_EVENTS;
         }
         long gen = localGenOps[localIdx] & ~0xFFL;
-        Operation op = Operation.valueOf((int) (genOps[localIdx] & 0xFFL));
+        Operation op = Operation.valueOf((int) (localGenOps[localIdx] & 0xFFL));
         if (op == Operation.NONE) {
           break;
         }
