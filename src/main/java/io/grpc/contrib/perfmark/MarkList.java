@@ -71,7 +71,9 @@ public final class MarkList {
         Operation operation) {
       this.operation = checkNotNull(operation, "operation");
       this.taskName = taskName;
-      if (operation != Operation.TASK_END && operation != Operation.LINK) {
+      if (operation != Operation.TASK_END
+          && operation != Operation.TASK_NOTAG_END
+          && operation != Operation.LINK) {
         checkNotNull(taskName, "taskName");
       }
       this.tagName = tagName;
@@ -84,7 +86,9 @@ public final class MarkList {
     public enum Operation {
       NONE,
       TASK_START,
+      TASK_NOTAG_START,
       TASK_END,
+      TASK_NOTAG_END,
       LINK,
       ;
 

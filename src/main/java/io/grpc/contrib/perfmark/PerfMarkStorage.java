@@ -9,6 +9,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,10 @@ final class PerfMarkStorage {
 
   private static final long NO_NANOTIME = 123456789876543210L;
 
+  static void startAnyways(long gen, String taskName, Marker marker) {
+    SpanHolder.current().startNoTag(gen, taskName, marker, System.nanoTime());
+  }
+
   static void startAnyways(long gen, String taskName, Tag tag, Marker marker) {
     SpanHolder.current().start(gen, taskName, tag.tagName, tag.tagId, marker, System.nanoTime());
   }
@@ -32,6 +37,11 @@ final class PerfMarkStorage {
   static void stopAnyways(long gen, @Nullable String taskName, Tag tag, Marker marker) {
     long nanoTime = System.nanoTime();
     SpanHolder.current().stop(gen, taskName, tag.tagName, tag.tagId, marker, nanoTime);
+  }
+
+  static void stopAnyways(long gen, @Nullable String taskName, Marker marker) {
+    long nanoTime = System.nanoTime();
+    SpanHolder.current().stopNoTag(gen, taskName, marker, nanoTime);
   }
 
   static void linkAnyways(long gen, long linkId, Marker marker) {
@@ -53,7 +63,9 @@ final class PerfMarkStorage {
     private static final long GEN_MASK = (1 << PerfMark.GEN_OFFSET) - 1;
 
     private static final long START_OP = Operation.TASK_START.ordinal();
+    private static final long START_NOTAG_OP = Operation.TASK_NOTAG_START.ordinal();
     private static final long STOP_OP = Operation.TASK_END.ordinal();
+    private static final long STOP_NOTAG_OP = Operation.TASK_NOTAG_END.ordinal();
     private static final long LINK_OP = Operation.LINK.ordinal();
 
     private static final AtomicLongFieldUpdater<SpanHolder> idxHandle =
@@ -112,14 +124,25 @@ final class PerfMarkStorage {
       idxHandle.lazySet(this, localIdx + 1);
     }
 
+    void startNoTag(long gen, String taskName, Marker marker, long nanoTime) {
+      long localIdx = idxHandle.get(this);
+      int i = (int) (localIdx & MAX_EVENTS_MASK);
+      taskNames[i] = taskName;
+      markers[i] = marker;
+      nanoTimes[i] = nanoTime;
+      genOps[i] = gen | START_NOTAG_OP;
+      idxHandle.lazySet(this, localIdx + 1);
+    }
+
     void link(long gen, long linkId, Marker marker) {
       long localIdx = idxHandle.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
-      taskNames[i] = null;
-      tagNames[i] = null;
-      tagIds[i] = linkId;
+      // taskNames[i] = null;
+      // tagNames[i] = null;
+      // tagIds[i] = linkId;
       markers[i] = marker;
-      nanoTimes[i] = NO_NANOTIME;
+      // nanoTimes[i] = NO_NANOTIME;
+      nanoTimes[i] = linkId;
       genOps[i] = gen | LINK_OP;
       idxHandle.lazySet(this, localIdx + 1);
     }
@@ -139,6 +162,16 @@ final class PerfMarkStorage {
       markers[i] = marker;
       nanoTimes[i] = nanoTime;
       genOps[i] = gen | STOP_OP;
+      idxHandle.lazySet(this, localIdx + 1);
+    }
+
+    void stopNoTag(long gen, @Nullable String taskName, Marker marker, long nanoTime) {
+      long localIdx = idxHandle.get(this);
+      int i = (int) (localIdx & MAX_EVENTS_MASK);
+      taskNames[i] = taskName;
+      markers[i] = marker;
+      nanoTimes[i] = nanoTime;
+      genOps[i] = gen | STOP_NOTAG_OP;
       idxHandle.lazySet(this, localIdx + 1);
     }
 
@@ -197,7 +230,7 @@ final class PerfMarkStorage {
         long gen = localGenOps[readIdx] & ~GEN_MASK;
         Operation op = Operation.valueOf((int) (localGenOps[readIdx] & GEN_MASK));
         if (op == Operation.NONE) {
-          break; // this should be impossible, unless resetForTest was called.
+          throw new ConcurrentModificationException("Read of storage was not threadsafe");
         }
         marks.addFirst(new MarkList.Mark(
             localTaskNames[readIdx],

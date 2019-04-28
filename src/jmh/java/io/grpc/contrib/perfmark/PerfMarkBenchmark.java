@@ -16,13 +16,20 @@ public class PerfMarkBenchmark {
 
   @State(Scope.Benchmark)
   public static class ASpanHolderBenchmark {
-    PerfMarkStorage.SpanHolder spanHolder = new PerfMarkStorage.SpanHolder();
+    private final PerfMarkStorage.SpanHolder spanHolder = new PerfMarkStorage.SpanHolder();
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void start() {
       spanHolder.start(1, "hi", null, 0, Marker.NONE, 1234);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void startNoTag() {
+      spanHolder.startNoTag(1, "hi", Marker.NONE, 1234);
     }
 
     @Benchmark
@@ -35,10 +42,16 @@ public class PerfMarkBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void stopNoTag() {
+      spanHolder.stopNoTag(1, "hi", Marker.NONE, 1234);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void link() {
       spanHolder.link(1, 9999, Marker.NONE);
     }
-
   }
 
   @State(Scope.Benchmark)

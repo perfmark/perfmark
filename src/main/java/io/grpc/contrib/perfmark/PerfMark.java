@@ -111,7 +111,7 @@ public final class PerfMark {
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.startAnyways(gen, taskName, Tag.NO_TAG, Marker.NONE);
+    PerfMarkStorage.startAnyways(gen, taskName, Marker.NONE);
   }
 
   public static void startTask(@CompileTimeConstant String taskName, Tag tag) {
@@ -127,7 +127,7 @@ public final class PerfMark {
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.stopAnyways(gen, /*taskName=*/ null, /*tag=*/Tag.NO_TAG, Marker.NONE);
+    PerfMarkStorage.stopAnyways(gen, /*taskName=*/ null, Marker.NONE);
   }
 
   /**
