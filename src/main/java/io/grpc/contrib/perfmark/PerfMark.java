@@ -85,8 +85,6 @@ public final class PerfMark {
     }
   }
 
-
-
   /**
    * Turns on or off PerfMark recording.  Don't call this method too frequently; while neither on
    * nor off have very high overhead, transitioning between the two may be slow.
