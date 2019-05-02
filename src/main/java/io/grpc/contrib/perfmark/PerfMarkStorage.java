@@ -137,12 +137,11 @@ final class PerfMarkStorage {
     void link(long gen, long linkId, Marker marker) {
       long localIdx = idxHandle.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
-      // taskNames[i] = null;
-      // tagNames[i] = null;
-      // tagIds[i] = linkId;
+      taskNames[i] = null;
+      tagNames[i] = null;
+      tagIds[i] = linkId;
       markers[i] = marker;
-      // nanoTimes[i] = NO_NANOTIME;
-      nanoTimes[i] = linkId;
+      nanoTimes[i] = NO_NANOTIME;
       genOps[i] = gen | LINK_OP;
       idxHandle.lazySet(this, localIdx + 1);
     }

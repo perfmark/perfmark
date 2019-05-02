@@ -43,7 +43,8 @@ jmh {
 }
 
 compileJmhJava {
-    sourceCompatibility = 1.8
+    sourceCompatibility = 1.9
+    targetCompatibility = 1.9
     dependencies {
         compile 'org.openjdk.jmh:jmh-core:1.21'
         compile 'org.openjdk.jcstress:jcstress-core:0.5'

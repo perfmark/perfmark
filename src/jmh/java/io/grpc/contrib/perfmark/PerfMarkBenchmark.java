@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class PerfMarkBenchmark {
 
   @State(Scope.Benchmark)
-  public static class ASpanHolderBenchmark {
+  public static class SpanHolderBenchmark {
     private final PerfMarkStorage.SpanHolder spanHolder = new PerfMarkStorage.SpanHolder();
 
     @Benchmark
@@ -56,7 +56,7 @@ public class PerfMarkBenchmark {
 
   @State(Scope.Benchmark)
   public static class EnabledBenchmark {
-    @Param({"false", "true"})
+    @Param({"true", "false"})
     public boolean enabled;
 
     @Setup

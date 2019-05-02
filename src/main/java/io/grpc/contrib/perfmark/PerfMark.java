@@ -1,89 +1,69 @@
 package io.grpc.contrib.perfmark;
 
 import com.google.errorprone.annotations.CompileTimeConstant;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.CheckReturnValue;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MutableCallSite;
 
 public final class PerfMark {
   static final int GEN_OFFSET = 8;
-  static final long INCREMENT = 1L << GEN_OFFSET;
   static final long FAILURE = (-2L) << GEN_OFFSET;
+  private static final long INCREMENT = 1L << GEN_OFFSET;
 
-  private static final Generation generation;
+  private static final Generator generator;
+  private static final Logger logger;
 
   static {
-    Generation gen = null;
-    Throwable failure = null;
+    Generator gen = null;
+    Queue<Throwable> failures = new ArrayDeque<>();
     try {
-      gen = MethodHandleGeneration.INSTANCE;
-    } catch (Throwable t) {
-      failure = t;
-      gen = VolatileGeneration.INSTANCE;
-    } finally {
-      generation = gen;
-      if (failure != null) {
-        Logger.getLogger(PerfMark.class.getName())
-            .log(Level.SEVERE, "PerfMark init failure", failure);
+      Class<? extends Generator> clz =
+          Class.forName("io.grpc.contrib.perfmark.MethodHandleGenerator")
+              .asSubclass(Generator.class);
+      gen = clz.getDeclaredConstructor().newInstance();
+    } catch (ClassNotFoundException e) {
+      // May happen if MethodHandleGenerator was removed from the jar.
+      failures.add(e);
+    } catch (NoClassDefFoundError e) {
+      // May happen if MethodHandles are not available, such as on Java 6.
+      failures.add(e);
+    } catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(e.getMessage(), e);
+    }
+    if (gen == null) {
+      try {
+        Class<? extends Generator> clz =
+            Class.forName("io.grpc.contrib.perfmark.VarHandleGenerator")
+                .asSubclass(Generator.class);
+        gen = clz.getDeclaredConstructor().newInstance();
+      } catch (ClassNotFoundException e) {
+        // May happen if VarHandleGenerator was removed from the jar.
+        failures.add(e);
+      } catch (NoClassDefFoundError e) {
+        // May happen if VarHandles are not available, such as on Java 7.
+        failures.add(e);
+      } catch (RuntimeException e) {
+        throw e;
+      } catch (Exception e) {
+        throw new RuntimeException(e.getMessage(), e);
       }
     }
+    if (gen == null) {
+      gen = new VolatileGenerator();
+    }
+    generator = gen;
+    // Logger creation must happen after the generator is set, incase the logger is instrumented.
+    logger = Logger.getLogger(PerfMark.class.getName());
+    for (Throwable failure : failures) {
+      logger.log(Level.FINE, "PerfMark init failure", failure);
+    }
+    logger.info("Using the " + gen);
   }
 
   private static long actualGeneration;
-
-  abstract static class Generation {
-    protected abstract void setGeneration(long generation);
-
-    protected abstract long getGeneration();
-  }
-
-  private static final class MethodHandleGeneration extends Generation {
-    private static final MutableCallSite currentGeneration =
-        new MutableCallSite(MethodHandles.constant(long.class, 0));
-    private static final MutableCallSite[] currentGenerations =
-        new MutableCallSite[] {currentGeneration};
-    private static final MethodHandle currentGenerationGetter = currentGeneration.dynamicInvoker();
-
-    static final MethodHandleGeneration INSTANCE = new MethodHandleGeneration();
-
-    private MethodHandleGeneration() {}
-
-    @Override
-    protected long getGeneration() {
-      try {
-        return (long) currentGenerationGetter.invoke();
-      } catch (Throwable throwable) {
-        return FAILURE;
-      }
-    }
-
-    @Override
-    protected void setGeneration(long generation) {
-      currentGeneration.setTarget(MethodHandles.constant(long.class, generation));
-      MutableCallSite.syncAll(currentGenerations);
-    }
-  }
-
-  private static final class VolatileGeneration extends Generation {
-    private static volatile long gen;
-
-    static final VolatileGeneration INSTANCE = new VolatileGeneration();
-
-    private VolatileGeneration() {}
-
-    @Override
-    protected long getGeneration() {
-      return gen;
-    }
-
-    @Override
-    protected void setGeneration(long generation) {
-      gen = generation;
-    }
-  }
 
   /**
    * Turns on or off PerfMark recording.  Don't call this method too frequently; while neither on
@@ -96,7 +76,10 @@ public final class PerfMark {
     if (actualGeneration == FAILURE) {
       return;
     }
-    generation.setGeneration(actualGeneration += INCREMENT);
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine((value ? "Enabling" : "Disabling") + " PerfMark recorder");
+    }
+    generator.setGeneration(actualGeneration += INCREMENT);
   }
 
   // For Testing
@@ -144,7 +127,6 @@ public final class PerfMark {
     return new Link(inboundLinkId);
   }
 
-  @CheckReturnValue
   public static PerfMarkCloseable record(@CompileTimeConstant String taskName) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
@@ -154,7 +136,6 @@ public final class PerfMark {
     return PerfMarkCloseable.MARKING;
   }
 
-  @CheckReturnValue
   public static PerfMarkCloseable record(@CompileTimeConstant String taskName, Tag tag) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
@@ -203,7 +184,7 @@ public final class PerfMark {
   private PerfMark() {}
 
   private static long getGen() {
-    return generation.getGeneration();
+    return generator.getGeneration();
   }
 
   private static boolean isEnabled(long gen) {
