@@ -45,33 +45,5 @@ public abstract class PerfMarkCloseable implements AutoCloseable {
             this.taskName = taskName;
         }
     }
-
-    static final class MarkerTagAutoCloseable extends PerfMarkCloseable {
-        private final Marker marker;
-        private final Tag tag;
-
-        @Override
-        public void close() {
-            PerfMark.Package.Access.stopTask(marker, tag);
-        }
-
-        MarkerTagAutoCloseable(Marker marker, Tag tag) {
-            this.marker = marker;
-            this.tag = tag;
-        }
-    }
-
-    static final class MarkerAutoCloseable extends PerfMarkCloseable {
-        private final Marker marker;
-
-        @Override
-        public void close() {
-            PerfMark.Package.Access.stopTask(marker);
-        }
-
-        MarkerAutoCloseable(Marker marker) {
-            this.marker = marker;
-        }
-    }
 }
 

@@ -87,14 +87,6 @@ public final class PerfMark {
     return actualGeneration;
   }
 
-  public static void startTask(@CompileTimeConstant String taskName) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.startAnyways(gen, taskName);
-  }
-
   public static void startTask(@CompileTimeConstant String taskName, Tag tag) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
@@ -103,12 +95,12 @@ public final class PerfMark {
     PerfMarkStorage.startAnyways(gen, taskName, tag);
   }
 
-  public static void stopTask(@CompileTimeConstant String taskName) {
+  public static void startTask(@CompileTimeConstant String taskName) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.stopAnyways(gen, taskName);
+    PerfMarkStorage.startAnyways(gen, taskName);
   }
 
   public static void stopTask(@CompileTimeConstant String taskName, Tag tag) {
@@ -117,6 +109,14 @@ public final class PerfMark {
       return;
     }
     PerfMarkStorage.stopAnyways(gen, taskName, tag);
+  }
+
+  public static void stopTask(@CompileTimeConstant String taskName) {
+    final long gen = getGen();
+    if (!isEnabled(gen)) {
+      return;
+    }
+    PerfMarkStorage.stopAnyways(gen, taskName);
   }
 
   static final class Package {
@@ -156,24 +156,6 @@ public final class PerfMark {
           return;
         }
         PerfMarkStorage.stopAnyways(gen, marker);
-      }
-
-      public static PerfMarkCloseable record(Marker marker, Tag tag) {
-        final long gen = getGen();
-        if (!isEnabled(gen)) {
-          return PerfMarkCloseable.NOOP;
-        }
-        PerfMarkStorage.startAnyways(gen, marker, tag);
-        return new PerfMarkCloseable.MarkerTagAutoCloseable(marker, tag);
-      }
-
-      public static PerfMarkCloseable record(Marker marker) {
-        final long gen = getGen();
-        if (!isEnabled(gen)) {
-          return PerfMarkCloseable.NOOP;
-        }
-        PerfMarkStorage.startAnyways(gen, marker);
-        return new PerfMarkCloseable.MarkerAutoCloseable(marker);
       }
 
       public static Link link(Marker marker) {
