@@ -10,7 +10,6 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 
 import java.util.concurrent.TimeUnit;
-import org.openjdk.jmh.infra.Blackhole;
 
 
 public class PerfMarkBenchmark {
@@ -21,69 +20,69 @@ public class PerfMarkBenchmark {
   @State(Scope.Benchmark)
   public static class ASpanHolderBenchmark {
 
-    private final PerfMarkStorage.SpanHolder spanHolder = new PerfMarkStorage.SpanHolder();
+    private final PerfMarkStorage.MarkHolder markHolder = new PerfMarkStorage.MarkHolder();
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void start_name_tag() {
-      spanHolder.start(1, "hi", "tag", 2, 1234);
+      markHolder.start(1, "hi", "tag", 2, 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void start_name_noTag() {
-      spanHolder.start(1, "hi", 1234);
+      markHolder.start(1, "hi", 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void start_marker_tag() {
-      spanHolder.start(1, MARKER, "tag", 2, 1234);
+      markHolder.start(1, MARKER, "tag", 2, 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void start_marker_noTag() {
-      spanHolder.start(1, MARKER, 1234);
+      markHolder.start(1, MARKER, 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void stop_name_tag() {
-      spanHolder.stop(1, "hi", "tag", 2, 1234);
+      markHolder.stop(1, "hi", "tag", 2, 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void stop_name_noTag() {
-      spanHolder.stop(1, "hi", 1234);
+      markHolder.stop(1, "hi", 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void stop_marker_tag() {
-      spanHolder.stop(1, MARKER, "tag", 2, 1234);
+      markHolder.stop(1, MARKER, "tag", 2, 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void stop_marker_noTag() {
-      spanHolder.stop(1, MARKER, 1234);
+      markHolder.stop(1, MARKER, 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void link() {
-      spanHolder.link(1, 9999, MARKER);
+      markHolder.link(1, 9999, MARKER);
     }
   }
 

@@ -31,7 +31,7 @@ public class PerfMarkStorageStress {
 
   private static final Thread noThread = new Thread();
 
-  private static final PerfMarkStorage.SpanHolder holder = new PerfMarkStorage.SpanHolder(noThread);
+  private static final PerfMarkStorage.MarkHolder holder = new PerfMarkStorage.MarkHolder(noThread);
 
   public static volatile boolean spoiler;
   @Actor

@@ -26,54 +26,54 @@ import javax.annotation.Nullable;
 final class PerfMarkStorage {
 
   static void startAnyways(long gen, String taskName, Tag tag) {
-    SpanHolder.current().start(gen, taskName, tag.tagName, tag.tagId, System.nanoTime());
+    MarkHolder.current().start(gen, taskName, tag.tagName, tag.tagId, System.nanoTime());
   }
 
   static void startAnyways(long gen, Marker marker, Tag tag) {
-    SpanHolder.current().start(gen, marker, tag.tagName, tag.tagId, System.nanoTime());
+    MarkHolder.current().start(gen, marker, tag.tagName, tag.tagId, System.nanoTime());
   }
 
   static void startAnyways(long gen, String taskName) {
-    SpanHolder.current().start(gen, taskName, System.nanoTime());
+    MarkHolder.current().start(gen, taskName, System.nanoTime());
   }
 
   static void startAnyways(long gen, Marker marker) {
-    SpanHolder.current().start(gen, marker, System.nanoTime());
+    MarkHolder.current().start(gen, marker, System.nanoTime());
   }
 
   static void stopAnyways(long gen, String taskName, Tag tag) {
     long nanoTime = System.nanoTime();
-    SpanHolder.current().stop(gen, taskName, tag.tagName, tag.tagId, nanoTime);
+    MarkHolder.current().stop(gen, taskName, tag.tagName, tag.tagId, nanoTime);
   }
 
   static void stopAnyways(long gen, Marker marker, Tag tag) {
     long nanoTime = System.nanoTime();
-    SpanHolder.current().stop(gen, marker, tag.tagName, tag.tagId, nanoTime);
+    MarkHolder.current().stop(gen, marker, tag.tagName, tag.tagId, nanoTime);
   }
 
   static void stopAnyways(long gen, String taskName) {
     long nanoTime = System.nanoTime();
-    SpanHolder.current().stop(gen, taskName, nanoTime);
+    MarkHolder.current().stop(gen, taskName, nanoTime);
   }
 
   static void stopAnyways(long gen, Marker marker) {
     long nanoTime = System.nanoTime();
-    SpanHolder.current().stop(gen, marker, nanoTime);
+    MarkHolder.current().stop(gen, marker, nanoTime);
   }
 
   static void linkAnyways(long gen, long linkId, Marker marker) {
-    SpanHolder.current().link(gen, linkId, marker);
+    MarkHolder.current().link(gen, linkId, marker);
   }
 
   static void resetForTest() {
-    SpanHolder.current().resetForTest();
+    MarkHolder.current().resetForTest();
   }
 
   static List<MarkList> read() {
-    return SpanHolder.readAll();
+    return MarkHolder.readAll();
   }
 
-  static final class SpanHolder {
+  static final class MarkHolder {
     private static final int MAX_EVENTS = 16384;
     private static final long MAX_EVENTS_MASK = MAX_EVENTS - 1;
     private static final long GEN_MASK = (1 << PerfMark.GEN_OFFSET) - 1;
@@ -86,10 +86,10 @@ final class PerfMarkStorage {
 
     private static final ConcurrentMap<SpanHolderRef, SpanHolderRef> allSpans =
         new ConcurrentHashMap<>();
-    private static final ThreadLocal<SpanHolder> localSpan = new ThreadLocal<SpanHolder>() {
+    private static final ThreadLocal<MarkHolder> localMarks = new ThreadLocal<MarkHolder>() {
       @Override
-      protected SpanHolder initialValue() {
-        return new SpanHolder();
+      protected MarkHolder initialValue() {
+        return new MarkHolder();
       }
     };
 
@@ -100,7 +100,7 @@ final class PerfMarkStorage {
 
     static {
       try {
-        IDX = MethodHandles.lookup().findVarHandle(SpanHolder.class, "idx", long.class);
+        IDX = MethodHandles.lookup().findVarHandle(MarkHolder.class, "idx", long.class);
         OBJECTS = MethodHandles.arrayElementVarHandle(Object[].class);
         STRINGS = MethodHandles.arrayElementVarHandle(String[].class);
         LONGS = MethodHandles.arrayElementVarHandle(long[].class);
@@ -122,11 +122,11 @@ final class PerfMarkStorage {
     private final long[] nanoTimes = new long[MAX_EVENTS];
     private final long[] genOps = new long[MAX_EVENTS];
 
-    SpanHolder() {
+    MarkHolder() {
       this(Thread.currentThread());
     }
 
-    SpanHolder(@Nullable Thread writerThread) {
+    MarkHolder(@Nullable Thread writerThread) {
       SpanHolderRef.cleanQueue(allSpans);
       this.writerThread = writerThread;
       this.ref = new SpanHolderRef(this);
@@ -134,8 +134,8 @@ final class PerfMarkStorage {
       this.startTime = System.nanoTime();
     }
 
-    static SpanHolder current() {
-      return localSpan.get();
+    static MarkHolder current() {
+      return localMarks.get();
     }
 
     void start(long gen, String taskName, String tagName, long tagId, long nanoTime) {
@@ -250,7 +250,7 @@ final class PerfMarkStorage {
       List<MarkList> markLists = new ArrayList<>(allSpans.size());
       SpanHolderRef.cleanQueue(allSpans);
       for (SpanHolderRef ref : allSpans.keySet()) {
-        SpanHolder sh = ref.get();
+        MarkHolder sh = ref.get();
         if (sh == null) {
           continue;
         }
@@ -320,10 +320,10 @@ final class PerfMarkStorage {
     }
   }
 
-  private static final class SpanHolderRef extends WeakReference<SpanHolder> {
-    private static final ReferenceQueue<SpanHolder> spanHolderQueue = new ReferenceQueue<>();
+  private static final class SpanHolderRef extends WeakReference<MarkHolder> {
+    private static final ReferenceQueue<MarkHolder> spanHolderQueue = new ReferenceQueue<>();
 
-    SpanHolderRef(SpanHolder holder) {
+    SpanHolderRef(MarkHolder holder) {
       super(holder, spanHolderQueue);
     }
 
