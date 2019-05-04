@@ -14,8 +14,8 @@ public final class MarkList {
   MarkList(List<Mark> marks, long startNanoTime, Thread thread) {
     this.marks = Collections.unmodifiableList(new ArrayList<>(marks));
     this.startNanoTime = startNanoTime;
-    this.threadId = thread.getId();
-    this.threadName = thread.getName();
+    this.threadId = thread != null ? thread.getId() : -1;
+    this.threadName = thread != null ? thread.getName() : "(null)";
   }
 
   public List<Mark> getMarks() {
@@ -112,6 +112,14 @@ public final class MarkList {
 
     public Operation getOperation() {
       return operation;
+    }
+
+    public long getTagId() {
+      return tagId;
+    }
+
+    Marker getMarker() {
+      return marker;
     }
 
     @Override

@@ -2,6 +2,8 @@ package io.grpc.contrib.perfmark;
 
 
 import io.grpc.contrib.perfmark.MarkList.Mark.Operation;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -57,8 +59,7 @@ final class PerfMarkStorage {
   }
 
   static final class SpanHolder {
-    private static final int MAX_EVENTS_BITS = 15;
-    private static final int MAX_EVENTS = 1 << MAX_EVENTS_BITS;
+    private static final int MAX_EVENTS = 16384;
     private static final long MAX_EVENTS_MASK = MAX_EVENTS - 1;
     private static final long GEN_MASK = (1 << PerfMark.GEN_OFFSET) - 1;
 
@@ -67,9 +68,6 @@ final class PerfMarkStorage {
     private static final long STOP_OP = Operation.TASK_END.ordinal();
     private static final long STOP_NOTAG_OP = Operation.TASK_NOTAG_END.ordinal();
     private static final long LINK_OP = Operation.LINK.ordinal();
-
-    private static final AtomicLongFieldUpdater<SpanHolder> idxHandle =
-        AtomicLongFieldUpdater.newUpdater(SpanHolder.class, "idx");
 
     private static final ConcurrentMap<SpanHolderRef, SpanHolderRef> allSpans =
         new ConcurrentHashMap<>();
@@ -80,7 +78,23 @@ final class PerfMarkStorage {
       }
     };
 
-    private final Thread currentThread;
+    private static final VarHandle IDX;
+    private static final VarHandle STRINGS;
+    private static final VarHandle LONGS;
+    private static final VarHandle MARKERS;
+
+    static {
+      try {
+        IDX = MethodHandles.lookup().findVarHandle(SpanHolder.class, "idx", long.class);
+        STRINGS = MethodHandles.arrayElementVarHandle(String[].class);
+        LONGS = MethodHandles.arrayElementVarHandle(long[].class);
+        MARKERS = MethodHandles.arrayElementVarHandle(Marker[].class);
+      } catch (NoSuchFieldException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Nullable private final Thread writerThread;
     private final SpanHolderRef ref;
     private final long startTime;
 
@@ -95,8 +109,12 @@ final class PerfMarkStorage {
     private final long[] genOps = new long[MAX_EVENTS];
 
     SpanHolder() {
+      this(Thread.currentThread());
+    }
+
+    SpanHolder(@Nullable Thread writerThread) {
       SpanHolderRef.cleanQueue(allSpans);
-      this.currentThread = Thread.currentThread();
+      this.writerThread = writerThread;
       this.ref = new SpanHolderRef(this);
       allSpans.put(ref, ref);
       this.startTime = System.nanoTime();
@@ -107,43 +125,39 @@ final class PerfMarkStorage {
     }
 
     void start(
-        long gen,
-        String taskName,
-        String tagName,
-        long tagId,
-        Marker marker,
-        long nanoTime) {
-      long localIdx = idxHandle.get(this);
+        long gen, String taskName, String tagName, long tagId, Marker marker, long nanoTime) {
+      long localIdx = (long) IDX.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
-      taskNames[i] = taskName;
-      tagNames[i] = tagName;
-      tagIds[i] = tagId;
-      markers[i] = marker;
-      nanoTimes[i] = nanoTime;
-      genOps[i] = gen | START_OP;
-      idxHandle.lazySet(this, localIdx + 1);
+      VarHandle.acquireFence();
+      STRINGS.setOpaque(taskNames, i, taskName);
+      STRINGS.setOpaque(tagNames, i, tagName);
+      LONGS.setOpaque(tagIds, i, tagId);
+      MARKERS.setOpaque(markers, i, marker);
+      LONGS.setOpaque(nanoTimes, i, nanoTime);
+      LONGS.setOpaque(genOps, i, gen | START_OP);
+      IDX.setRelease(this, localIdx + 1);
     }
 
     void startNoTag(long gen, String taskName, Marker marker, long nanoTime) {
-      long localIdx = idxHandle.get(this);
+      long localIdx = (long) IDX.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
-      taskNames[i] = taskName;
-      markers[i] = marker;
-      nanoTimes[i] = nanoTime;
-      genOps[i] = gen | START_NOTAG_OP;
-      idxHandle.lazySet(this, localIdx + 1);
+      VarHandle.acquireFence();
+      STRINGS.setOpaque(taskNames, i, taskName);
+      MARKERS.setOpaque(markers, i, marker);
+      LONGS.setOpaque(nanoTimes, i, nanoTime);
+      LONGS.setOpaque(genOps, i, gen | START_NOTAG_OP);
+      IDX.setRelease(this, localIdx + 1);
     }
 
     void link(long gen, long linkId, Marker marker) {
-      long localIdx = idxHandle.get(this);
+      long localIdx = (long) IDX.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
-      taskNames[i] = null;
-      tagNames[i] = null;
-      tagIds[i] = linkId;
-      markers[i] = marker;
-      nanoTimes[i] = NO_NANOTIME;
-      genOps[i] = gen | LINK_OP;
-      idxHandle.lazySet(this, localIdx + 1);
+      VarHandle.acquireFence();
+      LONGS.setOpaque(tagIds, i, linkId);
+      MARKERS.setOpaque(markers, i, marker);
+      LONGS.setOpaque(nanoTimes, i, NO_NANOTIME);
+      LONGS.setOpaque(genOps, i, gen | LINK_OP);
+      IDX.setRelease(this, localIdx + 1);
     }
 
     void stop(
@@ -153,36 +167,38 @@ final class PerfMarkStorage {
         long tagId,
         Marker marker,
         long nanoTime) {
-      long localIdx = idxHandle.get(this);
+      long localIdx = (long) IDX.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
-      taskNames[i] = taskName;
-      tagNames[i] = tagName;
-      tagIds[i] = tagId;
-      markers[i] = marker;
-      nanoTimes[i] = nanoTime;
-      genOps[i] = gen | STOP_OP;
-      idxHandle.lazySet(this, localIdx + 1);
+      VarHandle.acquireFence();
+      STRINGS.setOpaque(taskNames, i, taskName);
+      STRINGS.setOpaque(tagNames, i, tagName);
+      LONGS.setOpaque(tagIds, i, tagId);
+      MARKERS.setOpaque(markers, i, marker);
+      LONGS.setOpaque(nanoTimes, i, nanoTime);
+      LONGS.setOpaque(genOps, i, gen | STOP_OP);
+      IDX.setRelease(this, localIdx + 1);
     }
 
     void stopNoTag(long gen, @Nullable String taskName, Marker marker, long nanoTime) {
-      long localIdx = idxHandle.get(this);
+      long localIdx = (long) IDX.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
-      taskNames[i] = taskName;
-      markers[i] = marker;
-      nanoTimes[i] = nanoTime;
-      genOps[i] = gen | STOP_NOTAG_OP;
-      idxHandle.lazySet(this, localIdx + 1);
+      VarHandle.acquireFence();
+      STRINGS.setOpaque(taskNames, i, taskName);
+      MARKERS.setOpaque(markers, i, marker);
+      LONGS.setOpaque(nanoTimes, i, nanoTime);
+      LONGS.setOpaque(genOps, i, gen | STOP_NOTAG_OP);
+      IDX.setRelease(this, localIdx + 1);
     }
 
     void resetForTest() {
-      assert Thread.currentThread() == this.currentThread;
+      assert Thread.currentThread() == this.writerThread;
       Arrays.fill(taskNames, null);
       Arrays.fill(tagNames, null);
       Arrays.fill(tagIds, 0);
       Arrays.fill(markers, null);
       Arrays.fill(nanoTimes, 0);
       Arrays.fill(genOps, 0);
-      idxHandle.lazySet(this, 0L);
+      IDX.setVolatile(this, 0L);
     }
 
     static List<MarkList> readAll() {
@@ -198,9 +214,7 @@ final class PerfMarkStorage {
       return Collections.unmodifiableList(markLists);
     }
 
-    private MarkList read() {
-      final boolean selfRead = Thread.currentThread() == this.currentThread;
-      final Deque<MarkList.Mark> marks = new ArrayDeque<>(MAX_EVENTS);
+    static final class ReadState {
       final String[] localTaskNames = new String[MAX_EVENTS];
       final String[] localTagNames = new String[MAX_EVENTS];
       final long[] localTagIds= new long[MAX_EVENTS];
@@ -208,41 +222,59 @@ final class PerfMarkStorage {
       final long[] localNanoTimes = new long[MAX_EVENTS];
       final long[] localGenOps = new long[MAX_EVENTS];
 
-      long startIdx = idxHandle.get(this);
-      int copy = (int) Math.min(startIdx, MAX_EVENTS);
-      System.arraycopy(this.taskNames, 0, localTaskNames, 0, copy);
-      System.arraycopy(this.tagNames, 0, localTagNames, 0, copy);
-      System.arraycopy(this.tagIds, 0, localTagIds, 0, copy);
-      System.arraycopy(this.markers, 0, localMarkers, 0, copy);
-      System.arraycopy(this.nanoTimes, 0, localNanoTimes, 0, copy);
-      System.arraycopy(this.genOps, 0, localGenOps, 0, copy);
-      long endIdx = idxHandle.get(this);
+      ReadState() {}
+    }
+
+    static final ThreadLocal<ReadState> states = new ThreadLocal<ReadState>() {
+      @Override
+      protected ReadState initialValue() {
+        return new ReadState();
+      }
+    };
+
+    MarkList read() {
+      // long sizingRead = (long) IDX.getVolatile(this);
+      ReadState rs = states.get();
+      long startIdx = (long) IDX.getVolatile(this);
+      int size = (int) Math.min(startIdx, MAX_EVENTS);
+      for (int i = 0; i < size; i++) {
+        rs.localTaskNames[i] = (String) STRINGS.getOpaque(taskNames, i);
+        rs.localTagNames[i] = (String) STRINGS.getOpaque(tagNames, i);
+        rs.localTagIds[i] = (long) LONGS.getOpaque(tagIds, i);
+        rs.localMarkers[i] = (Marker) MARKERS.getOpaque(markers, i);
+        rs.localNanoTimes[i] = (long) LONGS.getOpaque(nanoTimes, i);
+        rs.localGenOps[i] = (long) LONGS.getOpaque(genOps, i);
+      }
+      long endIdx = (long) IDX.getVolatile(this);
       if (endIdx < startIdx) {
         throw new AssertionError();
       }
       // If we are reading from ourselves (such as in a test), we can assume there isn't an in
-      // progress write modifying the oldest entry.
-      endIdx += !selfRead ? 1 : 0;
+      // progress write modifying the oldest entry.  Additionally, if the writer has not yet
+      // wrapped around, the last entry cannot have been corrupted.
+      boolean tailValid = Thread.currentThread() == this.writerThread || endIdx < MAX_EVENTS - 1;
+      endIdx += !tailValid ? 1 : 0;
       long eventsToDrop = endIdx - startIdx;
-      for (int i = 0; i < copy - eventsToDrop; i++) {
+      final Deque<MarkList.Mark> marks = new ArrayDeque<>(size);
+      for (int i = 0; i < size - eventsToDrop; i++) {
         int readIdx = (int) ((startIdx - i - 1) & MAX_EVENTS_MASK);
-        long gen = localGenOps[readIdx] & ~GEN_MASK;
-        Operation op = Operation.valueOf((int) (localGenOps[readIdx] & GEN_MASK));
+        long gen = rs.localGenOps[readIdx] & ~GEN_MASK;
+        Operation op = Operation.valueOf((int) (rs.localGenOps[readIdx] & GEN_MASK));
         if (op == Operation.NONE) {
           throw new ConcurrentModificationException("Read of storage was not threadsafe");
         }
         marks.addFirst(new MarkList.Mark(
-            localTaskNames[readIdx],
-            localTagNames[readIdx],
-            localTagIds[readIdx],
-            localMarkers[readIdx],
-            localNanoTimes[readIdx],
+            rs.localTaskNames[readIdx],
+            rs.localTagNames[readIdx],
+            rs.localTagIds[readIdx],
+            rs.localMarkers[readIdx],
+            rs.localNanoTimes[readIdx],
             gen,
             op));
       }
 
       return new MarkList(
-          Collections.unmodifiableList(new ArrayList<>(marks)), startTime, currentThread);
+          Collections.unmodifiableList(new ArrayList<>(marks)), startTime, writerThread);
     }
   }
 
