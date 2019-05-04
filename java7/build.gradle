@@ -1,0 +1,12 @@
+description = "PerfMark Java7 API"
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+dependencies {
+    compile project(':perfmark-impl-api'),
+            libraries.jsr305
+
+    // no signature because method handles are @PolymorphicSignature
+    // signature "org.codehaus.mojo.signature:java17:1.0@signature"
+}

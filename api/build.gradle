@@ -1,0 +1,52 @@
+description = "PerfMark API"
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+dependencies {
+    compile project(':perfmark-impl-api'),
+            libraries.jsr305,
+            libraries.errorprone
+
+    jmh project(':perfmark-java9'),
+            project(':perfmark-java7')
+
+
+    signature "org.codehaus.mojo.signature:java17:1.0@signature"
+    signature "net.sf.androidscents.signature:android-api-level-14:4.0_r4@signature"
+}
+
+compileJmhJava {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+}
+
+jmh {
+    timeOnIteration = "1s"
+    warmup = "1s"
+    fork = 1
+    warmupIterations = 10
+
+    /*
+    profilers = ["perfasm"]
+
+    jvmArgs = [
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+LogCompilation",
+            "-XX:LogFile=/tmp/blah.txt",
+            "-XX:+PrintAssembly",
+            "-XX:+PrintInterpreter",
+            "-XX:+PrintNMethods",
+            "-XX:+PrintNativeNMethods",
+            "-XX:+PrintSignatureHandlers",
+            "-XX:+PrintAdapterHandlers",
+            "-XX:+PrintStubCode",
+            "-XX:+PrintCompilation",
+            "-XX:+PrintInlining",
+            "-XX:+TraceClassLoading",
+            "-XX:PrintAssemblyOptions=syntax",
+            "-XX:PrintAssemblyOptions=intel"
+    ]
+    */
+
+}

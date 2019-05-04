@@ -1,84 +1,61 @@
 buildscript {
     repositories {
+        mavenLocal()
+        maven { url "https://plugins.gradle.org/m2/" }
         jcenter()
     }
 
     dependencies {
         classpath 'com.github.erizo.gradle:jcstress-gradle-plugin:0.8.2'
+        classpath 'ru.vyarus:gradle-animalsniffer-plugin:1.4.5'
+        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6'
+        classpath "me.champeau.gradle:jmh-gradle-plugin:0.4.8"
     }
 }
 
-plugins {
-    id 'java'
-    id "me.champeau.gradle.jmh" version "0.4.8"
-}
+subprojects {
+    apply plugin: "java"
+    apply plugin: "idea"
+    apply plugin: "jacoco"
+    apply plugin: "me.champeau.gradle.jmh"
+    apply plugin: "ru.vyarus.animalsniffer"
+    apply plugin: "net.ltgt.errorprone"
 
-apply plugin: 'jcstress'
+    repositories {
+        maven {
+            url "https://maven-central.storage-download.googleapis.com/repos/central/data/" }
+        mavenLocal()
+    }
 
+    if (rootProject.properties.get('errorProne', true)) {
+        dependencies {
+            errorprone 'com.google.errorprone:error_prone_core:2.3.3'
+            errorproneJavac 'com.google.errorprone:javac:9+181-r4173-1'
+        }
+    } else {
+        // Disable Error Prone
+        allprojects {
+            afterEvaluate { project ->
+                project.tasks.withType(JavaCompile) {
+                    options.errorprone.enabled = false
+                }
+            }
+        }
+    }
 
-group 'io.grpc.contrib'
-version '1.0-SNAPSHOT'
+    jacoco { toolVersion = "0.8.2" }
 
-sourceCompatibility = 1.9
+    group = "io.grpc.contrib.perfmark"
+    version = "1.0.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-}
+    ext {
+        libraries = [
+                errorprone: 'com.google.errorprone:error_prone_annotations:2.3.3',
+                jsr305: 'com.google.code.findbugs:jsr305:3.0.2'
+        ]
+    }
 
-jmh {
-    timeOnIteration = "1s"
-    warmup = "1s"
-    fork = 1
-    warmupIterations = 10
-
-/*
-    profilers = ["perfasm"]
-
-    jvmArgs = [
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+LogCompilation",
-            "-XX:LogFile=/tmp/blah.txt",
-            "-XX:+PrintAssembly",
-            "-XX:+PrintInterpreter",
-            "-XX:+PrintNMethods",
-            "-XX:+PrintNativeNMethods",
-            "-XX:+PrintSignatureHandlers",
-            "-XX:+PrintAdapterHandlers",
-            "-XX:+PrintStubCode",
-            "-XX:+PrintCompilation",
-            "-XX:+PrintInlining",
-            "-XX:+TraceClassLoading",
-            "-XX:PrintAssemblyOptions=syntax",
-            "-XX:PrintAssemblyOptions=intel"
-    ]
-*/
-
-}
-
-jcstress {
-    jcstressDependency 'org.openjdk.jcstress:jcstress-core:0.5'
-    mode "tough"
-    deoptRatio "2"
-}
-compileJmhJava {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
     dependencies {
-        compile 'org.openjdk.jmh:jmh-core:1.21'
+        testCompile group: 'junit', name: 'junit', version: '4.12'
     }
-}
-
-compileJcstressJava {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-    dependencies {
-        compile 'org.openjdk.jcstress:jcstress-core:0.5'
-    }
-}
-
-dependencies {
-    compile 'com.google.errorprone:error_prone_annotations:2.3.3'
-    compile 'com.google.code.findbugs:jsr305:3.0.2'
-
-    testCompile group: 'junit', name: 'junit', version: '4.12'
 }

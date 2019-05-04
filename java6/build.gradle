@@ -1,0 +1,11 @@
+description = "PerfMark Java6 API"
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+dependencies {
+    compile project(':perfmark-impl-api'),
+            libraries.jsr305
+
+    signature "org.codehaus.mojo.signature:java16:1.1@signature"
+}

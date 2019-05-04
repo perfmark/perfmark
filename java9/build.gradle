@@ -1,0 +1,49 @@
+apply plugin: 'jcstress'
+
+description = "PerfMark Java9 API"
+
+sourceCompatibility = 1.9
+targetCompatibility = 1.9
+
+dependencies {
+    compile project(':perfmark-impl-api'),
+            libraries.jsr305
+    testCompile project(':perfmark-api'),
+            project(':perfmark-impl-api')
+}
+
+jmh {
+    timeOnIteration = "1s"
+    warmup = "1s"
+    fork = 1
+    warmupIterations = 10
+
+    /*
+    profilers = ["perfasm"]
+
+    jvmArgs = [
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+LogCompilation",
+            "-XX:LogFile=/tmp/blah.txt",
+            "-XX:+PrintAssembly",
+            "-XX:+PrintInterpreter",
+            "-XX:+PrintNMethods",
+            "-XX:+PrintNativeNMethods",
+            "-XX:+PrintSignatureHandlers",
+            "-XX:+PrintAdapterHandlers",
+            "-XX:+PrintStubCode",
+            "-XX:+PrintCompilation",
+            "-XX:+PrintInlining",
+            "-XX:+TraceClassLoading",
+            "-XX:PrintAssemblyOptions=syntax",
+            "-XX:PrintAssemblyOptions=intel"
+    ]
+    */
+}
+
+// ./gradlew --no-daemon clean :perfmark-java9:jcstress
+jcstress {
+    jcstressDependency 'org.openjdk.jcstress:jcstress-core:0.5'
+    mode "tough"
+    deoptRatio "2"
+}
