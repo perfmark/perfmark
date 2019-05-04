@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.Nullable;
 
 public final class MarkList {
+  static final long NO_NANOTIME = 0;
+
   private final List<Mark> marks;
   private final long startNanoTime;
   private final long threadId;
@@ -53,33 +56,59 @@ public final class MarkList {
   }
 
   public static final class Mark {
-    private final String taskName;
+    @Nullable private final String taskName;
+    @Nullable private final Marker marker;
+
     private final String tagName;
     private final long tagId;
-    private final Marker marker;
+    private final long linkId;
     private final long nanoTime;
     private final long generation;
     private final Operation operation;
 
     Mark(
-        String taskName,
-        String tagName,
+        Object taskNameOrMarker,
+        @Nullable String tagName,
         long tagId,
-        Marker marker,
         long nanoTime,
         long generation,
         Operation operation) {
       this.operation = checkNotNull(operation, "operation");
-      this.taskName = taskName;
-      if (operation != Operation.TASK_END
-          && operation != Operation.TASK_NOTAG_END
-          && operation != Operation.LINK) {
-        checkNotNull(taskName, "taskName");
+      if (operation == Operation.NONE) {
+        throw new IllegalArgumentException("bad operation");
       }
-      this.tagName = tagName;
-      this.tagId = tagId;
-      this.marker = checkNotNull(marker, "marker");
-      this.nanoTime = nanoTime;
+      if (taskNameOrMarker instanceof Marker) {
+        this.marker = (Marker) taskNameOrMarker;
+        this.taskName = null;
+      } else if (taskNameOrMarker instanceof String) {
+        this.marker = null;
+        this.taskName = (String) taskNameOrMarker;
+      } else {
+        throw new IllegalArgumentException("wrong marker type " + taskNameOrMarker);
+      }
+      tagCheck: {
+        switch (operation) {
+          case TASK_START: // fall-through
+          case TASK_END:
+            this.tagName = tagName;
+            this.tagId = tagId;
+            break tagCheck;
+          case TASK_NOTAG_START: // fall-through
+          case TASK_NOTAG_END: // fall-through
+          case LINK:
+            this.tagName = Tag.NO_TAG_NAME;
+            this.tagId = Tag.NO_TAG_ID;
+            break tagCheck;
+        }
+        throw new AssertionError(String.valueOf(operation));
+      }
+      if (operation == Operation.LINK) {
+        this.nanoTime = NO_NANOTIME;
+        this.linkId = tagId;
+      } else {
+        this.nanoTime = nanoTime;
+        this.linkId = Link.NO_LINK_ID;
+      }
       this.generation = generation;
     }
 
@@ -131,6 +160,7 @@ public final class MarkList {
       return equal(this.taskName, that.taskName)
           && equal(this.tagName, that.tagName)
           && equal(this.tagId, that.tagId)
+          && equal(this.linkId, that.linkId)
           && equal(this.marker, that.marker)
           && this.nanoTime == that.nanoTime
           && this.operation == that.operation;
@@ -138,7 +168,8 @@ public final class MarkList {
 
     @Override
     public int hashCode() {
-      return Arrays.hashCode(new Object[]{taskName, tagName, tagId, marker, nanoTime, operation});
+      return Arrays.hashCode(
+          new Object[]{taskName, tagName, tagId, linkId, marker, nanoTime, operation});
     }
 
     @Override
@@ -147,6 +178,7 @@ public final class MarkList {
           + "taskName=" + taskName + ", "
           + "tagName=" + tagName + ", "
           + "tagId=" + tagId + ", "
+          + "linkId=" + linkId + ", "
           + "marker=" + marker + ", "
           + "nanoTime=" + nanoTime + ", "
           + "generation=" + generation + ", "
@@ -162,6 +194,10 @@ public final class MarkList {
   }
 
   static <T> boolean equal(T a, T b) {
-    return a == b || a != null && a.equals(b);
+    return a == b || a.equals(b);
+  }
+
+  static boolean equal(long a, long b) {
+    return a == b;
   }
 }

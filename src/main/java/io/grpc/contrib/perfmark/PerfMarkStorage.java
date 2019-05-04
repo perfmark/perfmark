@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import javax.annotation.Nullable;
 
 /**
@@ -26,24 +25,40 @@ import javax.annotation.Nullable;
  */
 final class PerfMarkStorage {
 
-  private static final long NO_NANOTIME = 123456789876543210L;
-
-  static void startAnyways(long gen, String taskName, Marker marker) {
-    SpanHolder.current().startNoTag(gen, taskName, marker, System.nanoTime());
+  static void startAnyways(long gen, String taskName, Tag tag) {
+    SpanHolder.current().start(gen, taskName, tag.tagName, tag.tagId, System.nanoTime());
   }
 
-  static void startAnyways(long gen, String taskName, Tag tag, Marker marker) {
-    SpanHolder.current().start(gen, taskName, tag.tagName, tag.tagId, marker, System.nanoTime());
+  static void startAnyways(long gen, Marker marker, Tag tag) {
+    SpanHolder.current().start(gen, marker, tag.tagName, tag.tagId, System.nanoTime());
   }
 
-  static void stopAnyways(long gen, @Nullable String taskName, Tag tag, Marker marker) {
+  static void startAnyways(long gen, String taskName) {
+    SpanHolder.current().start(gen, taskName, System.nanoTime());
+  }
+
+  static void startAnyways(long gen, Marker marker) {
+    SpanHolder.current().start(gen, marker, System.nanoTime());
+  }
+
+  static void stopAnyways(long gen, String taskName, Tag tag) {
     long nanoTime = System.nanoTime();
-    SpanHolder.current().stop(gen, taskName, tag.tagName, tag.tagId, marker, nanoTime);
+    SpanHolder.current().stop(gen, taskName, tag.tagName, tag.tagId, nanoTime);
   }
 
-  static void stopAnyways(long gen, @Nullable String taskName, Marker marker) {
+  static void stopAnyways(long gen, Marker marker, Tag tag) {
     long nanoTime = System.nanoTime();
-    SpanHolder.current().stopNoTag(gen, taskName, marker, nanoTime);
+    SpanHolder.current().stop(gen, marker, tag.tagName, tag.tagId, nanoTime);
+  }
+
+  static void stopAnyways(long gen, String taskName) {
+    long nanoTime = System.nanoTime();
+    SpanHolder.current().stop(gen, taskName, nanoTime);
+  }
+
+  static void stopAnyways(long gen, Marker marker) {
+    long nanoTime = System.nanoTime();
+    SpanHolder.current().stop(gen, marker, nanoTime);
   }
 
   static void linkAnyways(long gen, long linkId, Marker marker) {
@@ -79,16 +94,16 @@ final class PerfMarkStorage {
     };
 
     private static final VarHandle IDX;
+    private static final VarHandle OBJECTS;
     private static final VarHandle STRINGS;
     private static final VarHandle LONGS;
-    private static final VarHandle MARKERS;
 
     static {
       try {
         IDX = MethodHandles.lookup().findVarHandle(SpanHolder.class, "idx", long.class);
+        OBJECTS = MethodHandles.arrayElementVarHandle(Object[].class);
         STRINGS = MethodHandles.arrayElementVarHandle(String[].class);
         LONGS = MethodHandles.arrayElementVarHandle(long[].class);
-        MARKERS = MethodHandles.arrayElementVarHandle(Marker[].class);
       } catch (NoSuchFieldException | IllegalAccessException e) {
         throw new RuntimeException(e);
       }
@@ -101,10 +116,9 @@ final class PerfMarkStorage {
     // where to write to next
     @SuppressWarnings("unused") // Used Reflectively
     private volatile long idx;
-    private final String[] taskNames = new String[MAX_EVENTS];
+    private final Object[] taskNameOrMarkers = new Object[MAX_EVENTS];
     private final String[] tagNames = new String[MAX_EVENTS];
     private final long[] tagIds= new long[MAX_EVENTS];
-    private final Marker[] markers = new Marker[MAX_EVENTS];
     private final long[] nanoTimes = new long[MAX_EVENTS];
     private final long[] genOps = new long[MAX_EVENTS];
 
@@ -124,28 +138,47 @@ final class PerfMarkStorage {
       return localSpan.get();
     }
 
-    void start(
-        long gen, String taskName, String tagName, long tagId, Marker marker, long nanoTime) {
+    void start(long gen, String taskName, String tagName, long tagId, long nanoTime) {
       long localIdx = (long) IDX.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
       VarHandle.acquireFence();
-      STRINGS.setOpaque(taskNames, i, taskName);
+      OBJECTS.setOpaque(taskNameOrMarkers, i, taskName);
       STRINGS.setOpaque(tagNames, i, tagName);
       LONGS.setOpaque(tagIds, i, tagId);
-      MARKERS.setOpaque(markers, i, marker);
       LONGS.setOpaque(nanoTimes, i, nanoTime);
-      LONGS.setOpaque(genOps, i, gen | START_OP);
+      LONGS.setOpaque(genOps, i, gen + START_OP);
       IDX.setRelease(this, localIdx + 1);
     }
 
-    void startNoTag(long gen, String taskName, Marker marker, long nanoTime) {
+    void start(long gen, Marker marker, String tagName, long tagId, long nanoTime) {
       long localIdx = (long) IDX.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
       VarHandle.acquireFence();
-      STRINGS.setOpaque(taskNames, i, taskName);
-      MARKERS.setOpaque(markers, i, marker);
+      OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
+      STRINGS.setOpaque(tagNames, i, tagName);
+      LONGS.setOpaque(tagIds, i, tagId);
       LONGS.setOpaque(nanoTimes, i, nanoTime);
-      LONGS.setOpaque(genOps, i, gen | START_NOTAG_OP);
+      LONGS.setOpaque(genOps, i, gen + START_OP);
+      IDX.setRelease(this, localIdx + 1);
+    }
+
+    void start(long gen, String taskName, long nanoTime) {
+      long localIdx = (long) IDX.get(this);
+      int i = (int) (localIdx & MAX_EVENTS_MASK);
+      VarHandle.acquireFence();
+      OBJECTS.setOpaque(taskNameOrMarkers, i, taskName);
+      LONGS.setOpaque(nanoTimes, i, nanoTime);
+      LONGS.setOpaque(genOps, i, gen + START_NOTAG_OP);
+      IDX.setRelease(this, localIdx + 1);
+    }
+
+    void start(long gen, Marker marker, long nanoTime) {
+      long localIdx = (long) IDX.get(this);
+      int i = (int) (localIdx & MAX_EVENTS_MASK);
+      VarHandle.acquireFence();
+      OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
+      LONGS.setOpaque(nanoTimes, i, nanoTime);
+      LONGS.setOpaque(genOps, i, gen + START_NOTAG_OP);
       IDX.setRelease(this, localIdx + 1);
     }
 
@@ -154,48 +187,60 @@ final class PerfMarkStorage {
       int i = (int) (localIdx & MAX_EVENTS_MASK);
       VarHandle.acquireFence();
       LONGS.setOpaque(tagIds, i, linkId);
-      MARKERS.setOpaque(markers, i, marker);
-      LONGS.setOpaque(nanoTimes, i, NO_NANOTIME);
-      LONGS.setOpaque(genOps, i, gen | LINK_OP);
+      OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
+      LONGS.setOpaque(genOps, i, gen + LINK_OP);
       IDX.setRelease(this, localIdx + 1);
     }
 
-    void stop(
-        long gen,
-        @Nullable String taskName,
-        @Nullable String tagName,
-        long tagId,
-        Marker marker,
-        long nanoTime) {
+    void stop(long gen, String taskName, String tagName, long tagId, long nanoTime) {
       long localIdx = (long) IDX.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
       VarHandle.acquireFence();
-      STRINGS.setOpaque(taskNames, i, taskName);
       STRINGS.setOpaque(tagNames, i, tagName);
       LONGS.setOpaque(tagIds, i, tagId);
-      MARKERS.setOpaque(markers, i, marker);
+      OBJECTS.setOpaque(taskNameOrMarkers, i, taskName);
       LONGS.setOpaque(nanoTimes, i, nanoTime);
-      LONGS.setOpaque(genOps, i, gen | STOP_OP);
+      LONGS.setOpaque(genOps, i, gen + STOP_OP);
       IDX.setRelease(this, localIdx + 1);
     }
 
-    void stopNoTag(long gen, @Nullable String taskName, Marker marker, long nanoTime) {
+    void stop(long gen, Marker marker, String tagName, long tagId, long nanoTime) {
       long localIdx = (long) IDX.get(this);
       int i = (int) (localIdx & MAX_EVENTS_MASK);
       VarHandle.acquireFence();
-      STRINGS.setOpaque(taskNames, i, taskName);
-      MARKERS.setOpaque(markers, i, marker);
+      STRINGS.setOpaque(tagNames, i, tagName);
+      LONGS.setOpaque(tagIds, i, tagId);
+      OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
       LONGS.setOpaque(nanoTimes, i, nanoTime);
-      LONGS.setOpaque(genOps, i, gen | STOP_NOTAG_OP);
+      LONGS.setOpaque(genOps, i, gen + STOP_OP);
+      IDX.setRelease(this, localIdx + 1);
+    }
+
+    void stop(long gen, String taskName, long nanoTime) {
+      long localIdx = (long) IDX.get(this);
+      int i = (int) (localIdx & MAX_EVENTS_MASK);
+      VarHandle.acquireFence();
+      OBJECTS.setOpaque(taskNameOrMarkers, i, taskName);
+      LONGS.setOpaque(nanoTimes, i, nanoTime);
+      LONGS.setOpaque(genOps, i, gen + STOP_NOTAG_OP);
+      IDX.setRelease(this, localIdx + 1);
+    }
+
+    void stop(long gen, Marker marker, long nanoTime) {
+      long localIdx = (long) IDX.get(this);
+      int i = (int) (localIdx & MAX_EVENTS_MASK);
+      VarHandle.acquireFence();
+      OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
+      LONGS.setOpaque(nanoTimes, i, nanoTime);
+      LONGS.setOpaque(genOps, i, gen + STOP_NOTAG_OP);
       IDX.setRelease(this, localIdx + 1);
     }
 
     void resetForTest() {
       assert Thread.currentThread() == this.writerThread;
-      Arrays.fill(taskNames, null);
+      Arrays.fill(taskNameOrMarkers, null);
       Arrays.fill(tagNames, null);
       Arrays.fill(tagIds, 0);
-      Arrays.fill(markers, null);
       Arrays.fill(nanoTimes, 0);
       Arrays.fill(genOps, 0);
       IDX.setVolatile(this, 0L);
@@ -215,10 +260,9 @@ final class PerfMarkStorage {
     }
 
     static final class ReadState {
-      final String[] localTaskNames = new String[MAX_EVENTS];
+      final Object[] localTaskNameOrMarkers = new Object[MAX_EVENTS];
       final String[] localTagNames = new String[MAX_EVENTS];
       final long[] localTagIds= new long[MAX_EVENTS];
-      final Marker[] localMarkers = new Marker[MAX_EVENTS];
       final long[] localNanoTimes = new long[MAX_EVENTS];
       final long[] localGenOps = new long[MAX_EVENTS];
 
@@ -238,10 +282,9 @@ final class PerfMarkStorage {
       long startIdx = (long) IDX.getVolatile(this);
       int size = (int) Math.min(startIdx, MAX_EVENTS);
       for (int i = 0; i < size; i++) {
-        rs.localTaskNames[i] = (String) STRINGS.getOpaque(taskNames, i);
+        rs.localTaskNameOrMarkers[i] = (Object) OBJECTS.getOpaque(taskNameOrMarkers, i);
         rs.localTagNames[i] = (String) STRINGS.getOpaque(tagNames, i);
         rs.localTagIds[i] = (long) LONGS.getOpaque(tagIds, i);
-        rs.localMarkers[i] = (Marker) MARKERS.getOpaque(markers, i);
         rs.localNanoTimes[i] = (long) LONGS.getOpaque(nanoTimes, i);
         rs.localGenOps[i] = (long) LONGS.getOpaque(genOps, i);
       }
@@ -264,10 +307,9 @@ final class PerfMarkStorage {
           throw new ConcurrentModificationException("Read of storage was not threadsafe");
         }
         marks.addFirst(new MarkList.Mark(
-            rs.localTaskNames[readIdx],
+            rs.localTaskNameOrMarkers[readIdx],
             rs.localTagNames[readIdx],
             rs.localTagIds[readIdx],
-            rs.localMarkers[readIdx],
             rs.localNanoTimes[readIdx],
             gen,
             op));

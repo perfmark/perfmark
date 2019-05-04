@@ -39,7 +39,7 @@ public class PerfMarkStressTest {
             return computeUnboxed(input);
           }
         } finally {
-          PerfMark.stopTask();
+          PerfMark.stopTask("compute", tag);
         }
       }
 
@@ -54,7 +54,7 @@ public class PerfMarkStressTest {
     PerfMark.startTask("calc");
     Link link = PerfMark.link();
     Long res = fjp.invoke(new Fibonacci(49, link));
-    PerfMark.stopTask();
+    PerfMark.stopTask("calc");
     for (MarkList markList : PerfMarkStorage.read()) {
       List<MarkList.Mark> marks = markList.getMarks();
       System.err.println("Thread " + markList.getThreadId() + " " + marks.size());

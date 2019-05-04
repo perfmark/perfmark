@@ -92,7 +92,7 @@ public final class PerfMark {
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.startAnyways(gen, taskName, Marker.NONE);
+    PerfMarkStorage.startAnyways(gen, taskName);
   }
 
   public static void startTask(@CompileTimeConstant String taskName, Tag tag) {
@@ -100,40 +100,104 @@ public final class PerfMark {
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.startAnyways(gen, taskName, tag, Marker.NONE);
+    PerfMarkStorage.startAnyways(gen, taskName, tag);
   }
 
-  public static void stopTask() {
+  public static void stopTask(@CompileTimeConstant String taskName) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.stopAnyways(gen, /*taskName=*/ null, Marker.NONE);
+    PerfMarkStorage.stopAnyways(gen, taskName);
   }
 
-  /**
-   * A link connects between two tasks that start asynchronously.  When {@link #link()} is
-   * called, an association between the most recently started task and a yet to be named
-   * task on another thread, is created.  Links are a one-to-many relationship.  A single
-   * started task can have multiple associated tasks on other threads.
-   */
-  public static Link link() {
-    long gen = getGen();
-    if (!isEnabled(gen)) {
-      return Link.NONE;
-    }
-    long inboundLinkId = Link.linkIdAlloc.incrementAndGet();
-    PerfMarkStorage.linkAnyways(gen, inboundLinkId, Marker.NONE);
-    return new Link(inboundLinkId);
-  }
-
-  public static PerfMarkCloseable record(@CompileTimeConstant String taskName) {
+  public static void stopTask(@CompileTimeConstant String taskName, Tag tag) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
-      return PerfMarkCloseable.NOOP;
+      return;
     }
-    PerfMarkStorage.startAnyways(gen, taskName, Tag.NO_TAG, Marker.NONE);
-    return PerfMarkCloseable.MARKING;
+    PerfMarkStorage.stopAnyways(gen, taskName, tag);
+  }
+
+  static final class Package {
+    private Package() {
+      throw new AssertionError("nope");
+    }
+
+    public static final class Access {
+
+      public static void startTask(Marker marker, Tag tag) {
+        final long gen = getGen();
+        if (!isEnabled(gen)) {
+          return;
+        }
+        PerfMarkStorage.startAnyways(gen, marker, tag);
+      }
+
+      public static void startTask(Marker marker) {
+        final long gen = getGen();
+        if (!isEnabled(gen)) {
+          return;
+        }
+        PerfMarkStorage.startAnyways(gen, marker);
+      }
+
+      public static void stopTask(Marker marker, Tag tag) {
+        final long gen = getGen();
+        if (!isEnabled(gen)) {
+          return;
+        }
+        PerfMarkStorage.stopAnyways(gen, marker, tag);
+      }
+
+      public static void stopTask(Marker marker) {
+        final long gen = getGen();
+        if (!isEnabled(gen)) {
+          return;
+        }
+        PerfMarkStorage.stopAnyways(gen, marker);
+      }
+
+      public static PerfMarkCloseable record(Marker marker, Tag tag) {
+        final long gen = getGen();
+        if (!isEnabled(gen)) {
+          return PerfMarkCloseable.NOOP;
+        }
+        PerfMarkStorage.startAnyways(gen, marker, tag);
+        return new PerfMarkCloseable.MarkerTagAutoCloseable(marker, tag);
+      }
+
+      public static PerfMarkCloseable record(Marker marker) {
+        final long gen = getGen();
+        if (!isEnabled(gen)) {
+          return PerfMarkCloseable.NOOP;
+        }
+        PerfMarkStorage.startAnyways(gen, marker);
+        return new PerfMarkCloseable.MarkerAutoCloseable(marker);
+      }
+
+      public static Link link(Marker marker) {
+        long gen = getGen();
+        if (!isEnabled(gen)) {
+          return Link.NONE;
+        }
+        long inboundLinkId = Link.linkIdAlloc.incrementAndGet();
+        PerfMarkStorage.linkAnyways(gen, inboundLinkId, marker);
+        return new Link(inboundLinkId);
+      }
+
+      public static void link(long linkId, Marker marker) {
+        long gen = getGen();
+        if (!isEnabled(gen)) {
+          return;
+        }
+        PerfMarkStorage.linkAnyways(gen, -linkId, marker);
+      }
+
+      private Access() {
+        throw new AssertionError("nope");
+      }
+    }
   }
 
   public static PerfMarkCloseable record(@CompileTimeConstant String taskName, Tag tag) {
@@ -141,8 +205,17 @@ public final class PerfMark {
     if (!isEnabled(gen)) {
       return PerfMarkCloseable.NOOP;
     }
-    PerfMarkStorage.startAnyways(gen, taskName, tag, Marker.NONE);
-    return PerfMarkCloseable.MARKING;
+    PerfMarkStorage.startAnyways(gen, taskName, tag);
+    return new PerfMarkCloseable.TaskTagAutoCloseable(taskName, tag);
+  }
+
+  public static PerfMarkCloseable record(@CompileTimeConstant String taskName) {
+    final long gen = getGen();
+    if (!isEnabled(gen)) {
+      return PerfMarkCloseable.NOOP;
+    }
+    PerfMarkStorage.startAnyways(gen, taskName);
+    return new PerfMarkCloseable.TaskAutoCloseable(taskName);
   }
 
   public static Tag createTag() {
@@ -165,12 +238,28 @@ public final class PerfMark {
     }
   }
 
-  public static Tag createTag(long id, String name) {
+  public static Tag createTag(String name, long id) {
     if (!isEnabled(getGen())) {
       return Tag.NO_TAG;
     } else {
-      return new Tag(id, name);
+      return new Tag(name, id);
     }
+  }
+
+  /**
+   * A link connects between two tasks that start asynchronously.  When {@link #link()} is
+   * called, an association between the most recently started task and a yet to be named
+   * task on another thread, is created.  Links are a one-to-many relationship.  A single
+   * started task can have multiple associated tasks on other threads.
+   */
+  public static Link link() {
+    long gen = getGen();
+    if (!isEnabled(gen)) {
+      return Link.NONE;
+    }
+    long inboundLinkId = Link.linkIdAlloc.incrementAndGet();
+    PerfMarkStorage.linkAnyways(gen, inboundLinkId, Marker.NONE);
+    return new Link(inboundLinkId);
   }
 
   static void link(long linkId) {
@@ -183,11 +272,11 @@ public final class PerfMark {
 
   private PerfMark() {}
 
-  private static long getGen() {
+  static long getGen() {
     return generator.getGeneration();
   }
 
-  private static boolean isEnabled(long gen) {
+  static boolean isEnabled(long gen) {
     return ((gen >>> GEN_OFFSET) & 0x1L) != 0L;
   }
 }

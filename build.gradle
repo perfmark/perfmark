@@ -19,7 +19,7 @@ apply plugin: 'jcstress'
 group 'io.grpc.contrib'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.9
 
 repositories {
     mavenCentral()

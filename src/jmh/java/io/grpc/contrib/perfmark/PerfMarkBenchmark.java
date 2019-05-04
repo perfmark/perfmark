@@ -10,47 +10,80 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 
 import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.infra.Blackhole;
 
 
 public class PerfMarkBenchmark {
 
+  static final Marker MARKER = Marker.create("task");
+  static final Tag TAG = new Tag("tag", 2);
+
   @State(Scope.Benchmark)
-  public static class SpanHolderBenchmark {
+  public static class ASpanHolderBenchmark {
+
     private final PerfMarkStorage.SpanHolder spanHolder = new PerfMarkStorage.SpanHolder();
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void start() {
-      spanHolder.start(1, "hi", null, 0, Marker.NONE, 1234);
+    public void start_name_tag() {
+      spanHolder.start(1, "hi", "tag", 2, 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void startNoTag() {
-      spanHolder.startNoTag(1, "hi", Marker.NONE, 1234);
+    public void start_name_noTag() {
+      spanHolder.start(1, "hi", 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void stop() {
-      spanHolder.stop(1, "hi", null, 0, Marker.NONE, 1234);
+    public void start_marker_tag() {
+      spanHolder.start(1, MARKER, "tag", 2, 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void stopNoTag() {
-      spanHolder.stopNoTag(1, "hi", Marker.NONE, 1234);
+    public void start_marker_noTag() {
+      spanHolder.start(1, MARKER, 1234);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void stop_name_tag() {
+      spanHolder.stop(1, "hi", "tag", 2, 1234);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void stop_name_noTag() {
+      spanHolder.stop(1, "hi", 1234);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void stop_marker_tag() {
+      spanHolder.stop(1, MARKER, "tag", 2, 1234);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void stop_marker_noTag() {
+      spanHolder.stop(1, MARKER, 1234);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void link() {
-      spanHolder.link(1, 9999, Marker.NONE);
+      spanHolder.link(1, 9999, MARKER);
     }
   }
 
@@ -68,15 +101,15 @@ public class PerfMarkBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void startStop() {
-      PerfMark.startTask("hi");
-      PerfMark.stopTask();
+      PerfMark.startTask("hi", TAG);
+      PerfMark.stopTask("hi", TAG);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void startStopClosable() {
-      try (PerfMarkCloseable pc = PerfMark.record("hi")) {
+      try (PerfMarkCloseable pc = PerfMark.record("hi", TAG)) {
       }
     }
 
@@ -84,7 +117,7 @@ public class PerfMarkBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public Tag createTag() {
-      return PerfMark.createTag(1);
+      return PerfMark.createTag("tag", 2);
     }
 
     @Benchmark

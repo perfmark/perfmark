@@ -1,36 +1,55 @@
 package io.grpc.contrib.perfmark;
 
+import java.util.Arrays;
+import javax.annotation.Nullable;
+
 final class Marker {
 
-  static final Marker NONE = new Marker(null, -1, null, null);
+  static final Marker NONE = new Marker("(notask)", null);
 
-  private final String fileName;
-  private final int lineNumber;
-  private final String className;
-  private final String functionName;
+  private final String taskName;
+  private final @Nullable StackTraceElement location;
 
-  private Marker(String fileName, int lineNumber, String className, String functionName) {
-    this.fileName = fileName;
-    this.lineNumber = lineNumber;
-    this.className = className;
-    this.functionName = functionName;
+
+  private Marker(String taskName, @Nullable StackTraceElement location) {
+    if (taskName == null) {
+      throw new NullPointerException("taskName");
+    }
+    this.taskName = taskName;
+    this.location = location;
   }
 
-  static Marker create() {
-    // TODO(carl-mastrangelo): implement
+  static Marker create(String taskName) {
     StackTraceElement[] st = new RuntimeException().fillInStackTrace().getStackTrace();
     if (st.length > 1) {
-      return new Marker(st[1].getFileName(), st[1].getLineNumber(), st[1].getClassName(), st[1].getMethodName());
+      return new Marker(taskName, st[1]);
     } else {
-      return NONE;
+      return new Marker(taskName, null);
     }
+  }
+
+  public String getTaskName() {
+    return taskName;
   }
 
   @Override
   public String toString() {
-    if (this == NONE) {
-      return "Marker.NONE";
+    return "Marker{" + taskName + "," + location + "}";
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(new Object[] {taskName, location});
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof Marker)) {
+      return false;
     }
-    return super.toString();
+    Marker other = (Marker) obj;
+    return Arrays.equals(
+        new Object[] {taskName, location}, new Object[] {other.taskName, other.location});
+
   }
 }
