@@ -13,7 +13,7 @@ import org.openjdk.jmh.annotations.State;
 public class VarHandleMarkHolderBenchmark {
   public final Marker MARKER = Marker.NONE;
 
-  public final VarHandleMarkHolder markHolder = new VarHandleMarkHolder();
+  public final VarHandleMarkHolder markHolder = new VarHandleMarkHolder(16384);
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)

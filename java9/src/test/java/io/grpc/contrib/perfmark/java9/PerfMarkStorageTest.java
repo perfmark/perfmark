@@ -17,6 +17,7 @@ import io.grpc.contrib.perfmark.impl.MarkHolder;
 import io.grpc.contrib.perfmark.impl.Marker;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -56,6 +57,33 @@ public class PerfMarkStorageTest {
   }
 
   @Test
+  public void taskStartStop_name() {
+    mh.start(gen, "task", 3);
+    mh.stop(gen, "task", 4);
+
+    List<Mark> marks = mh.read(true);
+    assertEquals(2, marks.size());
+    List<Mark> expected = Arrays.asList(
+        Mark.create("task", NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
+        Mark.create("task", NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_END));
+    assertEquals(expected, marks);
+  }
+
+  @Test
+  public void taskStartStop_marker() {
+    Marker marker = Internal.createMarker("(link)");
+    mh.start(gen, marker, 3);
+    mh.stop(gen, marker, 4);
+
+    List<Mark> marks = mh.read(true);
+    assertEquals(2, marks.size());
+    List<Mark> expected = Arrays.asList(
+        Mark.create(marker, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
+        Mark.create(marker, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_END));
+    assertEquals(expected, marks);
+  }
+
+  @Test
   public void taskStartStartStopStop() {
     mh.start(gen, "task1", 3);
     mh.start(gen, "task2", 4);
@@ -90,5 +118,38 @@ public class PerfMarkStorageTest {
         Mark.create(marker, NO_TAG_NAME, -9, NO_NANOTIME, gen, LINK),
         Mark.create("task1", NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_END));
     assertEquals(expected, marks);
+  }
+
+  @Test
+  public void read_getsAllIfWriter() {
+    mh.start(gen, "task", 3);
+
+    List<Mark> marks = mh.read(true);
+
+    assertEquals(marks.size(), 1);
+  }
+
+  @Test
+  public void read_getsAllButLastIfNotWriter() {
+    Assume.assumeTrue("holder " + mh + " is not fixed size", mh instanceof VarHandleMarkHolder);
+    int events = mh.maxMarks() - 1;
+    for (int i = 0; i < events; i++) {
+      mh.start(gen, "task", 3);
+    }
+
+    List<Mark> marks = mh.read(false);
+    assertEquals(events - 1, marks.size());
+  }
+
+  @Test
+  public void read_getsAllIfNotWriterButNoWrap() {
+    Assume.assumeTrue("holder " + mh + " is not fixed size", mh instanceof VarHandleMarkHolder);
+    int events = mh.maxMarks() - 2;
+    for (int i = 0; i < events; i++) {
+      mh.start(gen, "task", 3);
+    }
+
+    List<Mark> marks = mh.read(false);
+    assertEquals(events, marks.size());
   }
 }
