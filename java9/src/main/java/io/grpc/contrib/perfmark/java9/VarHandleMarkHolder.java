@@ -54,7 +54,7 @@ final class VarHandleMarkHolder extends MarkHolder {
   private final long[] genOps;
 
   VarHandleMarkHolder() {
-    this(16384);
+    this(32768);
   }
 
   VarHandleMarkHolder(int maxEvents) {
@@ -66,11 +66,11 @@ final class VarHandleMarkHolder extends MarkHolder {
     }
     this.maxEvents = maxEvents;
     this.maxEventsMax = maxEvents - 1L;
-    taskNameOrMarkers = new Object[maxEvents];
-    tagNames = new String[maxEvents];
-    tagIds= new long[maxEvents];
-    nanoTimes = new long[maxEvents];
-    genOps = new long[maxEvents];
+    this.taskNameOrMarkers = new Object[maxEvents];
+    this.tagNames = new String[maxEvents];
+    this.tagIds= new long[maxEvents];
+    this.nanoTimes = new long[maxEvents];
+    this.genOps = new long[maxEvents];
   }
 
   @Override

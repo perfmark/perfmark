@@ -9,7 +9,8 @@ dependencies {
     compile project(':perfmark-impl-api'),
             libraries.jsr305
     testCompile project(':perfmark-api'),
-            project(':perfmark-impl-api')
+            project(':perfmark-impl-api'),
+            project(':perfmark-java7')
 }
 
 jmh {

@@ -1,5 +1,9 @@
 package io.grpc.contrib.perfmark;
 
+/**
+ * Internal class for accessing package protected methods of the perfmark api.  If you need to use
+ * this class, please file an issue on GitHub first with your use case.
+ */
 public final class Internal {
 
   public static Tag createTag(String name, long tagId) {

@@ -11,8 +11,7 @@ public final class Mark {
 
   @Nullable private final String taskName;
   @Nullable private final Marker marker;
-
-  private final String tagName;
+  @Nullable private final String tagName;
   private final long tagId;
   private final long linkId;
   private final long nanoTime;
@@ -118,12 +117,27 @@ public final class Mark {
     return operation;
   }
 
+  @Nullable
+  public String getTagName() {
+    return tagName;
+  }
+
   public long getTagId() {
     return tagId;
   }
 
+  @Nullable
   public Marker getMarker() {
     return marker;
+  }
+
+  @Nullable
+  public String getTaskName() {
+    return taskName;
+  }
+
+  public long getLinkId() {
+    return linkId;
   }
 
   @Override
