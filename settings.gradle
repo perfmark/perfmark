@@ -6,7 +6,7 @@ include ":perfmark-java7"
 include ":perfmark-java9"
 
 project(':perfmark-api').projectDir = "$rootDir/api" as File
-project(':perfmark-impl-api').projectDir = "$rootDir/implapi" as File
+project(':perfmark-impl-api').projectDir = "$rootDir/impl-api" as File
 project(':perfmark-java6').projectDir = "$rootDir/java6" as File
 project(':perfmark-java7').projectDir = "$rootDir/java7" as File
 project(':perfmark-java9').projectDir = "$rootDir/java9" as File
