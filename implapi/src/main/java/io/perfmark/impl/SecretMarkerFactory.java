@@ -1,4 +1,4 @@
-package io.perfmark;
+package io.perfmark.impl;
 
 import javax.annotation.Nullable;
 

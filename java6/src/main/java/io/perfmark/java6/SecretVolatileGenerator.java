@@ -1,6 +1,6 @@
 package io.perfmark.java6;
 
-import io.perfmark.Generator;
+import io.perfmark.impl.Generator;
 
 final class SecretVolatileGenerator {
 

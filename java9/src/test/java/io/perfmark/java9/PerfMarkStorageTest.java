@@ -1,21 +1,20 @@
 package io.perfmark.java9;
 
-import static io.perfmark.Mark.NO_NANOTIME;
-import static io.perfmark.Mark.NO_TAG_ID;
-import static io.perfmark.Mark.NO_TAG_NAME;
-import static io.perfmark.Mark.Operation.LINK;
-import static io.perfmark.Mark.Operation.TASK_END;
-import static io.perfmark.Mark.Operation.TASK_NOTAG_END;
-import static io.perfmark.Mark.Operation.TASK_NOTAG_START;
-import static io.perfmark.Mark.Operation.TASK_START;
+import static io.perfmark.impl.Mark.NO_NANOTIME;
+import static io.perfmark.impl.Mark.NO_TAG_ID;
+import static io.perfmark.impl.Mark.NO_TAG_NAME;
+import static io.perfmark.impl.Mark.Operation.LINK;
+import static io.perfmark.impl.Mark.Operation.TASK_END;
+import static io.perfmark.impl.Mark.Operation.TASK_NOTAG_END;
+import static io.perfmark.impl.Mark.Operation.TASK_NOTAG_START;
+import static io.perfmark.impl.Mark.Operation.TASK_START;
 import static org.junit.Assert.assertEquals;
 
-import io.perfmark.Generator;
-import io.perfmark.Internal;
-import io.perfmark.Mark;
-import io.perfmark.MarkHolder;
-import io.perfmark.Marker;
-import io.perfmark.java9.VarHandleMarkHolder;
+import io.perfmark.impl.Generator;
+import io.perfmark.impl.Internal;
+import io.perfmark.impl.Mark;
+import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.Marker;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Assume;

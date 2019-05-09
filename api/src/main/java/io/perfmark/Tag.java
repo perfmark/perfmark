@@ -1,5 +1,6 @@
 package io.perfmark;
 
+import io.perfmark.impl.Mark;
 import javax.annotation.Nullable;
 
 /**

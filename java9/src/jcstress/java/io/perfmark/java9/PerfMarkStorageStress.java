@@ -1,8 +1,8 @@
 package io.perfmark.java9;
 
-import io.perfmark.Generator;
-import io.perfmark.Mark;
-import io.perfmark.Marker;
+import io.perfmark.impl.Generator;
+import io.perfmark.impl.Mark;
+import io.perfmark.impl.Marker;
 import java.util.List;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Description;

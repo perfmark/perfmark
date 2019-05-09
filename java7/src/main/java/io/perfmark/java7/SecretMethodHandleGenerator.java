@@ -1,6 +1,6 @@
 package io.perfmark.java7;
 
-import io.perfmark.Generator;
+import io.perfmark.impl.Generator;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MutableCallSite;

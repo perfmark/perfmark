@@ -1,8 +1,8 @@
 package io.perfmark.java9;
 
-import io.perfmark.Generator;
-import io.perfmark.MarkHolder;
-import io.perfmark.MarkHolderProvider;
+import io.perfmark.impl.Generator;
+import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkHolderProvider;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import javax.annotation.Nullable;

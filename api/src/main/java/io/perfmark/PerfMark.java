@@ -1,8 +1,10 @@
 package io.perfmark;
 
-import static io.perfmark.Generator.GEN_OFFSET;
+import static io.perfmark.impl.Generator.GEN_OFFSET;
 
 import com.google.errorprone.annotations.CompileTimeConstant;
+import io.perfmark.impl.Generator;
+import io.perfmark.impl.Marker;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.logging.Level;

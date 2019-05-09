@@ -1,4 +1,4 @@
-package io.perfmark;
+package io.perfmark.impl;
 
 import java.util.Arrays;
 import javax.annotation.Nullable;

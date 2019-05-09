@@ -1,5 +1,10 @@
 package io.perfmark;
 
+import io.perfmark.impl.Mark;
+import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkHolderProvider;
+import io.perfmark.impl.MarkList;
+import io.perfmark.impl.Marker;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;

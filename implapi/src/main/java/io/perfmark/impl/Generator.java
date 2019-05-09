@@ -1,4 +1,4 @@
-package io.perfmark;
+package io.perfmark.impl;
 
 public abstract class Generator {
   public static final int GEN_OFFSET = 8;

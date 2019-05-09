@@ -1,7 +1,6 @@
 package io.perfmark.java9;
 
-import io.perfmark.Marker;
-import io.perfmark.java9.VarHandleMarkHolder;
+import io.perfmark.impl.Marker;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;

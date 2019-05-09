@@ -1,4 +1,4 @@
-package io.perfmark;
+package io.perfmark.impl;
 
 public final class Internal {
 

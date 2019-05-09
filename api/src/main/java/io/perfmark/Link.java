@@ -1,5 +1,6 @@
 package io.perfmark;
 
+import io.perfmark.impl.Mark;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**

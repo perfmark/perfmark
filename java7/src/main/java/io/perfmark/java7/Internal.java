@@ -1,6 +1,6 @@
 package io.perfmark.java7;
 
-import io.perfmark.Generator;
+import io.perfmark.impl.Generator;
 
 public final class Internal {
 

@@ -1,9 +1,9 @@
 package io.perfmark.java9;
 
-import io.perfmark.Generator;
-import io.perfmark.Mark;
-import io.perfmark.MarkHolder;
-import io.perfmark.Marker;
+import io.perfmark.impl.Generator;
+import io.perfmark.impl.Mark;
+import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.Marker;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayDeque;
