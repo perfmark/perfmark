@@ -12,7 +12,7 @@ target
 bazel-bin
 bazel-examples
 bazel-genfiles
-bazel-grpc-java
+bazel-perfmark
 bazel-out
 bazel-testlogs
 

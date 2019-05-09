@@ -6,9 +6,6 @@ targetCompatibility = 1.7
 dependencies {
     compile project(':perfmark-impl-api'),
             libraries.jsr305
-
-    // no signature because method handles are @PolymorphicSignature
-    // signature "org.codehaus.mojo.signature:java17:1.0@signature"
 }
 
 jmh {
@@ -17,7 +14,6 @@ jmh {
     fork = 1
     warmupIterations = 10
 
-    
     profilers = ["perfasm"]
 
     jvmArgs = [
@@ -37,5 +33,4 @@ jmh {
             "-XX:PrintAssemblyOptions=syntax",
             "-XX:PrintAssemblyOptions=intel"
     ]
-    
 }

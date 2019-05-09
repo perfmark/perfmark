@@ -7,7 +7,6 @@ buildscript {
 
     dependencies {
         classpath 'com.github.erizo.gradle:jcstress-gradle-plugin:0.8.2'
-        classpath 'ru.vyarus:gradle-animalsniffer-plugin:1.4.5'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6'
         classpath "me.champeau.gradle:jmh-gradle-plugin:0.4.8"
     }
@@ -18,7 +17,6 @@ subprojects {
     apply plugin: "idea"
     apply plugin: "jacoco"
     apply plugin: "me.champeau.gradle.jmh"
-    apply plugin: "ru.vyarus.animalsniffer"
     apply plugin: "net.ltgt.errorprone"
 
     repositories {
@@ -45,7 +43,7 @@ subprojects {
 
     jacoco { toolVersion = "0.8.2" }
 
-    group = "io.grpc.contrib.perfmark"
+    group = "io.perfmark"
     version = "1.0.0-SNAPSHOT"
 
     ext {
