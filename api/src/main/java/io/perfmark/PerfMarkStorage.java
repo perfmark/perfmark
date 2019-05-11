@@ -8,65 +8,54 @@ import io.perfmark.impl.Marker;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class PerfMarkStorage {
-
+  private static final List<String> FALLBACK_MARK_HOLDERS =
+      Collections.unmodifiableList(Arrays.asList(
+          "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider"));
   static final long NO_THREAD_ID = -1;
   static final String NO_THREAD_NAME = "(unknownThread)";
-
+  // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
+  // and need to use these static variables.
+  static final ConcurrentMap<MarkHolderRef, Reference<? extends Thread>> allMarkHolders =
+      new ConcurrentHashMap<MarkHolderRef, Reference<? extends Thread>>();
+  private static final ThreadLocal<MarkHolder> localMarkHolder = new MarkHolderThreadLocal();
   private static final MarkHolderProvider markHolderProvider;
   private static final Logger logger;
 
   static {
-    MarkHolderProvider theProvider = null;
-    Queue<Throwable> failures = new ArrayDeque<Throwable>();
-    try {
-      Class<? extends MarkHolderProvider> clz =
-          Class.forName("io.perfmark.java9.PackageAccess$VarHandleMarkHolderProvider")
-              .asSubclass(MarkHolderProvider.class);
-      MarkHolderProvider provider = clz.getDeclaredConstructor().newInstance();
-      if (provider.unavailabilityCause() != null) {
-        failures.add(provider.unavailabilityCause());
-      } else {
-        theProvider = provider;
-      }
-    } catch (ClassNotFoundException e) {
-      // May happen if MethodHandleGenerator was removed from the jar.
-      failures.add(e);
-    } catch (NoClassDefFoundError e) {
-      // May happen if MethodHandles are not available, such as on Java 8.
-      failures.add(e);
-    } catch (RuntimeException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new RuntimeException(e.getMessage(), e);
+    List<Throwable> errors = new ArrayList<Throwable>();
+    List<MarkHolderProvider> markHolders =
+        PerfMark.getLoadable(
+            errors,
+            MarkHolderProvider.class,
+            FALLBACK_MARK_HOLDERS,
+            PerfMarkStorage.class.getClassLoader());
+    Level level;
+    if (markHolders.isEmpty()) {
+      markHolderProvider = new NoopMarkHolderProvider();
+      level = Level.WARNING;
+    } else {
+      markHolderProvider = markHolders.get(0);
+      level = Level.FINE;
     }
-
-    if (theProvider == null) {
-      theProvider = new NoopMarkHolderProvider();
-    }
-    markHolderProvider = theProvider;
-    // Logger creation must happen after the generator is set, incase the logger is instrumented.
     logger = Logger.getLogger(PerfMarkStorage.class.getName());
-    for (Throwable failure : failures) {
-      logger.log(Level.FINE, "PerfMarkStorage init failure", failure);
+    logger.log(level, "Using {0}", new Object[] {markHolderProvider.getClass()});
+    for (Throwable error : errors) {
+      logger.log(level, "Error encountered loading mark holder", error);
     }
-    logger.info("Using " + theProvider.getClass());
   }
 
-  static final ConcurrentMap<MarkHolderRef, Reference<? extends Thread>> allMarkHolders =
-      new ConcurrentHashMap<MarkHolderRef, Reference<? extends Thread>>();
-  private static final ThreadLocal<MarkHolder> localMarkHolder = new MarkHolderThreadLocal();
+
 
   public static List<MarkList> read() {
     MarkHolderRef.cleanQueue(allMarkHolders);

@@ -5,102 +5,132 @@ import static io.perfmark.impl.Generator.GEN_OFFSET;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Marker;
-import java.util.ArrayDeque;
-import java.util.Queue;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public final class PerfMark {
   private static final long INCREMENT = 1L << GEN_OFFSET;
+  private static final List<String> FALLBACK_GENERATORS =
+      Collections.unmodifiableList(Arrays.asList(
+          "io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator",
+          "io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator",
+          "io.perfmark.java6.SecretVolatileGenerator$VolatileGenerator"));
 
   private static final Generator generator;
   private static final Logger logger;
 
+  private static long actualGeneration;
+
   static {
-    Generator gen = null;
-    Queue<Throwable> failures = new ArrayDeque<Throwable>();
+    List<Throwable> errors = new ArrayList<Throwable>();
+    List<Generator> generators =
+        getLoadable(errors, Generator.class, FALLBACK_GENERATORS, PerfMark.class.getClassLoader());
+    Level level;
+    if (generators.isEmpty()) {
+      generator = new NoopGenerator();
+      level = Level.WARNING;
+    } else {
+      generator = generators.get(0);
+      level = Level.FINE;
+    }
+    boolean startEnabled = false;
     try {
-      Class<? extends Generator> clz =
-          Class.forName("io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator")
-              .asSubclass(Generator.class);
-      gen = clz.getDeclaredConstructor().newInstance();
-    } catch (ClassNotFoundException e) {
-      // May happen if MethodHandleGenerator was removed from the jar.
-      failures.add(e);
-    } catch (NoClassDefFoundError e) {
-      // May happen if MethodHandles are not available, such as on Java 6.
-      failures.add(e);
+      startEnabled =
+          Boolean.parseBoolean(System.getProperty("io.perfmark.PerfMark.startEnabled", "false"));
     } catch (RuntimeException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new RuntimeException(e.getMessage(), e);
+      errors.add(e);
+    } catch (Error e) {
+      errors.add(e);
     }
-    if (gen == null) {
-      try {
-        Class<? extends Generator> clz =
-            Class.forName("io.perfmark.java9.PackageAccess$VarHandleGenerator")
-                .asSubclass(Generator.class);
-        gen = clz.getDeclaredConstructor().newInstance();
-      } catch (ClassNotFoundException e) {
-        // May happen if VarHandleGenerator was removed from the jar.
-        failures.add(e);
-      } catch (NoClassDefFoundError e) {
-        // May happen if VarHandles are not available, such as on Java 7.
-        failures.add(e);
-      } catch (RuntimeException e) {
-        throw e;
-      } catch (Exception e) {
-        throw new RuntimeException(e.getMessage(), e);
-      }
-    }
-    if (gen == null) {
-      try {
-        Class<? extends Generator> clz =
-            Class.forName("io.perfmark.java6.PackageAccess$VolatileGenerator")
-                .asSubclass(Generator.class);
-        gen = clz.getDeclaredConstructor().newInstance();
-      } catch (ClassNotFoundException e) {
-        // May happen if VarHandleGenerator was removed from the jar.
-        failures.add(e);
-      } catch (NoClassDefFoundError e) {
-        // May happen if VarHandles are not available, such as on Java 7.
-        failures.add(e);
-      } catch (RuntimeException e) {
-        throw e;
-      } catch (Exception e) {
-        throw new RuntimeException(e.getMessage(), e);
-      }
-    }
-    if (gen == null) {
-      gen = new NoopGenerator();
-    }
-    generator = gen;
-    // Logger creation must happen after the generator is set, incase the logger is instrumented.
+    boolean success = setEnabledQuiet(startEnabled);
     logger = Logger.getLogger(PerfMark.class.getName());
-    Level level = gen instanceof NoopGenerator ? Level.WARNING : Level.INFO;
-    for (Throwable failure : failures) {
-      logger.log(level, "PerfMark init failure", failure);
+    logger.log(level, "Using {0}", new Object[] {generator.getClass()});
+    logEnabledChange(startEnabled, success);
+    for (Throwable error : errors) {
+      logger.log(level, "Error encountered loading generator", error);
     }
-    logger.log(level, "Using {0}", new Object[] {gen.getClass()});
   }
 
-  private static long actualGeneration;
+  // @VisibleForTesting
+  static <T> List<T> getLoadable(
+      List<? super Throwable> errors,
+      Class<T> clz,
+      List<? extends String> fallbackClassNames,
+      ClassLoader cl) {
+    Map<Class<? extends T>, T> loadables = new LinkedHashMap<Class<? extends T>, T>();
+    List<Throwable> serviceLoaderErrors = new ArrayList<Throwable>();
+    try {
+      ServiceLoader<T> loader = ServiceLoader.load(clz, cl);
+      Iterator<T> it = loader.iterator();
+      for (int i = 0; i < 10 && serviceLoaderErrors.size() < 10; i++) {
+        try {
+          if (it.hasNext()) {
+            T next = it.next();
+            Class<? extends T> subClz = next.getClass().asSubclass(clz);
+            if (!loadables.containsKey(subClz)) {
+              loadables.put(subClz, next);
+            }
+          } else {
+            break;
+          }
+        } catch (ServiceConfigurationError sce) {
+          serviceLoaderErrors.add(sce);
+        }
+      }
+    } catch (ServiceConfigurationError sce) {
+      serviceLoaderErrors.add(sce);
+    } finally {
+      errors.addAll(serviceLoaderErrors);
+    }
+    for (String fallbackClassName : fallbackClassNames) {
+      try {
+        Class<?> fallbackClz = Class.forName(fallbackClassName, false, cl);
+        if (!loadables.containsKey(fallbackClz)) {
+          Class<? extends T> subClz = fallbackClz.asSubclass(clz);
+          loadables.put(subClz, subClz.getDeclaredConstructor().newInstance());
+        }
+      } catch (Throwable t) {
+        errors.add(t);
+      }
+    }
+    return Collections.unmodifiableList(new ArrayList<T>(loadables.values()));
+  }
 
   /**
    * Turns on or off PerfMark recording.  Don't call this method too frequently; while neither on
    * nor off have very high overhead, transitioning between the two may be slow.
    */
   public static synchronized void setEnabled(boolean value) {
-    if (isEnabled(actualGeneration) == value) {
-      return;
-    }
-    if (actualGeneration == Generator.FAILURE) {
-      return;
-    }
-    if (logger.isLoggable(Level.FINE)) {
+    logEnabledChange(value, setEnabledQuiet(value));
+  }
+
+  private static synchronized void logEnabledChange(boolean value, boolean success) {
+    if (success && logger.isLoggable(Level.FINE)) {
       logger.fine((value ? "Enabling" : "Disabling") + " PerfMark recorder");
     }
+  }
+
+  /**
+   * Returns true if sucessfully changed.
+   */
+  private static synchronized boolean setEnabledQuiet(boolean value) {
+    if (isEnabled(actualGeneration) == value) {
+      return false;
+    }
+    if (actualGeneration == Generator.FAILURE) {
+      return false;
+    }
     generator.setGeneration(actualGeneration += INCREMENT);
+    return true;
   }
 
   // For Testing

@@ -42,4 +42,18 @@ public abstract class Generator {
    * @return the current generation or {@link #FAILURE}.
    */
   public abstract long getGeneration();
+
+  /**
+   * Returns the approximate cost to change the generation.
+   */
+  public long costOfSetNanos() {
+    return 1000000;
+  }
+
+  /**
+   * Returns the approximate cost to read the generation.
+   */
+  public long costOfGetNanos() {
+    return 10;
+  }
 }

@@ -31,6 +31,19 @@ final class SecretMethodHandleGenerator {
       currentGeneration.setTarget(MethodHandles.constant(long.class, generation));
       MutableCallSite.syncAll(currentGenerations);
     }
+
+    @Override
+    public long costOfGetNanos() {
+      // Method handles compile to constants, so this is effectively free.
+      // JMH testing on a Skylake x86_64 processor shows the cost to be about 0.3ns.
+      return 0;
+    }
+
+    @Override
+    public long costOfSetNanos() {
+      // based on JMH testing on a Skylake x86_64 processor.
+      return 2000000;
+    }
   }
 
   private SecretMethodHandleGenerator() {

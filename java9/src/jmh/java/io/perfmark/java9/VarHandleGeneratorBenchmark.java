@@ -1,6 +1,5 @@
 package io.perfmark.java9;
 
-import io.perfmark.java9.PackageAccess;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -13,8 +12,8 @@ import org.openjdk.jmh.annotations.State;
 @State(Scope.Benchmark)
 public class VarHandleGeneratorBenchmark {
 
-  public static final PackageAccess.VarHandleGenerator generator =
-      new PackageAccess.VarHandleGenerator();
+  public static final SecretVarHandleGenerator.VarHandleGenerator generator =
+      new SecretVarHandleGenerator.VarHandleGenerator();
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)

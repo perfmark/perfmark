@@ -6,16 +6,9 @@ import io.perfmark.impl.MarkHolderProvider;
 import io.perfmark.impl.Marker;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Nullable;
 
 final class NoopMarkHolderProvider extends MarkHolderProvider {
   NoopMarkHolderProvider() {}
-
-  @Nullable
-  @Override
-  public Throwable unavailabilityCause() {
-    return null;
-  }
 
   @Override
   public MarkHolder create() {

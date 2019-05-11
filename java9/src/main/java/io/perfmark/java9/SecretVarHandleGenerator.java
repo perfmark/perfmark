@@ -1,13 +1,10 @@
 package io.perfmark.java9;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.MarkHolderProvider;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import javax.annotation.Nullable;
 
-final class PackageAccess {
+final class SecretVarHandleGenerator {
 
   /**
    * This class let's PerfMark have fairly low overhead detection if it is enabled, with reasonable
@@ -42,32 +39,19 @@ final class PackageAccess {
     public long getGeneration() {
       return (long) GEN.getOpaque(this);
     }
-  }
 
-  public static final class VarHandleMarkHolderProvider extends MarkHolderProvider {
-
-    @Nullable
     @Override
-    public Throwable unavailabilityCause() {
-      try {
-        MarkHolder holder = new VarHandleMarkHolder();
-        holder.start(1, "bogus", 0);
-        holder.stop(1, "bogus", 0);
-        int size = holder.read(true).size();
-        assert size == 2;
-        return null;
-      } catch (Throwable t) {
-        return t;
-      }
+    public long costOfSetNanos() {
+      return 5;
     }
 
     @Override
-    public MarkHolder create() {
-      return new VarHandleMarkHolder();
+    public long costOfGetNanos() {
+      return 2;
     }
   }
 
-  private PackageAccess() {
+  private SecretVarHandleGenerator() {
     throw new AssertionError("nope");
   }
 }

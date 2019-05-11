@@ -21,5 +21,19 @@ final class SecretVolatileGenerator {
     public long getGeneration() {
       return gen;
     }
+
+    @Override
+    public long costOfGetNanos() {
+      return 5;
+    }
+
+    @Override
+    public long costOfSetNanos() {
+      return 10;
+    }
+  }
+
+  private SecretVolatileGenerator() {
+    throw new AssertionError("nope");
   }
 }
