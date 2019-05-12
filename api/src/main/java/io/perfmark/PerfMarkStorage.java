@@ -29,7 +29,7 @@ public final class PerfMarkStorage {
   static final ConcurrentMap<MarkHolderRef, Reference<? extends Thread>> allMarkHolders =
       new ConcurrentHashMap<MarkHolderRef, Reference<? extends Thread>>();
   private static final ThreadLocal<MarkHolder> localMarkHolder = new MarkHolderThreadLocal();
-  private static final MarkHolderProvider markHolderProvider;
+  static final MarkHolderProvider markHolderProvider;
   private static final Logger logger;
 
   static {

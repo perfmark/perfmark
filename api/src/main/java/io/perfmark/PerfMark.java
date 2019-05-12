@@ -112,20 +112,6 @@ public final class PerfMark {
     return Collections.unmodifiableList(new ArrayList<T>(loadables.values()));
   }
 
-  private static boolean errorsEqual(Throwable t1, Throwable t2) {
-    if (t1 == null || t2 == null) {
-      return t1 == t2;
-    }
-    String msg1 = t1.getMessage();
-    String msg2 = t2.getMessage();
-    if (msg1 == msg2 || (msg1 != null && msg1.equals(msg2))) {
-      if (Arrays.equals(t1.getStackTrace(), t2.getStackTrace())) {
-        return errorsEqual(t1.getCause(), t2.getCause());
-      }
-    }
-    return false;
-  }
-
   /**
    * Turns on or off PerfMark recording.  Don't call this method too frequently; while neither on
    * nor off have very high overhead, transitioning between the two may be slow.
@@ -344,5 +330,22 @@ public final class PerfMark {
 
   static boolean isEnabled(long gen) {
     return ((gen >>> GEN_OFFSET) & 0x1L) != 0L;
+  }
+
+  @SuppressWarnings("ReferenceEquality") // No Java 8 yet
+  private static boolean errorsEqual(Throwable t1, Throwable t2) {
+    if (t1 == null || t2 == null) {
+      return t1 == t2;
+    }
+    if (t1.getClass() == t2.getClass()) {
+      String msg1 = t1.getMessage();
+      String msg2 = t2.getMessage();
+      if (msg1 == msg2 || (msg1 != null && msg1.equals(msg2))) {
+        if (Arrays.equals(t1.getStackTrace(), t2.getStackTrace())) {
+          return errorsEqual(t1.getCause(), t2.getCause());
+        }
+      }
+    }
+    return false;
   }
 }
