@@ -24,7 +24,7 @@ final class SecretVolatileGenerator {
 
     @Override
     public long costOfGetNanos() {
-      return 5;
+      return 3;
     }
 
     @Override
