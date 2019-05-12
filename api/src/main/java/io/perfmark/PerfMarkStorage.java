@@ -55,8 +55,6 @@ public final class PerfMarkStorage {
     }
   }
 
-
-
   public static List<MarkList> read() {
     MarkHolderRef.cleanQueue(allMarkHolders);
     List<MarkList> markLists = new ArrayList<MarkList>(allMarkHolders.size());

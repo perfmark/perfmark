@@ -19,7 +19,8 @@ import java.util.logging.Logger;
 
 public final class PerfMark {
   private static final long INCREMENT = 1L << GEN_OFFSET;
-  private static final List<String> FALLBACK_GENERATORS =
+  static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";
+  static final List<String> FALLBACK_GENERATORS =
       Collections.unmodifiableList(Arrays.asList(
           "io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator",
           "io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator",
@@ -45,7 +46,7 @@ public final class PerfMark {
     boolean startEnabled = false;
     try {
       startEnabled =
-          Boolean.parseBoolean(System.getProperty("io.perfmark.PerfMark.startEnabled", "false"));
+          Boolean.parseBoolean(System.getProperty(START_ENABLED_PROPERTY, "false"));
     } catch (RuntimeException e) {
       errors.add(e);
     } catch (Error e) {
@@ -83,6 +84,12 @@ public final class PerfMark {
             break;
           }
         } catch (ServiceConfigurationError sce) {
+          if (!serviceLoaderErrors.isEmpty()) {
+            Throwable last = serviceLoaderErrors.get(serviceLoaderErrors.size() - 1);
+            if (errorsEqual(sce, last)) {
+              continue;
+            }
+          }
           serviceLoaderErrors.add(sce);
         }
       }
@@ -93,7 +100,7 @@ public final class PerfMark {
     }
     for (String fallbackClassName : fallbackClassNames) {
       try {
-        Class<?> fallbackClz = Class.forName(fallbackClassName, false, cl);
+        Class<?> fallbackClz = Class.forName(fallbackClassName, true, cl);
         if (!loadables.containsKey(fallbackClz)) {
           Class<? extends T> subClz = fallbackClz.asSubclass(clz);
           loadables.put(subClz, subClz.getDeclaredConstructor().newInstance());
@@ -103,6 +110,20 @@ public final class PerfMark {
       }
     }
     return Collections.unmodifiableList(new ArrayList<T>(loadables.values()));
+  }
+
+  private static boolean errorsEqual(Throwable t1, Throwable t2) {
+    if (t1 == null || t2 == null) {
+      return t1 == t2;
+    }
+    String msg1 = t1.getMessage();
+    String msg2 = t2.getMessage();
+    if (msg1 == msg2 || (msg1 != null && msg1.equals(msg2))) {
+      if (Arrays.equals(t1.getStackTrace(), t2.getStackTrace())) {
+        return errorsEqual(t1.getCause(), t2.getCause());
+      }
+    }
+    return false;
   }
 
   /**
