@@ -10,72 +10,89 @@ import org.openjdk.jcstress.annotations.Expect;
 import org.openjdk.jcstress.annotations.JCStressTest;
 import org.openjdk.jcstress.annotations.Outcome;
 import org.openjdk.jcstress.annotations.State;
-import org.openjdk.jcstress.infra.results.LL_Result;
+import org.openjdk.jcstress.infra.results.L_Result;
 
 /**
  * Simulates the PerfMarkStorage racy reader.
  */
 @JCStressTest
-@Outcome(id = "0, 3", expect = Expect.ACCEPTABLE, desc = "0 Writes")
-@Outcome(id = "65536, 1", expect = Expect.ACCEPTABLE, desc = "1 Writes")
-@Outcome(id = "131072, 2", expect = Expect.ACCEPTABLE, desc = "2 Writes")
-@Outcome(id = "262144, 4", expect = Expect.ACCEPTABLE, desc = "3 Writes")
-@Outcome(id = "524288, 8", expect = Expect.ACCEPTABLE, desc = "4 writes")
-@Outcome(id = "1048576, 16", expect = Expect.ACCEPTABLE, desc = "5 writes")
-@Outcome(id = "-2, -2", expect = Expect.FORBIDDEN, desc = "Wrong Type")
+@Outcome(id = "0", expect = Expect.ACCEPTABLE, desc = "0 Writes")
+@Outcome(id = "1", expect = Expect.ACCEPTABLE, desc = "1 Write")
+@Outcome(id = "2", expect = Expect.ACCEPTABLE, desc = "2 Writes")
+@Outcome(id = "3", expect = Expect.ACCEPTABLE, desc = "3 Writes")
+@Outcome(id = "4", expect = Expect.ACCEPTABLE, desc = "4 Writes")
+@Outcome(id = "5", expect = Expect.ACCEPTABLE, desc = "5 Writes")
+@Outcome(id = "6", expect = Expect.ACCEPTABLE, desc = "6 Writes")
+@Outcome(id = "7", expect = Expect.ACCEPTABLE, desc = "7 Writes")
+@Outcome(id = "8", expect = Expect.ACCEPTABLE, desc = "8 Writes")
+@Outcome(id = "9", expect = Expect.ACCEPTABLE, desc = "9 Writes")
+@Outcome(id = "10", expect = Expect.ACCEPTABLE, desc = "10 Writes")
+@Outcome(id = "11", expect = Expect.ACCEPTABLE, desc = "11 Writes")
+@Outcome(id = "12", expect = Expect.ACCEPTABLE, desc = "12 Writes")
+@Outcome(id = "13", expect = Expect.ACCEPTABLE, desc = "13 Writes")
+@Outcome(id = "14", expect = Expect.ACCEPTABLE, desc = "14 Writes")
+@Outcome(id = "15", expect = Expect.ACCEPTABLE, desc = "15 Writes")
+@Outcome(id = "16", expect = Expect.ACCEPTABLE, desc = "16 Writes")
+@Outcome(id = "17", expect = Expect.ACCEPTABLE, desc = "17 Writes")
+@Outcome(id = "18", expect = Expect.ACCEPTABLE, desc = "18 Writes")
+@Outcome(id = "19", expect = Expect.ACCEPTABLE, desc = "19 Writes")
+@Outcome(id = "20", expect = Expect.ACCEPTABLE, desc = "20 Writes")
+@Outcome(id = "21", expect = Expect.ACCEPTABLE, desc = "21 Writes")
+@Outcome(id = "22", expect = Expect.ACCEPTABLE, desc = "22 Writes")
+@Outcome(id = "23", expect = Expect.ACCEPTABLE, desc = "23 Writes")
+@Outcome(id = "24", expect = Expect.ACCEPTABLE, desc = "24 Writes")
+@Outcome(id = "25", expect = Expect.ACCEPTABLE, desc = "25 Writes")
+@Outcome(id = "26", expect = Expect.ACCEPTABLE, desc = "26 Writes")
+@Outcome(id = "27", expect = Expect.ACCEPTABLE, desc = "27 Writes")
+@Outcome(id = "28", expect = Expect.ACCEPTABLE, desc = "28 Writes")
+@Outcome(id = "29", expect = Expect.ACCEPTABLE, desc = "29 Writes")
+@Outcome(id = "30", expect = Expect.ACCEPTABLE, desc = "30 Writes")
+@Outcome(id = "31", expect = Expect.ACCEPTABLE, desc = "31 Writes")
+@Outcome(id = "32", expect = Expect.ACCEPTABLE, desc = "32 Writes")
+@Outcome(id = "-1", expect = Expect.FORBIDDEN, desc = "Wrong Type")
+@Outcome(id = "-2", expect = Expect.FORBIDDEN, desc = "Wrong Marker")
+@Outcome(id = "-3", expect = Expect.FORBIDDEN, desc = "Wrong ID")
 @State
 @Description("Simulates the PerfMarkStorage reader.")
 public class PerfMarkStorageStress {
   private static final int OFFSET;
+  private static final int SIZE = 8;
+
+
   static {
-    OFFSET = 16;
+    OFFSET = 31;
     assert Generator.GEN_OFFSET <= OFFSET;
   }
 
-  private static final VarHandleMarkHolder holder = new VarHandleMarkHolder();
+  private final VarHandleMarkHolder holder = new VarHandleMarkHolder(SIZE);
 
-  public static volatile boolean spoiler;
   @Actor
   public void writer() {
-    holder.link(1 << OFFSET, 1, Marker.NONE);
-    if (spoiler) return;
-    holder.link(2 << OFFSET, 2, Marker.NONE);
-    if (spoiler) return;
-    holder.link(4 << OFFSET, 4, Marker.NONE);
-    if (spoiler) return;
-    holder.link(8 << OFFSET, 8, Marker.NONE);
-    if (spoiler) return;
-    holder.link(16 << OFFSET, 16, Marker.NONE);
+    for (long i = 0; i < SIZE * 4; i++) {
+      holder.link(i << OFFSET, i, Marker.NONE);
+    }
   }
 
   @Actor
   @SuppressWarnings("ReferenceEquality")
-  public void reader(LL_Result r) {
+  public void reader(L_Result r) {
     List<Mark> marks = holder.read(false);
-    if (marks.isEmpty()) {
-      r.r1 = 0;
-      r.r2 = 3;
-      return;
-    }
-
+    int ret = marks.size();
     for (int i = 0; i < marks.size(); i++) {
       Mark mark = marks.get(i);
       if (mark.getOperation() != Mark.Operation.LINK) {
-        r.r1 = -2;
-        r.r2 = -2;
-        return;
+        ret = -1;
+        break;
       } else if (mark.getMarker() != Marker.NONE) {
-        r.r1 = -2;
-        r.r2 = -2;
-        return;
+        ret = -2;
+        break;
       } else if (mark.getGeneration() >>> OFFSET != mark.getTagId()) {
-        r.r1 = -3;
-        r.r2 = -3;
-        return;
+        ret = -3;
+        break;
       } else {
-        r.r1 = mark.getGeneration();
-        r.r2 = mark.getTagId();
+        // keep going
       }
     }
+    r.r1 = ret;
   }
 }
