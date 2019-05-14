@@ -86,7 +86,7 @@ public class PerfMarkStorageStress {
       } else if (mark.getMarker() != Marker.NONE) {
         ret = -2;
         break;
-      } else if (mark.getGeneration() >>> OFFSET != mark.getTagId()) {
+      } else if (mark.getGeneration() >>> OFFSET != mark.getLinkId()) {
         ret = -3;
         break;
       } else {
