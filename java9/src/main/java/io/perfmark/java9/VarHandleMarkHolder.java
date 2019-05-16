@@ -198,7 +198,8 @@ final class VarHandleMarkHolder extends MarkHolder {
     final long[] localTagIds= new long[maxEvents];
     final long[] localNanoTimes = new long[maxEvents];
     final long[] localGenOps = new long[maxEvents];
-    long startIdx = (long) IDX.getVolatile(this);
+    long startIdx = (long) IDX.getOpaque(this);
+    VarHandle.loadLoadFence();
     int size = (int) Math.min(startIdx, maxEvents);
     for (int i = 0; i < size; i++) {
       localTaskNameOrMarkers[i] = (Object) OBJECTS.getOpaque(taskNameOrMarkers, i);
@@ -207,7 +208,8 @@ final class VarHandleMarkHolder extends MarkHolder {
       localNanoTimes[i] = (long) LONGS.getOpaque(nanoTimes, i);
       localGenOps[i] = (long) LONGS.getOpaque(genOps, i);
     }
-    long endIdx = (long) IDX.getVolatile(this);
+    VarHandle.loadLoadFence();
+    long endIdx = (long) IDX.getOpaque(this);
     if (endIdx < startIdx) {
       throw new AssertionError();
     }
