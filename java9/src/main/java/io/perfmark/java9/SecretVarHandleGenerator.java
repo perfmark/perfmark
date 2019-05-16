@@ -42,7 +42,7 @@ final class SecretVarHandleGenerator {
 
     @Override
     public long costOfSetNanos() {
-      return 5;
+      return 3;
     }
 
     @Override

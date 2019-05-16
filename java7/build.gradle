@@ -14,6 +14,7 @@ jmh {
     fork = 1
     warmupIterations = 10
 
+    /*
     profilers = ["perfasm"]
 
     jvmArgs = [
@@ -33,4 +34,6 @@ jmh {
             "-XX:PrintAssemblyOptions=syntax",
             "-XX:PrintAssemblyOptions=intel"
     ]
+    
+     */
 }

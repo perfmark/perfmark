@@ -42,7 +42,7 @@ final class SecretMethodHandleGenerator {
     @Override
     public long costOfSetNanos() {
       // based on JMH testing on a Skylake x86_64 processor.
-      return 2000000;
+      return 2_000_000;
     }
   }
 
