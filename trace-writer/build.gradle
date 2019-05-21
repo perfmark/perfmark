@@ -1,0 +1,42 @@
+description = "PerfMark Tracer Output"
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+dependencies {
+    compile project(':perfmark-api'),
+            project(':perfmark-impl-api'),
+            project(':perfmark-java9'),
+            libraries.jsr305,
+            libraries.gson
+}
+
+jmh {
+    timeOnIteration = "1s"
+    warmup = "1s"
+    fork = 1
+    warmupIterations = 10
+
+    /*
+    profilers = ["perfasm"]
+
+    jvmArgs = [
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+LogCompilation",
+            "-XX:LogFile=/tmp/blah.txt",
+            "-XX:+PrintAssembly",
+            "-XX:+PrintInterpreter",
+            "-XX:+PrintNMethods",
+            "-XX:+PrintNativeNMethods",
+            "-XX:+PrintSignatureHandlers",
+            "-XX:+PrintAdapterHandlers",
+            "-XX:+PrintStubCode",
+            "-XX:+PrintCompilation",
+            "-XX:+PrintInlining",
+            "-XX:+TraceClassLoading",
+            "-XX:PrintAssemblyOptions=syntax",
+            "-XX:PrintAssemblyOptions=intel"
+    ]
+   
+     */
+}

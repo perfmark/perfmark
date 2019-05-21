@@ -26,6 +26,7 @@ public final class PerfMark {
           "io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator",
           "io.perfmark.java6.SecretVolatileGenerator$VolatileGenerator"));
 
+  static final long initNanoTime = System.nanoTime();
   private static final Generator generator;
   private static final Logger logger;
 

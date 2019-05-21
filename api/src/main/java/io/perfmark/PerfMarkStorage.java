@@ -31,6 +31,7 @@ public final class PerfMarkStorage {
   private static final ThreadLocal<MarkHolder> localMarkHolder = new MarkHolderThreadLocal();
   static final MarkHolderProvider markHolderProvider;
   private static final Logger logger;
+  private static final long initNanoTime = System.nanoTime();
 
   static {
     List<Throwable> errors = new ArrayList<Throwable>();
@@ -52,6 +53,14 @@ public final class PerfMarkStorage {
     logger.log(level, "Using {0}", new Object[] {markHolderProvider.getClass()});
     for (Throwable error : errors) {
       logger.log(level, "Error encountered loading mark holder", error);
+    }
+  }
+
+  public static long getInitNanoTime() {
+    if (initNanoTime - PerfMark.initNanoTime > 0) {
+      return PerfMark.initNanoTime;
+    } else {
+      return initNanoTime;
     }
   }
 
