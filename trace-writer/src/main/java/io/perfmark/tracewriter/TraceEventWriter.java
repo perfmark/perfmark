@@ -61,7 +61,7 @@ public final class TraceEventWriter {
   void walkTasks(List<? super TraceEvent> traceEvents, long threadId, Task task, long initNanoTime) {
     traceEvents.add(new DurationBegin(task.start.getTaskName(), task.start.getNanoTime() - initNanoTime, threadId));
     for (Task child : task.children) {
-      walkTasks(traceEvents, threadId, task, initNanoTime);
+      walkTasks(traceEvents, threadId, child, initNanoTime);
     }
     traceEvents.add(new DurationEnd(task.end.getTaskName(), task.end.getNanoTime() - initNanoTime, threadId));
   }
