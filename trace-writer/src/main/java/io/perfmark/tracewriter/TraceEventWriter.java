@@ -1,9 +1,13 @@
 package io.perfmark.tracewriter;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.internal.bind.ObjectTypeAdapter;
+import io.perfmark.Link;
 import io.perfmark.PerfMark;
 import io.perfmark.PerfMarkStorage;
+import io.perfmark.Tag;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
 import java.io.File;
@@ -15,6 +19,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.RecursiveTask;
 
 // https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
 public final class TraceEventWriter {
@@ -26,13 +33,64 @@ public final class TraceEventWriter {
   private TraceEventWriter() {
     PerfMark.setEnabled(true);
 
-    int z = 1;
-    for (int i = 1; i < 33000; i++) {
-      PerfMark.startTask("Hi");
-      z = z * z + i;
-      PerfMark.stopTask("Hi");
+
+
+
+
+
+
+    ForkJoinPool fjp = new ForkJoinPool(8);
+    final class Fibonacci extends RecursiveTask<Long> {
+
+      private final long input;
+      private final Link link;
+
+      Fibonacci(long input, Link link) {
+        this.input = input;
+        this.link = link;
+      }
+
+      @Override
+      protected Long compute() {
+        Tag tag = PerfMark.createTag(input);
+        PerfMark.startTask("compute", tag);
+        link.link();
+        try {
+          if (input >= 25) {
+            Link link2 = PerfMark.link();
+            ForkJoinTask<Long> task1 = new Fibonacci(input - 1, link2).fork();
+            Fibonacci task2 = new Fibonacci(input - 2, link2);
+            return task2.compute() + task1.join();
+          } else {
+            return computeUnboxed(input);
+          }
+        } finally {
+          PerfMark.stopTask("compute", tag);
+        }
+      }
+
+      private long computeUnboxed(long n) {
+        if (n <= 1) {
+          return n;
+        }
+        return computeUnboxed(n - 1) + computeUnboxed(n - 2);
+      }
     }
-    System.out.println(z);
+    PerfMark.startTask("calc");
+    Link link = PerfMark.link();
+    ForkJoinTask<Long> task = new Fibonacci(28, link);
+    fjp.execute(task);
+    PerfMark.stopTask("calc");
+    Long res;
+    try {
+      res = task.get();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    System.err.println(res);
+
+    fjp.shutdown();
 
     List<MarkList> markLists = PerfMarkStorage.read();
     final long initNanoTime = PerfMarkStorage.getInitNanoTime();
@@ -42,6 +100,7 @@ public final class TraceEventWriter {
     new MarkListWalker() {
 
       long currentThreadId = -1;
+      long lastStart;
 
       @Override
       protected void enterMarkList(String threadName, long threadId) {
@@ -50,30 +109,35 @@ public final class TraceEventWriter {
 
       @Override
       protected void onTaskStart(Mark mark, boolean isFake) {
+        lastStart = mark.getNanoTime() - initNanoTime;
         traceEvents.add(new DurationBegin(
-            mark.getTaskName(), mark.getNanoTime() - initNanoTime, currentThreadId));
+            mark.getTaskName() + mark.getTagId(), mark.getNanoTime() - initNanoTime, currentThreadId));
       }
 
       @Override
       protected void onTaskEnd(Mark mark, boolean isFake) {
         traceEvents.add(new DurationEnd(
-            mark.getTaskName(), mark.getNanoTime() - initNanoTime, currentThreadId));
+            mark.getTaskName()+ mark.getTagId(), mark.getNanoTime() - initNanoTime, currentThreadId));
       }
 
       @Override
       protected void onLink(Mark mark, boolean isFake) {
         if (mark.getLinkId() > 0) {
           traceEvents.add(new FlowBegin(
-              mark.getTaskName(), mark.getLinkId(), currentThreadId));
+              "__perfmark_link", lastStart, mark.getLinkId(), currentThreadId));
         } else if (mark.getLinkId() < 0) {
           traceEvents.add(new FlowInstant(
-              mark.getTaskName(), -mark.getLinkId(), currentThreadId));
+              "__perfmark_link", lastStart, -mark.getLinkId(), currentThreadId));
         }
       }
     }.walk(markLists);
 
     try (Writer f = new FileWriter(new File("/tmp/tracey.json"))) {
-      new Gson().toJson(new TraceEventObject(traceEvents), f);
+      //new RuntimeTypeAdapterFactory();
+      Gson gson = new GsonBuilder()
+          .setPrettyPrinting()
+          .create();
+      gson.toJson(new TraceEventObject(traceEvents), f);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -113,21 +177,15 @@ public final class TraceEventWriter {
   }
 
   static final class FlowBegin extends TraceEvent {
-    @SerializedName("id")
-    final long id;
-
-    FlowBegin(String name, long id, long threadId) {
-      super(name, Collections.<String>emptyList(), "s", /* absNanoTime= */ null, 0L, threadId);
+    FlowBegin(String name, long absNanoTime, long id, long threadId) {
+      super(name, Collections.<String>emptyList(), "s", absNanoTime, 0L, threadId);
       this.id = id;
     }
   }
 
   static final class FlowInstant extends TraceEvent {
-    @SerializedName("id")
-    final long id;
-
-    FlowInstant(String name, long id, long threadId) {
-      super(name, Collections.<String>emptyList(), "s", /* absNanoTime= */ null, 0L, threadId);
+    FlowInstant(String name, long absNanoTime, long id, long threadId) {
+      super(name, Collections.<String>emptyList(), "t", absNanoTime, 0L, threadId);
       this.id = id;
     }
   }

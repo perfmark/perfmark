@@ -30,6 +30,10 @@ class TraceEvent {
   final Long tid;
 
   @Nullable
+  @SerializedName("id")
+  protected Long id;
+
+  @Nullable
   @SerializedName("args")
   final Map<String, ?> args = null;
 
