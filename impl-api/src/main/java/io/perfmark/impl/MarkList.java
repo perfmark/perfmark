@@ -32,6 +32,10 @@ public final class MarkList {
     return marks;
   }
 
+  public String getThreadName() {
+    return threadName;
+  }
+
   public long getThreadId() {
     return threadId;
   }
