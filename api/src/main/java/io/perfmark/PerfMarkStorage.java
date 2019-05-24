@@ -84,7 +84,10 @@ public final class PerfMarkStorage {
       }
       boolean readerIsWriter = Thread.currentThread() == writer;
       markLists.add(
-          MarkList.create(mh.read(readerIsWriter), Mark.NO_NANOTIME, threadName, threadId));
+          MarkList.newBuilder()
+              .setMarks(mh.read(readerIsWriter))
+              .setThreadName(threadName)
+              .setThreadId(threadId).build());
     }
     return Collections.unmodifiableList(markLists);
   }
