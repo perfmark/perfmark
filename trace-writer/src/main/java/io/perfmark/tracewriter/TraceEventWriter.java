@@ -7,21 +7,16 @@ import io.perfmark.PerfMarkStorage;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Writer;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
+// https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
 public final class TraceEventWriter {
 
   public static void main(String [] args) {
@@ -32,7 +27,7 @@ public final class TraceEventWriter {
     PerfMark.setEnabled(true);
 
     int z = 1;
-    for (int i = 1; i < 50000; i++) {
+    for (int i = 1; i < 33000; i++) {
       PerfMark.startTask("Hi");
       z = z * z + i;
       PerfMark.stopTask("Hi");
@@ -40,30 +35,48 @@ public final class TraceEventWriter {
     System.out.println(z);
 
     List<MarkList> markLists = PerfMarkStorage.read();
-    long initNanoTime = PerfMarkStorage.getInitNanoTime();
+    final long initNanoTime = PerfMarkStorage.getInitNanoTime();
 
-    List<TraceEvent> traceEvents = new ArrayList<>();
-    for(MarkList markList : markLists) {
-      List<Mark> marks = markList.getMarks();
-      List<Task> tasks = new MarkParser().parse(marks);
-      for (Task task : tasks) {
-        walkTasks(traceEvents, markList.getThreadId(), task, initNanoTime);
+    final List<TraceEvent> traceEvents = new ArrayList<>();
+
+    new MarkListWalker() {
+
+      long currentThreadId = -1;
+
+      @Override
+      protected void enterMarkList(String threadName, long threadId) {
+        currentThreadId = threadId;
       }
-    }
+
+      @Override
+      protected void onTaskStart(Mark mark, boolean isFake) {
+        traceEvents.add(new DurationBegin(
+            mark.getTaskName(), mark.getNanoTime() - initNanoTime, currentThreadId));
+      }
+
+      @Override
+      protected void onTaskEnd(Mark mark, boolean isFake) {
+        traceEvents.add(new DurationEnd(
+            mark.getTaskName(), mark.getNanoTime() - initNanoTime, currentThreadId));
+      }
+
+      @Override
+      protected void onLink(Mark mark, boolean isFake) {
+        if (mark.getLinkId() > 0) {
+          traceEvents.add(new FlowBegin(
+              mark.getTaskName(), mark.getLinkId(), currentThreadId));
+        } else if (mark.getLinkId() < 0) {
+          traceEvents.add(new FlowInstant(
+              mark.getTaskName(), -mark.getLinkId(), currentThreadId));
+        }
+      }
+    }.walk(markLists);
 
     try (Writer f = new FileWriter(new File("/tmp/tracey.json"))) {
       new Gson().toJson(new TraceEventObject(traceEvents), f);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  void walkTasks(List<? super TraceEvent> traceEvents, long threadId, Task task, long initNanoTime) {
-    traceEvents.add(new DurationBegin(task.start.getTaskName(), task.start.getNanoTime() - initNanoTime, threadId));
-    for (Task child : task.children) {
-      walkTasks(traceEvents, threadId, child, initNanoTime);
-    }
-    traceEvents.add(new DurationEnd(task.end.getTaskName(), task.end.getNanoTime() - initNanoTime, threadId));
   }
 
   static final class TraceEventObject {
@@ -87,114 +100,36 @@ public final class TraceEventWriter {
     }
   }
 
-  abstract static class TraceEvent {
-    @SerializedName("ph")
-    final String phase;
-
-    @SerializedName("name")
-    final String name;
-
-    @SerializedName("cat")
-    final String categories;
-
-    @SerializedName("ts")
-    final double traceClockMicros;
-
-    @SerializedName("pid")
-    final long pid;
-
-    @SerializedName("tid")
-    final long tid;
-
-    @SerializedName("args")
-    final Map<String, ?> args = new HashMap<>();
-
-    @SerializedName("cname")
-    final String colorName = "red";
-
-    TraceEvent(String name, String categories, Phase phase, long nanoTime, long pid, long tid) {
-      this.name = name;
-      this.categories = categories;
-      this.phase = phase.symbol;
-      this.traceClockMicros = nanoTime / 1000.0;
-      this.pid = pid;
-      this.tid = tid;
-    }
-  }
-
   static final class DurationBegin extends TraceEvent {
-    DurationBegin(String name, long nanoTime, long threadId) {
-      super(name, "none", Phase.BEGIN, nanoTime, 1, threadId);
+    DurationBegin(String name, long absNanoTime, long threadId) {
+      super(name, Collections.<String>emptyList(), "B", absNanoTime, 0L, threadId);
     }
   }
 
   static final class DurationEnd extends TraceEvent {
-    DurationEnd(String name, long nanoTime, long threadId) {
-      super(name, "none", Phase.END, nanoTime, 1, threadId);
+    DurationEnd(String name, long absNanoTime, long threadId) {
+      super(name, Collections.<String>emptyList(), "E", absNanoTime, 0L, threadId);
     }
   }
 
-  enum Phase {
-    // Duration Events
-    BEGIN("B"),
-    END("E"),
+  static final class FlowBegin extends TraceEvent {
+    @SerializedName("id")
+    final long id;
 
-    // Completion Events
-    COMPLETE("X"),
-
-    // Instant Events
-    INSTANT("i"),
-    @Deprecated INSTANT_DEPRECATED("I"),
-
-    // Counter Events
-    COUNTER("C"),
-
-    // Async Events
-    ASYNC_NESTABLE_START("b"),
-    ASYNC_NESTABLE_INSTANT("n"),
-    ASYNC_NESTABLE_END("e"),
-    @Deprecated ASYNC_DEPRECATED_START("S"),
-    @Deprecated ASYNC_DEPRECATED_STEP_INTO("T"),
-    @Deprecated ASYNC_DEPRECATED_STEP_PAST("p"),
-    @Deprecated ASYNC_DEPRECATED_END("F"),
-
-    // Flow Events
-    FLOW_START("s"),
-    FLOW_STEP("t"),
-    FLOW_END("f"),
-
-    SAMPLE("P"),
-
-    // Object Events
-    CREATED("N"),
-    SNAPSHOT("O"),
-    DESTROYED("D"),
-
-    METADATA("M"),
-
-    // Memory Dump Events
-    MEMORY_DUMP_GLOBAL("V"),
-    MEMORY_DUMP_PROCESS("v"),
-
-    // Mark Events
-    MARK("R"),
-
-    CLOCK_SYNC("c"),
-
-    CONTEXT_ENTER("("),
-    CONTEXT_EXIT(")"),
-
-    ;
-
-    private final String symbol;
-
-    Phase(String symbol) {
-      this.symbol = symbol;
+    FlowBegin(String name, long id, long threadId) {
+      super(name, Collections.<String>emptyList(), "s", /* absNanoTime= */ null, 0L, threadId);
+      this.id = id;
     }
   }
 
-  static final class Trace {
-    Phase phase;
+  static final class FlowInstant extends TraceEvent {
+    @SerializedName("id")
+    final long id;
+
+    FlowInstant(String name, long id, long threadId) {
+      super(name, Collections.<String>emptyList(), "s", /* absNanoTime= */ null, 0L, threadId);
+      this.id = id;
+    }
   }
 
   /*
@@ -312,33 +247,7 @@ public final class TraceEventWriter {
       List<Long> outLinkIdList = new ArrayList<>();
     }
   }
-
-  private static final class MarkParser {
-    private final Deque<Mark> fakeStarts = new ArrayDeque<>();
-    private final Deque<Mark> unmatchedMarks = new ArrayDeque<>();
-    private final Deque<Mark> fakeEnds = new ArrayDeque<>();
-    private Long firstNanoTime;
-    private long lastNanoTime;
-
-    private void setNanoTimeBounds(Mark mark) {
-      switch (mark.getOperation()) {
-        case TASK_NOTAG_START:
-        case TASK_START:
-        case TASK_NOTAG_END:
-        case TASK_END:
-          if (firstNanoTime == null) {
-            firstNanoTime = mark.getNanoTime();
-          }
-          lastNanoTime = mark.getNanoTime();
-          return;
-        case LINK:
-          return;
-        case NONE:
-          break;
-      }
-      throw new AssertionError();
-    }
-
+/*
     List<Task> parse(List<Mark> marks) {
       addFakes(marks);
       Deque<Task.MutableTask> tasks = new ArrayDeque<>();
@@ -389,144 +298,6 @@ public final class TraceEventWriter {
       }
       return roots;
     }
+*/
 
-    private void addFakes(List<Mark> marks) {
-      loop: for (Mark mark : marks) {
-        setNanoTimeBounds(mark);
-        switch (mark.getOperation()) {
-          case TASK_START:
-          case TASK_NOTAG_START:
-            unmatchedMarks.addLast(mark);
-            continue loop;
-          case TASK_END:
-          case TASK_NOTAG_END:
-            if (!unmatchedMarks.isEmpty()) {
-              unmatchedMarks.removeLast();
-            } else {
-              fakeStarts.addFirst(createFakeStart(mark));
-            }
-            continue loop;
-          case LINK:
-            continue loop;
-          case NONE:
-            break;
-        }
-        throw new AssertionError();
-      }
-      for (Mark unmatchedMark : unmatchedMarks) {
-        fakeEnds.addFirst(createFakeEnd(unmatchedMark));
-      }
-      unmatchedMarks.clear();
-    }
-
-    private Mark createFakeEnd(Mark start) {
-      if (start.getMarker() != null) {
-        switch (start.getOperation()) {
-          case TASK_START:
-            return Mark.create(
-                start.getMarker(),
-                start.getTagName(),
-                start.getTagId(),
-                lastNanoTime,
-                start.getGeneration(),
-                Mark.Operation.TASK_END);
-          case TASK_NOTAG_START:
-            return Mark.create(
-                start.getMarker(),
-                Mark.NO_TAG_NAME,
-                Mark.NO_TAG_ID,
-                lastNanoTime,
-                start.getGeneration(),
-                Mark.Operation.TASK_NOTAG_END);
-          case LINK:
-          case NONE:
-          case TASK_END:
-          case TASK_NOTAG_END:
-            break;
-        }
-        throw new AssertionError();
-      } else {
-        String taskName = String.valueOf(start.getTaskName()); // Uses "null" if null.
-        switch (start.getOperation()) {
-          case TASK_START:
-            return Mark.create(
-                taskName,
-                start.getTagName(),
-                start.getTagId(),
-                lastNanoTime,
-                start.getGeneration(),
-                Mark.Operation.TASK_END);
-          case TASK_NOTAG_START:
-            return Mark.create(
-                taskName,
-                Mark.NO_TAG_NAME,
-                Mark.NO_TAG_ID,
-                lastNanoTime,
-                start.getGeneration(),
-                Mark.Operation.TASK_NOTAG_END);
-          case LINK:
-          case NONE:
-          case TASK_END:
-          case TASK_NOTAG_END:
-            break;
-        }
-        throw new AssertionError();
-      }
-    }
-
-    private Mark createFakeStart(Mark end) {
-      if (end.getMarker() != null) {
-        switch (end.getOperation()) {
-          case TASK_END:
-            return Mark.create(
-                end.getMarker(),
-                end.getTagName(),
-                end.getTagId(),
-                firstNanoTime,
-                end.getGeneration(),
-                Mark.Operation.TASK_START);
-          case TASK_NOTAG_END:
-            return Mark.create(
-                end.getMarker(),
-                Mark.NO_TAG_NAME,
-                Mark.NO_TAG_ID,
-                firstNanoTime,
-                end.getGeneration(),
-                Mark.Operation.TASK_NOTAG_START);
-          case LINK:
-          case NONE:
-          case TASK_START:
-          case TASK_NOTAG_START:
-            break;
-        }
-        throw new AssertionError();
-      } else {
-        String taskName = String.valueOf(end.getTaskName()); // Uses "null" if null.
-        switch (end.getOperation()) {
-          case TASK_END:
-            return Mark.create(
-                taskName,
-                end.getTagName(),
-                end.getTagId(),
-                firstNanoTime,
-                end.getGeneration(),
-                Mark.Operation.TASK_START);
-          case TASK_NOTAG_END:
-            return Mark.create(
-                taskName,
-                Mark.NO_TAG_NAME,
-                Mark.NO_TAG_ID,
-                firstNanoTime,
-                end.getGeneration(),
-                Mark.Operation.TASK_NOTAG_START);
-          case LINK:
-          case NONE:
-          case TASK_START:
-          case TASK_NOTAG_START:
-            break;
-        }
-        throw new AssertionError();
-      }
-    }
-  }
 }
