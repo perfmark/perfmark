@@ -110,18 +110,21 @@ public final class TraceEventWriter {
     new MarkListWalker() {
 
       long currentThreadId = -1;
+      long currentMarkListId = -1;
       Deque<Long> taskStarts = new ArrayDeque<>();
       Deque<String> taskNames = new ArrayDeque<>();
 
       @Override
-      protected void enterMarkList(String threadName, long threadId) {
+      protected void enterMarkList(String threadName, long threadId, long markListId) {
         currentThreadId = threadId;
+        currentMarkListId = markListId;
         traceEvents.add(
             TraceEvent.EVENT
                 .name("thread_name")
                 .phase("M")
                 .pid(pid)
                 .arg("name", threadName)
+                .arg("markListId", markListId)
                 .tid(currentThreadId));
       }
 

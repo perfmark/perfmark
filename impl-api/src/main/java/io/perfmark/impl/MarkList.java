@@ -14,6 +14,7 @@ public final class MarkList {
 
   private final List<Mark> marks;
   private final long threadId;
+  private final long markListId;
   private final String threadName;
 
   MarkList(Builder builder) {
@@ -26,6 +27,7 @@ public final class MarkList {
     }
     this.threadName = builder.threadName;
     this.threadId = builder.threadId;
+    this.markListId = builder.markListId;
   }
 
   public List<Mark> getMarks() {
@@ -36,8 +38,15 @@ public final class MarkList {
     return threadName;
   }
 
+  /**
+   * Thread IDs can be recycled, so this is not unique.
+   */
   public long getThreadId() {
     return threadId;
+  }
+
+  public long getMarkListId() {
+    return markListId;
   }
 
   @Override
@@ -48,12 +57,13 @@ public final class MarkList {
     MarkList that = (MarkList) obj;
     return Mark.equal(this.marks, that.marks)
         && this.threadId == that.threadId
+        && this.markListId == that.markListId
         && Mark.equal(this.threadName, that.threadName);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(new Object[] {marks, threadId, threadName});
+    return Arrays.hashCode(new Object[] {marks, threadId, markListId, threadName});
   }
 
   @Override
@@ -61,6 +71,7 @@ public final class MarkList {
     return "MarkList{"
         + "marks=" + marks + ", "
         + "threadId=" + threadId + ", "
+        + "markListId=" + markListId + ", "
         + "threadName=" + threadName + "}";
   }
 
@@ -75,6 +86,7 @@ public final class MarkList {
     List<Mark> marks;
     String threadName;
     long threadId;
+    long markListId;
 
     public MarkList build() {
       return new MarkList(this);
@@ -123,6 +135,17 @@ public final class MarkList {
      */
     public Builder setThreadId(long threadId) {
       this.threadId = threadId;
+      return this;
+    }
+
+    /**
+     * Sets the mark list ID for this MarkList builder.
+     *
+     * @param markListId
+     * @return this
+     */
+    public Builder setMarkListId(long markListId) {
+      this.markListId = markListId;
       return this;
     }
   }

@@ -18,7 +18,7 @@ class MarkListWalker {
     for (Map.Entry<Long, List<MarkList>> entry : generationToMarkLists.entrySet()) {
       enterGeneration(entry.getKey());
       for (MarkList markList : entry.getValue()) {
-        enterMarkList(markList.getThreadName(), markList.getThreadId());
+        enterMarkList(markList.getThreadName(), markList.getThreadId(), markList.getMarkListId());
         Deque<Mark> fakeStarts = new ArrayDeque<>();
         Deque<Mark> fakeEnds = new ArrayDeque<>();
         createFakes(fakeStarts, fakeEnds, markList.getMarks());
@@ -41,7 +41,7 @@ class MarkListWalker {
 
   protected void exitGeneration() {}
 
-  protected void enterMarkList(String threadName, long threadId) {}
+  protected void enterMarkList(String threadName, long threadId, long markListId) {}
 
   protected void exitMarkList() {}
 
@@ -69,6 +69,9 @@ class MarkListWalker {
   protected void onTaskEnd(Mark mark, boolean isFake) {}
 
   protected void onLink(Mark mark, boolean isFake) {}
+
+  private static final class LinkPair {
+  }
 
   private static Map<Long, List<MarkList>> groupMarkListsByGeneration(List<MarkList> markLists) {
     Map<Long, List<MarkList>> generationToMarkLists = new TreeMap<>();

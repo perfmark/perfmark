@@ -417,6 +417,7 @@ public class PerfMarkTest {
     }
   }
 
+  @SuppressWarnings("deprecation") // We must be alive to find our own, so it's okay.
   private static List<Mark> getMine(List<MarkList> markLists) {
     for (MarkList markList : markLists) {
       if (markList.getThreadId() == Thread.currentThread().getId()) {

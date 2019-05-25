@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -88,7 +89,9 @@ public final class PerfMarkStorage {
           MarkList.newBuilder()
               .setMarks(mh.read(readerIsWriter))
               .setThreadName(threadName)
-              .setThreadId(threadId).build());
+              .setThreadId(threadId)
+              .setMarkListId(entry.getKey().markHolderId)
+              .build());
     }
     return Collections.unmodifiableList(markLists);
   }
@@ -155,6 +158,9 @@ public final class PerfMarkStorage {
   private static final class MarkHolderRef extends WeakReference<MarkHolder> {
     private static final ReferenceQueue<MarkHolder> markHolderRefQueue =
         new ReferenceQueue<MarkHolder>();
+    private static final AtomicLong markHolderIdAllocator = new AtomicLong();
+
+    final long markHolderId = markHolderIdAllocator.incrementAndGet();
 
     MarkHolderRef(MarkHolder holder) {
       super(holder, markHolderRefQueue);
