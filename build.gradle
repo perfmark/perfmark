@@ -14,6 +14,7 @@ buildscript {
 
 subprojects {
     apply plugin: "java"
+    apply plugin: 'maven-publish'
     apply plugin: "idea"
     apply plugin: "jacoco"
     apply plugin: "me.champeau.gradle.jmh"
@@ -23,6 +24,18 @@ subprojects {
         maven {
             url "https://maven-central.storage-download.googleapis.com/repos/central/data/" }
         mavenLocal()
+    }
+
+    publishing {
+        publications {
+            myLibrary(MavenPublication) {
+                from components.java
+            }
+        }
+
+        repositories {
+            mavenLocal()
+        }
     }
 
     if (rootProject.properties.get('errorProne', true)) {
@@ -48,7 +61,7 @@ subprojects {
 
     ext {
         libraries = [
-                errorprone: 'com.google.errorprone:error_prone_annotations:2.3.3',
+                errorprone: 'com.google.errorprone:error_prone_annotations:[2.3.2,2.3.3]',
                 jsr305: 'com.google.code.findbugs:jsr305:3.0.2',
                 gson: 'com.google.code.gson:gson:2.8.5'
         ]
