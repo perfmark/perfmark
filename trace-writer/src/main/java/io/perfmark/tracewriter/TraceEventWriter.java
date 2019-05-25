@@ -12,12 +12,10 @@ import io.perfmark.Tag;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -108,11 +106,60 @@ public final class TraceEventWriter {
     final long pid = getPid();
 
     new MarkListWalker() {
+      long uniqueLinkPairId = 1;
 
       long currentThreadId = -1;
       long currentMarkListId = -1;
-      Deque<Long> taskStarts = new ArrayDeque<>();
-      Deque<String> taskNames = new ArrayDeque<>();
+      final Deque<Mark> taskStack = new ArrayDeque<>();
+      final Map<Long, LinkTuple> linkIdToLinkOut = new LinkedHashMap<>();
+      final List<LinkTuple> linkIdToLinkIn = new ArrayList<>();
+
+      @Override
+      protected void enterGeneration(long generation) {
+        linkIdToLinkOut.clear();
+        linkIdToLinkIn.clear();
+      }
+
+      @Override
+      protected void exitGeneration() {
+        for (LinkTuple linkIn : linkIdToLinkIn) {
+          long inLinkId = linkIn.link.getLinkId();
+          long outLinkId = -inLinkId;
+          LinkTuple linkOut = linkIdToLinkOut.get(outLinkId);
+          if (linkOut == null) {
+            // TODO: log?
+            continue;
+          }
+          if (linkOut.markListId == linkIn.markListId) {
+            continue;
+          }
+          // The name must be the same to match links together.
+          String name = "link("
+              + linkOut.lastTaskStart.getTaskName()
+              + " -> "
+              + linkIn.lastTaskStart.getTaskName()
+              + ")";
+          long localUniqueLinkPairId = uniqueLinkPairId++;
+          traceEvents.add(
+              TraceEvent.EVENT.name(name)
+                  .tid(linkOut.threadId)
+                  .pid(pid)
+                  .phase("s")
+                  .id(localUniqueLinkPairId)
+                  .arg("linkid", linkOut.link.getLinkId())
+                  .traceClockNanos(linkOut.lastTaskStart.getNanoTime() - initNanoTime));
+
+          traceEvents.add(
+              TraceEvent.EVENT.name(name)
+                  .tid(linkIn.threadId)
+                  .pid(pid)
+                  .phase("t")
+                  .id(localUniqueLinkPairId)
+                  .arg("linkid", linkOut.link.getLinkId())
+                  .traceClockNanos(linkIn.lastTaskStart.getNanoTime() - initNanoTime));
+        }
+        super.exitGeneration();
+      }
 
       @Override
       protected void enterMarkList(String threadName, long threadId, long markListId) {
@@ -130,8 +177,7 @@ public final class TraceEventWriter {
 
       @Override
       protected void onTaskStart(Mark mark, boolean isFake) {
-        taskStarts.addLast(mark.getNanoTime() - initNanoTime);
-        taskNames.addLast(mark.getTaskName() + mark.getTagId());
+        taskStack.add(mark);
         traceEvents.add(
             TraceEvent.EVENT
                 .name(mark.getTaskName())
@@ -145,9 +191,8 @@ public final class TraceEventWriter {
 
       @Override
       protected void onTaskEnd(Mark mark, boolean isFake) {
-        taskStarts.pollLast();
+        taskStack.pollLast();
         // TODO: maybe complain about task name mismatch?
-        taskNames.pollLast();
         traceEvents.add(
             TraceEvent.EVENT
                 .name(mark.getTaskName())
@@ -159,19 +204,43 @@ public final class TraceEventWriter {
                 .traceClockNanos(mark.getNanoTime() - initNanoTime));
       }
 
+      final class LinkTuple {
+        final Mark lastTaskStart;
+        final Mark link;
+        final long threadId;
+        final long markListId;
+
+        LinkTuple(Mark lastTaskStart, Mark link, long threadId, long markListId) {
+          this.lastTaskStart = lastTaskStart;
+          this.link = link;
+          this.threadId = threadId;
+          this.markListId = markListId;
+        }
+      }
+
       @Override
       protected void onLink(Mark mark, boolean isFake) {
-        if (taskNames.isEmpty()) {
+        if (taskStack.isEmpty()) {
           // In a mark list of only links (i.e. no starts or ends) it's possible there are no tasks
           // to bind to.  This is probably due to not calling link() correctly.
           logger.warning("Link not associated with any task");
           return;
         }
-        // The name must be the same to match links together.
-        String name = "(link)";
         assert !isFake;
+        LinkTuple linkTuple =
+            new LinkTuple(taskStack.peekLast(), mark, currentThreadId, currentMarkListId);
         if (mark.getLinkId() > 0) {
-          traceEvents.add(
+          LinkTuple old = linkIdToLinkOut.put(mark.getLinkId(), linkTuple);
+          assert old == null;
+        } else if (mark.getLinkId() < 0) {
+          linkIdToLinkIn.add(linkTuple);
+        }
+      }
+    }.walk(markLists);
+
+    /*
+
+              traceEvents.add(
               TraceEvent.EVENT.name(name)
                   .tid(currentThreadId)
                   .pid(pid)
@@ -179,8 +248,8 @@ public final class TraceEventWriter {
                   .id(mark.getLinkId())
                   .arg("outtask", taskNames.peekLast())
                   .traceClockNanos(taskStarts.peekLast()));
-        } else if (mark.getLinkId() < 0) {
-          traceEvents.add(
+
+                            traceEvents.add(
               TraceEvent.EVENT.name(name)
                   .tid(currentThreadId)
                   .pid(pid)
@@ -188,9 +257,8 @@ public final class TraceEventWriter {
                   .id(-mark.getLinkId())
                   .arg("intask", taskNames.peekLast())
                   .traceClockNanos(taskStarts.peekLast()));
-        }
-      }
-    }.walk(markLists);
+
+     */
 
     try (Writer f = Files.newBufferedWriter(new File("/tmp/tracey.json").toPath(), UTF_8)) {
       Gson gson = new GsonBuilder()

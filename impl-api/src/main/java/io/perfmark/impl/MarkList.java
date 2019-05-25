@@ -78,7 +78,7 @@ public final class MarkList {
   public Builder toBuilder() {
     Builder builder = newBuilder();
     builder.marks = marks;
-    return builder.setThreadName(threadName).setThreadId(threadId);
+    return builder.setThreadName(threadName).setThreadId(threadId).setMarkListId(markListId);
   }
 
   public static final class Builder {
