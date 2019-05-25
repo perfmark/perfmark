@@ -28,7 +28,7 @@ class MarkListWalker {
         for (Mark mark : markList.getMarks()) {
           onMark(mark, false);
         }
-        for (Mark mark : fakeStarts) {
+        for (Mark mark : fakeEnds) {
           onMark(mark, true);
         }
         exitMarkList();
