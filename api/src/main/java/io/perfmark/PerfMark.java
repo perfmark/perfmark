@@ -259,6 +259,10 @@ public final class PerfMark {
     return new PerfMarkCloseable.TaskAutoCloseable(taskName);
   }
 
+  public static Tag createTag() {
+    return Tag.NO_TAG;
+  }
+
   public static Tag createTag(long id) {
     if (!isEnabled(getGen())) {
       return Tag.NO_TAG;
