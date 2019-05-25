@@ -57,11 +57,11 @@ class MarkListWalker {
         break;
       case TASK_START:
       case TASK_NOTAG_START:
-        onTaskStart(mark, true, unmatchedPairMarks.contains(mark));
+        onTaskStart(mark, false, unmatchedPairMarks.contains(mark));
         return;
       case TASK_END:
       case TASK_NOTAG_END:
-        onTaskEnd(mark, unmatchedPairMarks.contains(mark), true);
+        onTaskEnd(mark, unmatchedPairMarks.contains(mark), false);
         return;
       case LINK:
         onLink(mark);
