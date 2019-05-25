@@ -21,7 +21,8 @@ import java.util.logging.Logger;
 public final class PerfMarkStorage {
   private static final List<String> FALLBACK_MARK_HOLDERS =
       Collections.unmodifiableList(Arrays.asList(
-          "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider"));
+          "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider",
+          "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider"));
   static final long NO_THREAD_ID = -1;
   static final String NO_THREAD_NAME = "(unknownThread)";
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
