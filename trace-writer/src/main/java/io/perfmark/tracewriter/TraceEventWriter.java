@@ -124,7 +124,7 @@ public final class TraceEventWriter {
         taskNames.addLast(mark.getTaskName() + mark.getTagId());
         traceEvents.add(
             TraceEvent.EVENT
-                .name(mark.getTaskName() + mark.getTagId())
+                .name(mark.getTaskName())
                 .phase("B")
                 .pid(pid)
                 .args(tagArgs(mark.getTagName(), mark.getTagId()))
@@ -140,7 +140,7 @@ public final class TraceEventWriter {
         taskNames.pollLast();
         traceEvents.add(
             TraceEvent.EVENT
-                .name(mark.getTaskName() + mark.getTagId())
+                .name(mark.getTaskName())
                 .phase("E")
                 .pid(pid)
                 .args(tagArgs(mark.getTagName(), mark.getTagId()))
@@ -157,10 +157,12 @@ public final class TraceEventWriter {
           logger.warning("Link not associated with any task");
           return;
         }
+        // The name must be the same to match links together.
+        String name = "(link)";
         assert !isFake;
         if (mark.getLinkId() > 0) {
           traceEvents.add(
-              TraceEvent.EVENT.name("perfmark:outlink")
+              TraceEvent.EVENT.name(name)
                   .tid(currentThreadId)
                   .pid(pid)
                   .phase("s")
@@ -169,7 +171,7 @@ public final class TraceEventWriter {
                   .traceClockNanos(taskStarts.peekLast()));
         } else if (mark.getLinkId() < 0) {
           traceEvents.add(
-              TraceEvent.EVENT.name("perfmark:inlink")
+              TraceEvent.EVENT.name(name)
                   .tid(currentThreadId)
                   .pid(pid)
                   .phase("t")
@@ -192,18 +194,23 @@ public final class TraceEventWriter {
 
   static final class TraceEventObject {
     @SerializedName("traceEvents")
+    @SuppressWarnings("unused")
     final List<TraceEvent> traceEvents;
 
     @SerializedName("displayTimeUnit")
+    @SuppressWarnings("unused")
     final String displayTimeUnit = "ns";
 
     @SerializedName("systemTraceEvents")
+    @SuppressWarnings("unused")
     final String systemTraceData = "";
 
     @SerializedName("samples")
+    @SuppressWarnings("unused")
     final List<Object> samples = new ArrayList<>();
 
     @SerializedName("stackFrames")
+    @SuppressWarnings("unused")
     final Map<String, ?> stackFrames = new HashMap<>();
 
     TraceEventObject(List<TraceEvent> traceEvents) {
@@ -217,7 +224,7 @@ public final class TraceEventWriter {
       tagMap.put("tag", tagName);
     }
     if (tagId != Mark.NO_TAG_ID) {
-      tagMap.put("tagId", tagId);
+      tagMap.put("id", tagId);
     }
     return Collections.unmodifiableMap(tagMap);
   }
