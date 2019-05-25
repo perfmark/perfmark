@@ -12,6 +12,7 @@ import java.util.TreeMap;
 class MarkListWalker {
   MarkListWalker() {}
 
+  // TODO: make sure the generations dont have any timestamp overlap
   final void walk(List<MarkList> markLists) {
     Map<Long, List<MarkList>> generationToMarkLists = groupMarkListsByGeneration(markLists);
     for (Map.Entry<Long, List<MarkList>> entry : generationToMarkLists.entrySet()) {

@@ -1,9 +1,10 @@
 package io.perfmark.tracewriter;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
-import com.google.gson.internal.bind.ObjectTypeAdapter;
 import io.perfmark.Link;
 import io.perfmark.PerfMark;
 import io.perfmark.PerfMarkStorage;
@@ -14,17 +15,30 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import jdk.internal.jline.internal.Nullable;
 
 // https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
 public final class TraceEventWriter {
+
+  private static final Logger logger = Logger.getLogger(TraceEventWriter.class.getName());
 
   public static void main(String [] args) {
     new TraceEventWriter();
@@ -32,11 +46,6 @@ public final class TraceEventWriter {
 
   private TraceEventWriter() {
     PerfMark.setEnabled(true);
-
-
-
-
-
 
 
     ForkJoinPool fjp = new ForkJoinPool(8);
@@ -96,11 +105,13 @@ public final class TraceEventWriter {
     final long initNanoTime = PerfMarkStorage.getInitNanoTime();
 
     final List<TraceEvent> traceEvents = new ArrayList<>();
+    final long pid = getPid();
 
     new MarkListWalker() {
 
       long currentThreadId = -1;
-      long lastStart;
+      Deque<Long> taskStarts = new ArrayDeque<>();
+      Deque<String> taskNames = new ArrayDeque<>();
 
       @Override
       protected void enterMarkList(String threadName, long threadId) {
@@ -109,31 +120,67 @@ public final class TraceEventWriter {
 
       @Override
       protected void onTaskStart(Mark mark, boolean isFake) {
-        lastStart = mark.getNanoTime() - initNanoTime;
-        traceEvents.add(new DurationBegin(
-            mark.getTaskName() + mark.getTagId(), mark.getNanoTime() - initNanoTime, currentThreadId));
+        taskStarts.addLast(mark.getNanoTime() - initNanoTime);
+        taskNames.addLast(mark.getTaskName() + mark.getTagId());
+        traceEvents.add(
+            TraceEvent.EVENT
+                .name(mark.getTaskName() + mark.getTagId())
+                .phase("B")
+                .pid(pid)
+                .args(tagArgs(mark.getTagName(), mark.getTagId()))
+                .categories(isFake ? Arrays.asList("synthetic") : Collections.<String>emptyList())
+                .tid(currentThreadId)
+                .traceClockNanos(mark.getNanoTime() - initNanoTime));
       }
 
       @Override
       protected void onTaskEnd(Mark mark, boolean isFake) {
-        traceEvents.add(new DurationEnd(
-            mark.getTaskName()+ mark.getTagId(), mark.getNanoTime() - initNanoTime, currentThreadId));
+        taskStarts.pollLast();
+        // TODO: maybe complain about task name mismatch?
+        taskNames.pollLast();
+        traceEvents.add(
+            TraceEvent.EVENT
+                .name(mark.getTaskName() + mark.getTagId())
+                .phase("E")
+                .pid(pid)
+                .args(tagArgs(mark.getTagName(), mark.getTagId()))
+                .categories(isFake ? Arrays.asList("synthetic") : Collections.<String>emptyList())
+                .tid(currentThreadId)
+                .traceClockNanos(mark.getNanoTime() - initNanoTime));
       }
 
       @Override
       protected void onLink(Mark mark, boolean isFake) {
+        if (taskNames.isEmpty()) {
+          // In a mark list of only links (i.e. no starts or ends) it's possible there are no tasks
+          // to bind to.  This is probably due to not calling link() correctly.
+          logger.warning("Link not associated with any task");
+          return;
+        }
+        assert !isFake;
         if (mark.getLinkId() > 0) {
-          traceEvents.add(new FlowBegin(
-              "__perfmark_link", lastStart, mark.getLinkId(), currentThreadId));
+          traceEvents.add(
+              TraceEvent.EVENT.name("perfmark:outlink")
+                  .tid(currentThreadId)
+                  .pid(pid)
+                  .phase("s")
+                  .id(mark.getLinkId())
+                  .arg("outtask", taskNames.peekLast())
+                  .traceClockNanos(taskStarts.peekLast()));
         } else if (mark.getLinkId() < 0) {
-          traceEvents.add(new FlowInstant(
-              "__perfmark_link", lastStart, -mark.getLinkId(), currentThreadId));
+          traceEvents.add(
+              TraceEvent.EVENT.name("perfmark:inlink")
+                  .tid(currentThreadId)
+                  .pid(pid)
+                  .phase("t")
+                  .id(-mark.getLinkId())
+                  .arg("intask", taskNames.peekLast())
+                  .traceClockNanos(taskStarts.peekLast()));
         }
       }
     }.walk(markLists);
 
-    try (Writer f = new FileWriter(new File("/tmp/tracey.json"))) {
-      //new RuntimeTypeAdapterFactory();
+    try (Writer f = Files.newBufferedWriter(new File("/tmp/tracey.json").toPath(), UTF_8)) {
       Gson gson = new GsonBuilder()
           .setPrettyPrinting()
           .create();
@@ -145,7 +192,7 @@ public final class TraceEventWriter {
 
   static final class TraceEventObject {
     @SerializedName("traceEvents")
-    final List<? extends TraceEvent> traceEvents;
+    final List<TraceEvent> traceEvents;
 
     @SerializedName("displayTimeUnit")
     final String displayTimeUnit = "ns";
@@ -159,35 +206,20 @@ public final class TraceEventWriter {
     @SerializedName("stackFrames")
     final Map<String, ?> stackFrames = new HashMap<>();
 
-    TraceEventObject(List<? extends TraceEvent> traceEvents) {
+    TraceEventObject(List<TraceEvent> traceEvents) {
       this.traceEvents = Collections.unmodifiableList(new ArrayList<>(traceEvents));
     }
   }
 
-  static final class DurationBegin extends TraceEvent {
-    DurationBegin(String name, long absNanoTime, long threadId) {
-      super(name, Collections.<String>emptyList(), "B", absNanoTime, 0L, threadId);
+  private static Map<String, ?> tagArgs(@Nullable String tagName, long tagId) {
+    Map<String, Object> tagMap = new LinkedHashMap<>(2);
+    if (tagName != null) {
+      tagMap.put("tag", tagName);
     }
-  }
-
-  static final class DurationEnd extends TraceEvent {
-    DurationEnd(String name, long absNanoTime, long threadId) {
-      super(name, Collections.<String>emptyList(), "E", absNanoTime, 0L, threadId);
+    if (tagId != Mark.NO_TAG_ID) {
+      tagMap.put("tagId", tagId);
     }
-  }
-
-  static final class FlowBegin extends TraceEvent {
-    FlowBegin(String name, long absNanoTime, long id, long threadId) {
-      super(name, Collections.<String>emptyList(), "s", absNanoTime, 0L, threadId);
-      this.id = id;
-    }
-  }
-
-  static final class FlowInstant extends TraceEvent {
-    FlowInstant(String name, long absNanoTime, long id, long threadId) {
-      super(name, Collections.<String>emptyList(), "t", absNanoTime, 0L, threadId);
-      this.id = id;
-    }
+    return Collections.unmodifiableMap(tagMap);
   }
 
   /*
@@ -236,126 +268,38 @@ public final class TraceEventWriter {
    * fakeend 0
    *
    *
-       for (MarkList markList : PerfMarkStorage.read()) {
-      List<Mark> marks = markList.getMarks();
-      List<Task> roots = new MarkParser().parse(marks);
-      System.err.println("Thread " + markList.getThreadId() + " " + marks.size());
-      System.err.println(roots);
-      //for (int i = marks.size() - 1; i >= marks.size() - 20 && i >= 0; i--) {
-      //  System.err.println(marks.get(i));
-      //}
-    }
-   *
+
    * */
-  private static final class Task {
-    private final Mark start;
-    private final Mark end;
-    private final boolean startFake;
-    private final boolean endFake;
-    private final List<Task> children;
-    private final Long inLinkId;
-    private final List<Long> outLinkIdList;
 
-    private Task(MutableTask mutableTask) {
-      if (mutableTask.start == null) {
-        throw new NullPointerException("start");
-      }
-      this.start = mutableTask.start;
-      if (mutableTask.end == null) {
-        throw new NullPointerException("end");
-      }
-      this.end = mutableTask.end;
-      this.startFake = mutableTask.startFake;
-      this.endFake = mutableTask.endFake;
-      this.children = Collections.unmodifiableList(new ArrayList<>(mutableTask.children));
-      this.inLinkId = mutableTask.inLinkId;
-      this.outLinkIdList =
-          Collections.unmodifiableList(new ArrayList<>(mutableTask.outLinkIdList));
-    }
 
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      toString(sb, "");
-      return sb.toString();
-    }
-
-    private void toString(StringBuilder sb, String prefix) {
-      sb.append(prefix).append(start.getTaskName());
-      if (start.getOperation() == Mark.Operation.TASK_START) {
-        sb.append('@').append(start.getTagId());
+  private static long getPid() {
+    List<Throwable> errors = new ArrayList<>(0);
+    Level level = Level.FINE;
+    try {
+      try {
+        Class<?> clz = Class.forName("java.lang.ProcessHandle");
+        Method currentMethod = clz.getMethod("current");
+        Object processHandle = currentMethod.invoke(null);
+        Method pidMethod = clz.getMethod("pid");
+        return (long) pidMethod.invoke(processHandle);
+      } catch (Exception | Error e) {
+        errors.add(e);
       }
-      sb.append('\n');
-      sb.append(prefix).append(end.getNanoTime() - start.getNanoTime()).append('\n');
-      if (!children.isEmpty()) {
-        String childPrefix = prefix + " ";
-        for (Task child : children) {
-          child.toString(sb, childPrefix);
+      try {
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+        int index = name.indexOf('@');
+        if (index != -1) {
+          return Long.parseLong(name.substring(0, index));
         }
+      } catch (Exception | Error e) {
+        errors.add(e);
+      }
+      level = Level.WARNING;
+    } finally {
+      for (Throwable error : errors) {
+        logger.log(level, "Error getting pid", error);
       }
     }
-
-    static final class MutableTask {
-      Mark start;
-      Mark end;
-      boolean startFake;
-      boolean endFake;
-      List<Task> children = new ArrayList<>();
-      Long inLinkId;
-      List<Long> outLinkIdList = new ArrayList<>();
-    }
+    return -1;
   }
-/*
-    List<Task> parse(List<Mark> marks) {
-      addFakes(marks);
-      Deque<Task.MutableTask> tasks = new ArrayDeque<>();
-      List<Task> roots = new ArrayList<>();
-      for (Mark mark : fakeStarts) {
-        Task.MutableTask task = new Task.MutableTask();
-        task.start = mark;
-        task.startFake = true;
-        tasks.addLast(task);
-      }
-      loop: for (Mark mark : marks) {
-        Task.MutableTask task;
-        switch (mark.getOperation()) {
-          case TASK_START:
-          case TASK_NOTAG_START:
-            task = new Task.MutableTask();
-            task.start = mark;
-            tasks.addLast(task);
-            continue loop;
-          case TASK_END:
-          case TASK_NOTAG_END:
-            task = tasks.removeLast();
-            task.end = mark;
-            // todo: verify task names match if both non null
-            Task t = new Task(task);
-            Task.MutableTask parent = tasks.peekLast();
-            if (parent != null) {
-              parent.children.add(t);
-            } else {
-              roots.add(t);
-            }
-            continue loop;
-          case LINK:
-            long linkId = mark.getLinkId();
-            task = tasks.peekLast();
-            if (linkId > 0) {
-              task.outLinkIdList.add(linkId);
-            } else if (linkId < 0 && task.inLinkId == null) {
-              task.inLinkId = linkId;
-            } else {
-              // linking was disable when the link was created.  ignore
-            }
-            continue loop;
-          case NONE:
-            break;
-        }
-        throw new AssertionError();
-      }
-      return roots;
-    }
-*/
-
 }

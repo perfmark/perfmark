@@ -1,81 +1,187 @@
 package io.perfmark.tracewriter;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 
-class TraceEvent {
+@CheckReturnValue
+final class TraceEvent implements Cloneable {
+
+  private TraceEvent() {}
+
+  static final TraceEvent EVENT = new TraceEvent();
 
   @SerializedName("ph")
-  final String phase;
+  @SuppressWarnings("unused")
+  private String phase;
 
   @SerializedName("name")
-  final String name;
+  @SuppressWarnings("unused")
+  private String name;
 
   @Nullable
   @SerializedName("cat")
-  final String categories;
+  @SuppressWarnings("unused")
+  private String categories;
 
   @Nullable
   @SerializedName("ts")
-  final Double traceClockMicros;
+  @SuppressWarnings("unused")
+  private Double traceClockMicros;
 
   @Nullable
   @SerializedName("pid")
-  final Long pid;
+  @SuppressWarnings("unused")
+  private Long pid;
 
   @SerializedName("tid")
-  final Long tid;
+  @Nullable
+  @SuppressWarnings("unused")
+  private Long tid;
 
   @Nullable
   @SerializedName("id")
-  protected Long id;
+  @SuppressWarnings("unused")
+  private Long id;
 
   @Nullable
   @SerializedName("args")
-  final Map<String, ?> args = null;
+  @SuppressWarnings("unused")
+  private Map<String, ?> args = null;
 
   @Nullable
   @SerializedName("cname")
-  final String colorName = null;
+  @SuppressWarnings("unused")
+  private String colorName = null;
 
-  TraceEvent(
-      String name,
-      List<String> categories,
-      String phase,
-      @Nullable Long nanoTime,
-      @Nullable Long pid,
-      long tid) {
+  TraceEvent name(String name) {
     if (name == null) {
       throw new NullPointerException("name");
     }
-    this.name = name;
+    TraceEvent other = clone();
+    other.name = name;
+    return other;
+  }
+
+  TraceEvent categories(String ...categories) {
     if (categories == null) {
       throw new NullPointerException("categories");
     }
+    return categories(Arrays.asList(categories));
+  }
+
+  TraceEvent categories(List<String> categories) {
+    if (categories == null) {
+      throw new NullPointerException("categories");
+    }
+    TraceEvent other = clone();
     if (!categories.isEmpty()) {
       StringBuilder sb = new StringBuilder();
-      Iterator<String> it = categories.iterator();
+      ListIterator<String> it = categories.listIterator();
       sb.append(it.next());
       while (it.hasNext()) {
-        sb.append(',').append(it.next());
+        String next = it.next();
+        if (next == null) {
+          throw new NullPointerException("next null at " + (it.nextIndex() - 1));
+        }
+        sb.append(',').append(next);
       }
-      this.categories = sb.toString();
+      other.categories = sb.toString();
     } else {
-      this.categories = null;
+      other.categories = null;
     }
+    return other;
+  }
+
+  strictfp TraceEvent traceClockNanos(long traceClockNanos) {
+    TraceEvent other = clone();
+    other.traceClockMicros = traceClockNanos / 1000.0;
+    return other;
+  }
+
+  TraceEvent phase(String phase) {
     if (phase == null) {
       throw new NullPointerException("phase");
     }
-    this.phase = phase;
-    if (nanoTime != null) {
-      this.traceClockMicros = nanoTime / 1000.0;
-    } else {
-      this.traceClockMicros = null;
+    TraceEvent other = clone();
+    other.phase = phase;
+    return other;
+  }
+
+  TraceEvent tid(long tid) {
+    TraceEvent other = clone();
+    other.tid = tid;
+    return other;
+  }
+
+  TraceEvent pid(long pid) {
+    TraceEvent other = clone();
+    other.pid = pid;
+    return other;
+  }
+
+  TraceEvent id(long id) {
+    TraceEvent other = clone();
+    other.id = id;
+    return other;
+  }
+
+  TraceEvent args(Map<String, ?> args) {
+    if (args == null) {
+      throw new NullPointerException("args");
     }
-    this.pid = pid;
-    this.tid = tid;
+    Map<String, Object> newArgs = new LinkedHashMap<>(args.size());
+    for (Map.Entry<String, ?> arg : args.entrySet()) {
+      if (arg.getKey() == null) {
+        throw new NullPointerException("key");
+      }
+      if (arg.getValue() == null) {
+        throw new NullPointerException("value");
+      }
+      newArgs.put(arg.getKey(), arg.getValue());
+    }
+    TraceEvent other = clone();
+    if (!newArgs.isEmpty()) {
+      other.args = Collections.unmodifiableMap(newArgs);
+    } else {
+      other.args = null;
+    }
+    return other;
+  }
+
+  TraceEvent arg(String argKey, Object argValue) {
+    if (argKey == null) {
+      throw new NullPointerException("argKey");
+    }
+    if (argValue == null) {
+      throw new NullPointerException("argValue");
+    }
+    TraceEvent other = clone();
+    if (args == null) {
+      other.args = Collections.singletonMap(argKey, argValue);
+    } else {
+      Map<String, Object> newArgs = new LinkedHashMap<>(args);
+      newArgs.put(argKey, argValue);
+      other.args = Collections.unmodifiableMap(newArgs);
+    }
+    return other;
+  }
+
+  @Override
+  protected TraceEvent clone() {
+    try {
+      return (TraceEvent) super.clone();
+    } catch (CloneNotSupportedException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
