@@ -116,6 +116,13 @@ public final class TraceEventWriter {
       @Override
       protected void enterMarkList(String threadName, long threadId) {
         currentThreadId = threadId;
+        traceEvents.add(
+            TraceEvent.EVENT
+                .name("thread_name")
+                .phase("M")
+                .pid(pid)
+                .arg("name", threadName)
+                .tid(currentThreadId));
       }
 
       @Override
