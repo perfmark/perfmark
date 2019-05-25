@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jdk.internal.jline.internal.Nullable;
@@ -85,7 +87,7 @@ public final class TraceEventWriter {
     }
     PerfMark.startTask("calc");
     Link link = PerfMark.link();
-    ForkJoinTask<Long> task = new Fibonacci(28, link);
+    ForkJoinTask<Long> task = new Fibonacci(35, link);
     fjp.execute(task);
     PerfMark.stopTask("calc");
     Long res;
@@ -176,7 +178,14 @@ public final class TraceEventWriter {
       }
 
       @Override
-      protected void onTaskStart(Mark mark, boolean isFake) {
+      protected void onTaskStart(Mark mark, boolean unmatchedStart, boolean unmatchedEnd) {
+        assert !(unmatchedStart && unmatchedEnd);
+        List<String> categories = Collections.emptyList();
+        if (unmatchedStart) {
+          categories = Collections.singletonList("unknownStart");
+        } else if (unmatchedEnd) {
+          categories = Collections.singletonList("unfinished");
+        }
         taskStack.add(mark);
         traceEvents.add(
             TraceEvent.EVENT
@@ -184,13 +193,20 @@ public final class TraceEventWriter {
                 .phase("B")
                 .pid(pid)
                 .args(tagArgs(mark.getTagName(), mark.getTagId()))
-                .categories(isFake ? Arrays.asList("synthetic") : Collections.<String>emptyList())
+                .categories(categories)
                 .tid(currentThreadId)
                 .traceClockNanos(mark.getNanoTime() - initNanoTime));
       }
 
       @Override
-      protected void onTaskEnd(Mark mark, boolean isFake) {
+      protected void onTaskEnd(Mark mark, boolean unmatchedStart, boolean unmatchedEnd) {
+        assert !(unmatchedStart && unmatchedEnd);
+        List<String> categories = Collections.emptyList();
+        if (unmatchedStart) {
+          categories = Collections.singletonList("unknownStart");
+        } else if (unmatchedEnd) {
+          categories = Collections.singletonList("unfinished");
+        }
         taskStack.pollLast();
         // TODO: maybe complain about task name mismatch?
         traceEvents.add(
@@ -199,7 +215,7 @@ public final class TraceEventWriter {
                 .phase("E")
                 .pid(pid)
                 .args(tagArgs(mark.getTagName(), mark.getTagId()))
-                .categories(isFake ? Arrays.asList("synthetic") : Collections.<String>emptyList())
+                .categories(categories)
                 .tid(currentThreadId)
                 .traceClockNanos(mark.getNanoTime() - initNanoTime));
       }
@@ -219,14 +235,13 @@ public final class TraceEventWriter {
       }
 
       @Override
-      protected void onLink(Mark mark, boolean isFake) {
+      protected void onLink(Mark mark) {
         if (taskStack.isEmpty()) {
           // In a mark list of only links (i.e. no starts or ends) it's possible there are no tasks
           // to bind to.  This is probably due to not calling link() correctly.
           logger.warning("Link not associated with any task");
           return;
         }
-        assert !isFake;
         LinkTuple linkTuple =
             new LinkTuple(taskStack.peekLast(), mark, currentThreadId, currentMarkListId);
         if (mark.getLinkId() > 0) {
@@ -237,28 +252,6 @@ public final class TraceEventWriter {
         }
       }
     }.walk(markLists);
-
-    /*
-
-              traceEvents.add(
-              TraceEvent.EVENT.name(name)
-                  .tid(currentThreadId)
-                  .pid(pid)
-                  .phase("s")
-                  .id(mark.getLinkId())
-                  .arg("outtask", taskNames.peekLast())
-                  .traceClockNanos(taskStarts.peekLast()));
-
-                            traceEvents.add(
-              TraceEvent.EVENT.name(name)
-                  .tid(currentThreadId)
-                  .pid(pid)
-                  .phase("t")
-                  .id(-mark.getLinkId())
-                  .arg("intask", taskNames.peekLast())
-                  .traceClockNanos(taskStarts.peekLast()));
-
-     */
 
     try (Writer f = Files.newBufferedWriter(new File("/tmp/tracey.json").toPath(), UTF_8)) {
       Gson gson = new GsonBuilder()
@@ -306,56 +299,6 @@ public final class TraceEventWriter {
     }
     return Collections.unmodifiableMap(tagMap);
   }
-
-  /*
-   * 0
-   * start 1
-   * start 2
-   * end 1
-   * start 2
-   * end 1
-   * fakend 0
-   *
-   * from start to finish, the depth should never go negative
-   * the depth should always end at 0
-   * the depth shoudl aways start at 0
-   *
-   * 0
-   * start 1
-   * start 2
-   * end 1
-   * start 2
-   * end 1
-   * fakeend 0
-   *
-   * 0
-   * start 1
-   * start 2
-   * fakeend 1
-   * fakeend 0
-   *
-   * 0
-   * fakestart 1
-   * fakestart 2
-   * end 1
-   * end 0
-   *
-   * 0
-   * fakestart 1
-   * fakestart 2
-   * end 1
-   * end 0
-   * start 1
-   * end 0
-   * start 1
-   * start 2
-   * fakeend 1
-   * fakeend 0
-   *
-   *
-
-   * */
-
 
   private static long getPid() {
     List<Throwable> errors = new ArrayList<>(0);

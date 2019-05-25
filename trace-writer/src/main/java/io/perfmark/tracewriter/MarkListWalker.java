@@ -4,9 +4,13 @@ import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 class MarkListWalker {
@@ -21,15 +25,17 @@ class MarkListWalker {
         enterMarkList(markList.getThreadName(), markList.getThreadId(), markList.getMarkListId());
         Deque<Mark> fakeStarts = new ArrayDeque<>();
         Deque<Mark> fakeEnds = new ArrayDeque<>();
-        createFakes(fakeStarts, fakeEnds, markList.getMarks());
+        Set<Mark> unmatchedPairMarks =
+            Collections.newSetFromMap(new IdentityHashMap<Mark, Boolean>());
+        createFakes(fakeStarts, fakeEnds, unmatchedPairMarks, markList.getMarks());
         for (Mark mark : fakeStarts) {
-          onMark(mark, true);
+          onTaskStart(mark, true, false);
         }
         for (Mark mark : markList.getMarks()) {
-          onMark(mark, false);
+          onRealMark(mark, unmatchedPairMarks);
         }
         for (Mark mark : fakeEnds) {
-          onMark(mark, true);
+          onTaskEnd(mark, false, true);
         }
         exitMarkList();
       }
@@ -45,33 +51,30 @@ class MarkListWalker {
 
   protected void exitMarkList() {}
 
-  protected void onMark(Mark mark, boolean isFake) {
+  private void onRealMark(Mark mark, Collection<Mark> unmatchedPairMarks) {
     switch (mark.getOperation()) {
       case NONE:
         break;
       case TASK_START:
       case TASK_NOTAG_START:
-        onTaskStart(mark, isFake);
+        onTaskStart(mark, true, unmatchedPairMarks.contains(mark));
         return;
       case TASK_END:
       case TASK_NOTAG_END:
-        onTaskEnd(mark, isFake);
+        onTaskEnd(mark, unmatchedPairMarks.contains(mark), true);
         return;
       case LINK:
-        onLink(mark, isFake);
+        onLink(mark);
         return;
     }
     throw new AssertionError();
   }
 
-  protected void onTaskStart(Mark mark, boolean isFake) {}
+  protected void onTaskStart(Mark mark, boolean unmatchedStart, boolean unmatchedEnd) {}
 
-  protected void onTaskEnd(Mark mark, boolean isFake) {}
+  protected void onTaskEnd(Mark mark, boolean unmatchedStart, boolean unmatchedEnd) {}
 
-  protected void onLink(Mark mark, boolean isFake) {}
-
-  private static final class LinkPair {
-  }
+  protected void onLink(Mark mark) {}
 
   private static Map<Long, List<MarkList>> groupMarkListsByGeneration(List<MarkList> markLists) {
     Map<Long, List<MarkList>> generationToMarkLists = new TreeMap<>();
@@ -102,7 +105,10 @@ class MarkListWalker {
   }
 
   private static void createFakes(
-      Deque<? super Mark> fakeStarts, Deque<? super Mark> fakeEnds, List<Mark> marks) {
+      Deque<? super Mark> fakeStarts,
+      Deque<? super Mark> fakeEnds,
+      Set<? super Mark> unmatchedPairMarks,
+      List<Mark> marks) {
     final Deque<Mark> unmatchedMarks = new ArrayDeque<>();
     long[] nanoTimeBounds = new long[2]; // first, last
     nanoTimeBounds[0] = System.nanoTime(); // forces each subsequent overwrite to succeed.
@@ -121,6 +127,7 @@ class MarkListWalker {
             unmatchedMarks.removeLast();
           } else {
             fakeStarts.addFirst(createFakeStart(mark, nanoTimeBounds[0]));
+            unmatchedPairMarks.add(mark);
           }
           continue loop;
         case LINK:
@@ -132,6 +139,7 @@ class MarkListWalker {
     }
     for (Mark unmatchedMark : unmatchedMarks) {
       fakeEnds.addFirst(createFakeEnd(unmatchedMark, nanoTimeBounds[1]));
+      unmatchedPairMarks.add(unmatchedMark);
     }
     unmatchedMarks.clear();
   }
