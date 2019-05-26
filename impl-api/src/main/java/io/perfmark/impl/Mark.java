@@ -51,7 +51,7 @@ public final class Mark {
     }
     if (taskNameOrMarker instanceof Marker) {
       this.marker = (Marker) taskNameOrMarker;
-      this.taskName = null;
+      this.taskName = ((Marker) taskNameOrMarker).getTaskName();
     } else if (taskNameOrMarker instanceof String) {
       this.marker = null;
       this.taskName = (String) taskNameOrMarker;
