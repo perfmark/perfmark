@@ -61,12 +61,14 @@ public final class Mark {
     tagCheck: {
       switch (operation) {
         case TASK_START: // fall-through
-        case TASK_END:
+        case TASK_END: // fall-through
+        case EVENT:
           this.tagName = tagName;
           this.tagId = tagId;
           break tagCheck;
         case TASK_NOTAG_START: // fall-through
         case TASK_NOTAG_END: // fall-through
+        case EVENT_NOTAG: // fall-through
         case LINK:
           this.tagName = NO_TAG_NAME;
           this.tagId = NO_TAG_ID;
@@ -92,6 +94,8 @@ public final class Mark {
     TASK_NOTAG_START,
     TASK_END,
     TASK_NOTAG_END,
+    EVENT,
+    EVENT_NOTAG,
     LINK,
     ;
 

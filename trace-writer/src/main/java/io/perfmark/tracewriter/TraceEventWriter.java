@@ -19,8 +19,6 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -30,7 +28,6 @@ import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jdk.internal.jline.internal.Nullable;
@@ -46,7 +43,7 @@ public final class TraceEventWriter {
 
   private TraceEventWriter() {
     PerfMark.setEnabled(true);
-
+/*
 
     ForkJoinPool fjp = new ForkJoinPool(8);
     final class Fibonacci extends RecursiveTask<Long> {
@@ -100,7 +97,7 @@ public final class TraceEventWriter {
     System.err.println(res);
 
     fjp.shutdown();
-
+*/
     List<MarkList> markLists = PerfMarkStorage.read();
     final long initNanoTime = PerfMarkStorage.getInitNanoTime();
 
@@ -133,7 +130,7 @@ public final class TraceEventWriter {
             continue;
           }
           if (linkOut.markListId == linkIn.markListId) {
-            continue;
+            //continue;
           }
           // The name must be the same to match links together.
           String name = "link("

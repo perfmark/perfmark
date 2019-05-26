@@ -24,6 +24,16 @@ public abstract class MarkHolder {
 
   public abstract void stop(long gen, Marker marker, long nanoTime);
 
+  public abstract void event(
+      long gen, String eventName, String tagName, long tagId, long nanoTime, long durationNanos);
+
+  public abstract void event(
+      long gen, Marker marker, String tagName, long tagId, long nanoTime, long durationNanos);
+
+  public abstract void event(long gen, String eventName, long nanoTime, long durationNanos);
+
+  public abstract void event(long gen, Marker marker, long nanoTime, long durationNanos);
+
   public abstract void resetForTest();
 
   public abstract List<Mark> read(boolean readerIsWriter);

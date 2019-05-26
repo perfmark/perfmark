@@ -3,6 +3,7 @@ package io.perfmark;
 import static io.perfmark.impl.Mark.NO_NANOTIME;
 import static io.perfmark.impl.Mark.NO_TAG_ID;
 import static io.perfmark.impl.Mark.NO_TAG_NAME;
+import static io.perfmark.impl.Mark.Operation.EVENT;
 import static io.perfmark.impl.Mark.Operation.LINK;
 import static io.perfmark.impl.Mark.Operation.TASK_END;
 import static io.perfmark.impl.Mark.Operation.TASK_NOTAG_END;
@@ -404,6 +405,40 @@ public class PerfMarkTest {
           nanoTime,
           gen,
           Mark.Operation.TASK_NOTAG_END));
+    }
+
+    @Override
+    public void event(
+        long gen, String eventName, String tagName, long tagId, long nanoTime, long durationNanos) {
+      marks.add(Mark.create(eventName, tagName, tagId, nanoTime, gen, EVENT));
+    }
+
+    @Override
+    public void event(
+        long gen, Marker marker, String tagName, long tagId, long nanoTime, long durationNanos) {
+      marks.add(Mark.create(marker, tagName, tagId, nanoTime, gen, EVENT));
+    }
+
+    @Override
+    public void event(long gen, String eventName, long nanoTime, long durationNanos) {
+      marks.add(Mark.create(
+          eventName,
+          Mark.NO_TAG_NAME,
+          Mark.NO_TAG_ID,
+          nanoTime,
+          gen,
+          Mark.Operation.EVENT_NOTAG));
+    }
+
+    @Override
+    public void event(long gen, Marker marker, long nanoTime, long durationNanos) {
+      marks.add(Mark.create(
+          marker,
+          Mark.NO_TAG_NAME,
+          Mark.NO_TAG_ID,
+          nanoTime,
+          gen,
+          Mark.Operation.EVENT_NOTAG));
     }
 
     @Override

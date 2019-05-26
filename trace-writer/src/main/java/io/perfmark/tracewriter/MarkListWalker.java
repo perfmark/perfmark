@@ -63,6 +63,10 @@ class MarkListWalker {
       case TASK_NOTAG_END:
         onTaskEnd(mark, unmatchedPairMarks.contains(mark), false);
         return;
+      case EVENT:
+      case EVENT_NOTAG:
+        onEvent(mark);
+        return;
       case LINK:
         onLink(mark);
         return;
@@ -75,6 +79,8 @@ class MarkListWalker {
   protected void onTaskEnd(Mark mark, boolean unmatchedStart, boolean unmatchedEnd) {}
 
   protected void onLink(Mark mark) {}
+
+  protected void onEvent(Mark mark) {}
 
   private static Map<Long, List<MarkList>> groupMarkListsByGeneration(List<MarkList> markLists) {
     Map<Long, List<MarkList>> generationToMarkLists = new TreeMap<>();
@@ -130,6 +136,8 @@ class MarkListWalker {
             unmatchedPairMarks.add(mark);
           }
           continue loop;
+        case EVENT:
+        case EVENT_NOTAG:
         case LINK:
           continue loop;
         case NONE:
@@ -150,6 +158,8 @@ class MarkListWalker {
       case TASK_START:
       case TASK_NOTAG_END:
       case TASK_END:
+      case EVENT:
+      case EVENT_NOTAG:
         if (mark.getNanoTime() - nanoTimeBounds[0] < 0) {
           nanoTimeBounds[0] = mark.getNanoTime();
         }
@@ -186,6 +196,8 @@ class MarkListWalker {
         case NONE:
         case TASK_END:
         case TASK_NOTAG_END:
+        case EVENT:
+        case EVENT_NOTAG:
           break;
       }
       throw new AssertionError();
@@ -212,6 +224,8 @@ class MarkListWalker {
         case NONE:
         case TASK_END:
         case TASK_NOTAG_END:
+        case EVENT:
+        case EVENT_NOTAG:
           break;
       }
       throw new AssertionError();
@@ -241,6 +255,8 @@ class MarkListWalker {
         case NONE:
         case TASK_START:
         case TASK_NOTAG_START:
+        case EVENT:
+        case EVENT_NOTAG:
           break;
       }
       throw new AssertionError();
@@ -267,6 +283,8 @@ class MarkListWalker {
         case NONE:
         case TASK_START:
         case TASK_NOTAG_START:
+        case EVENT:
+        case EVENT_NOTAG:
           break;
       }
       throw new AssertionError();

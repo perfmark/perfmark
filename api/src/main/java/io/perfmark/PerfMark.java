@@ -154,12 +154,28 @@ public final class PerfMark {
     PerfMarkStorage.startAnyways(gen, taskName, tag);
   }
 
-  public static void startTask(@CompileTimeConstant String taskName) {
+  public static void startTask(@CompileTimeConstant String eventName) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.startAnyways(gen, taskName);
+    PerfMarkStorage.startAnyways(gen, eventName);
+  }
+
+  public static void event(@CompileTimeConstant String eventName, Tag tag) {
+    final long gen = getGen();
+    if (!isEnabled(gen)) {
+      return;
+    }
+    PerfMarkStorage.eventAnyways(gen, eventName, tag);
+  }
+
+  public static void event(@CompileTimeConstant String taskName) {
+    final long gen = getGen();
+    if (!isEnabled(gen)) {
+      return;
+    }
+    PerfMarkStorage.eventAnyways(gen, taskName);
   }
 
   public static void stopTask(@CompileTimeConstant String taskName, Tag tag) {
@@ -215,6 +231,22 @@ public final class PerfMark {
           return;
         }
         PerfMarkStorage.stopAnyways(gen, marker);
+      }
+
+      public static void event(Marker marker, Tag tag) {
+        final long gen = getGen();
+        if (!isEnabled(gen)) {
+          return;
+        }
+        PerfMarkStorage.eventAnyways(gen, marker, tag);
+      }
+
+      public static void event(Marker marker) {
+        final long gen = getGen();
+        if (!isEnabled(gen)) {
+          return;
+        }
+        PerfMarkStorage.eventAnyways(gen, marker);
       }
 
       public static Link link(Marker marker) {

@@ -16,6 +16,8 @@ final class SynchronizedMarkHolder extends MarkHolder {
   private static final long START_NOTAG_OP = Mark.Operation.TASK_NOTAG_START.ordinal();
   private static final long STOP_OP = Mark.Operation.TASK_END.ordinal();
   private static final long STOP_NOTAG_OP = Mark.Operation.TASK_NOTAG_END.ordinal();
+  private static final long EVENT_OP = Mark.Operation.EVENT.ordinal();
+  private static final long EVENT_NOTAG_OP = Mark.Operation.EVENT_NOTAG.ordinal();
   private static final long LINK_OP = Mark.Operation.LINK.ordinal();
 
   private final int maxEvents;
@@ -26,6 +28,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
   private final String[] tagNames;
   private final long[] tagIds;
   private final long[] nanoTimes;
+  private final long[] durationNanoTimes;
   private final long[] genOps;
 
   SynchronizedMarkHolder() {
@@ -44,6 +47,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
     this.tagNames = new String[maxEvents];
     this.tagIds= new long[maxEvents];
     this.nanoTimes = new long[maxEvents];
+    this.durationNanoTimes = new long[maxEvents];
     this.genOps = new long[maxEvents];
   }
 
@@ -104,7 +108,6 @@ final class SynchronizedMarkHolder extends MarkHolder {
     }
   }
 
-
   @Override
   public synchronized void stop(
       long gen, String taskName, String tagName, long tagId, long nanoTime) {
@@ -152,11 +155,62 @@ final class SynchronizedMarkHolder extends MarkHolder {
   }
 
   @Override
+  public synchronized void event(
+      long gen, String eventName, String tagName, long tagId, long nanoTime, long durationNanos) {
+    taskNameOrMarkers[idx] = eventName;
+    tagNames[idx] = tagName;
+    tagIds[idx] = tagId;
+    nanoTimes[idx] = nanoTime;
+    durationNanoTimes[idx] = durationNanos;
+    genOps[idx] = gen + EVENT_OP;
+    if (++idx == maxEvents) {
+      idx = 0;
+    }
+  }
+
+  @Override
+  public synchronized void event(
+      long gen, Marker marker, String tagName, long tagId, long nanoTime, long durationNanos) {
+    taskNameOrMarkers[idx] = marker;
+    tagNames[idx] = tagName;
+    tagIds[idx] = tagId;
+    nanoTimes[idx] = nanoTime;
+    durationNanoTimes[idx] = durationNanos;
+    genOps[idx] = gen + EVENT_OP;
+    if (++idx == maxEvents) {
+      idx = 0;
+    }
+  }
+
+  @Override
+  public synchronized void event(long gen, String eventName, long nanoTime, long durationNanos) {
+    taskNameOrMarkers[idx] = eventName;
+    nanoTimes[idx] = nanoTime;
+    durationNanoTimes[idx] = durationNanos;
+    genOps[idx] = gen + EVENT_NOTAG_OP;
+    if (++idx == maxEvents) {
+      idx = 0;
+    }
+  }
+
+  @Override
+  public synchronized void event(long gen, Marker marker, long nanoTime, long durationNanos) {
+    taskNameOrMarkers[idx] = marker;
+    nanoTimes[idx] = nanoTime;
+    durationNanoTimes[idx] = durationNanos;
+    genOps[idx] = gen + EVENT_NOTAG_OP;
+    if (++idx == maxEvents) {
+      idx = 0;
+    }
+  }
+
+  @Override
   public synchronized void resetForTest() {
     Arrays.fill(taskNameOrMarkers, null);
     Arrays.fill(tagNames, null);
     Arrays.fill(tagIds, 0);
     Arrays.fill(nanoTimes, 0);
+    Arrays.fill(durationNanoTimes, 0);
     Arrays.fill(genOps, 0);
     idx = 0;
   }
