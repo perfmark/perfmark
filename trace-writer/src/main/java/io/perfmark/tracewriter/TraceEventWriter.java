@@ -217,6 +217,18 @@ public final class TraceEventWriter {
                 .traceClockNanos(mark.getNanoTime() - initNanoTime));
       }
 
+      @Override
+      protected void onEvent(Mark mark) {
+        traceEvents.add(
+            TraceEvent.EVENT
+                .name(mark.getTaskName())
+                .phase("i")
+                .pid(pid)
+                .args(tagArgs(mark.getTagName(), mark.getTagId()))
+                .tid(currentThreadId)
+                .traceClockNanos(mark.getNanoTime() - initNanoTime));
+      }
+
       final class LinkTuple {
         final Mark lastTaskStart;
         final Mark link;
