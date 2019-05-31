@@ -42,62 +42,6 @@ public final class TraceEventWriter {
   }
 
   private TraceEventWriter() {
-    PerfMark.setEnabled(true);
-/*
-
-    ForkJoinPool fjp = new ForkJoinPool(8);
-    final class Fibonacci extends RecursiveTask<Long> {
-
-      private final long input;
-      private final Link link;
-
-      Fibonacci(long input, Link link) {
-        this.input = input;
-        this.link = link;
-      }
-
-      @Override
-      protected Long compute() {
-        Tag tag = PerfMark.createTag(input);
-        PerfMark.startTask("compute", tag);
-        link.link();
-        try {
-          if (input >= 25) {
-            Link link2 = PerfMark.link();
-            ForkJoinTask<Long> task1 = new Fibonacci(input - 1, link2).fork();
-            Fibonacci task2 = new Fibonacci(input - 2, link2);
-            return task2.compute() + task1.join();
-          } else {
-            return computeUnboxed(input);
-          }
-        } finally {
-          PerfMark.stopTask("compute", tag);
-        }
-      }
-
-      private long computeUnboxed(long n) {
-        if (n <= 1) {
-          return n;
-        }
-        return computeUnboxed(n - 1) + computeUnboxed(n - 2);
-      }
-    }
-    PerfMark.startTask("calc");
-    Link link = PerfMark.link();
-    ForkJoinTask<Long> task = new Fibonacci(35, link);
-    fjp.execute(task);
-    PerfMark.stopTask("calc");
-    Long res;
-    try {
-      res = task.get();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
-    System.err.println(res);
-
-    fjp.shutdown();
-*/
     List<MarkList> markLists = PerfMarkStorage.read();
     final long initNanoTime = PerfMarkStorage.getInitNanoTime();
 
