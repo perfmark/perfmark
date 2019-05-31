@@ -133,19 +133,23 @@ public final class PerfMarkStorage {
   }
 
   static void eventAnyways(long gen, String eventName, Tag tag) {
-    localMarkHolder.get().event(gen, eventName, tag.tagName, tag.tagId, System.nanoTime(), 0);
+    long nanoTime = System.nanoTime();
+    localMarkHolder.get().event(gen, eventName, tag.tagName, tag.tagId, nanoTime, 0);
   }
 
   static void eventAnyways(long gen, Marker marker, Tag tag) {
-    localMarkHolder.get().event(gen, marker, tag.tagName, tag.tagId, System.nanoTime(), 0);
+    long nanoTime = System.nanoTime();
+    localMarkHolder.get().event(gen, marker, tag.tagName, tag.tagId, nanoTime, 0);
   }
 
   static void eventAnyways(long gen, String eventName) {
-    localMarkHolder.get().event(gen, eventName, System.nanoTime(), 0);
+    long nanoTime = System.nanoTime();
+    localMarkHolder.get().event(gen, eventName, nanoTime, 0);
   }
 
   static void eventAnyways(long gen, Marker marker) {
-    localMarkHolder.get().event(gen, marker, System.nanoTime(), 0);
+    long nanoTime = System.nanoTime();
+    localMarkHolder.get().event(gen, marker, nanoTime, 0);
   }
 
   static void linkAnyways(long gen, long linkId, Marker marker) {

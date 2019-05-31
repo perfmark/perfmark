@@ -351,7 +351,7 @@ public final class PerfMark {
     PerfMarkStorage.stopAnyways(gen, taskName, tag);
   }
 
-  public static void stopTaskNonConstant(String taskName) {
+  static void stopTaskNonConstant(String taskName) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
       return;
