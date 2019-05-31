@@ -154,12 +154,12 @@ public final class PerfMark {
     PerfMarkStorage.startAnyways(gen, taskName, tag);
   }
 
-  public static void startTask(@CompileTimeConstant String eventName) {
+  public static void startTask(@CompileTimeConstant String taskName) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.startAnyways(gen, eventName);
+    PerfMarkStorage.startAnyways(gen, taskName);
   }
 
   public static void event(@CompileTimeConstant String eventName, Tag tag) {
@@ -170,12 +170,12 @@ public final class PerfMark {
     PerfMarkStorage.eventAnyways(gen, eventName, tag);
   }
 
-  public static void event(@CompileTimeConstant String taskName) {
+  public static void event(@CompileTimeConstant String eventName) {
     final long gen = getGen();
     if (!isEnabled(gen)) {
       return;
     }
-    PerfMarkStorage.eventAnyways(gen, taskName);
+    PerfMarkStorage.eventAnyways(gen, eventName);
   }
 
   public static void stopTask(@CompileTimeConstant String taskName, Tag tag) {
