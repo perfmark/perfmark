@@ -116,6 +116,8 @@ public final class PerfMark {
   /**
    * Turns on or off PerfMark recording.  Don't call this method too frequently; while neither on
    * nor off have very high overhead, transitioning between the two may be slow.
+   *
+   * @param value {@code true} to enable PerfMark recording, or {@code false} to disable it.
    */
   public static synchronized void setEnabled(boolean value) {
     logEnabledChange(value, setEnabledQuiet(value));
@@ -324,6 +326,8 @@ public final class PerfMark {
    * called, an association between the most recently started task and a yet to be named
    * task on another thread, is created.  Links are a one-to-many relationship.  A single
    * started task can have multiple associated tasks on other threads.
+   *
+   * @return A Link to be used in other tasks.
    */
   public static Link link() {
     long gen = getGen();

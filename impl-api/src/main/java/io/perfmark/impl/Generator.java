@@ -45,6 +45,8 @@ public abstract class Generator {
 
   /**
    * Returns the approximate cost to change the generation.
+   *
+   * @return an approximate number of nanoseconds needed to change the generator value.
    */
   public long costOfSetNanos() {
     return 1000000;
@@ -52,6 +54,8 @@ public abstract class Generator {
 
   /**
    * Returns the approximate cost to read the generation.
+   *
+   * @return an approximate number of nanoseconds needed to read the generator value.
    */
   public long costOfGetNanos() {
     return 10;

@@ -30,21 +30,39 @@ public final class MarkList {
     this.markListId = builder.markListId;
   }
 
+  /**
+   * Returns the Marks associated with a given list.
+   *
+   * @return the marks, in the order they were recorded.
+   */
   public List<Mark> getMarks() {
     return marks;
   }
 
+  /**
+   * Gets the Thread name of the thread that recorded the Marks.
+   *
+   * @return the Thread name.
+   */
   public String getThreadName() {
     return threadName;
   }
 
   /**
    * Thread IDs can be recycled, so this is not unique.
+   *
+   * @return the id of the thread, as returned by {@link Thread#getId()}.
    */
   public long getThreadId() {
     return threadId;
   }
 
+  /**
+   * The globally unique ID for this Mark list.  Unlike {@link #getThreadId()}, this value is
+   * never recycled.
+   *
+   * @return the id of this list.
+   */
   public long getMarkListId() {
     return markListId;
   }
@@ -119,7 +137,7 @@ public final class MarkList {
     /**
      * Sets the thread name for this MarkList builder.
      *
-     * @param threadName
+     * @param threadName the Thread Name
      * @return this
      */
     public Builder setThreadName(String threadName) {
@@ -130,7 +148,7 @@ public final class MarkList {
     /**
      * Sets the thread ID for this MarkList builder.
      *
-     * @param threadId
+     * @param threadId the Thread Id
      * @return this
      */
     public Builder setThreadId(long threadId) {
@@ -141,7 +159,7 @@ public final class MarkList {
     /**
      * Sets the mark list ID for this MarkList builder.
      *
-     * @param markListId
+     * @param markListId the mark list ID
      * @return this
      */
     public Builder setMarkListId(long markListId) {
