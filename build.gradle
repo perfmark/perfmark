@@ -43,6 +43,9 @@ subprojects {
         publications {
             maven(MavenPublication) {
                 from components.java
+
+                // TODO(carl-mastrangelo): add `artifact javadocJar`
+                artifact sourcesJar
             }
         }
 
