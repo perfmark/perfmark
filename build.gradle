@@ -17,6 +17,7 @@ subprojects {
     apply plugin: 'maven-publish'
     apply plugin: "idea"
     apply plugin: "jacoco"
+    apply plugin: "signing"
     apply plugin: "me.champeau.gradle.jmh"
     apply plugin: "net.ltgt.errorprone"
 
@@ -25,18 +26,49 @@ subprojects {
             url "https://maven-central.storage-download.googleapis.com/repos/central/data/" }
         mavenLocal()
     }
+    
+    
+    task javadocJar(type: Jar) {
+        classifier = 'javadoc'
+        from javadoc
+    }
+
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
 
     publishing {
         publications {
-            myLibrary(MavenPublication) {
+            maven(MavenPublication) {
                 from components.java
             }
         }
 
         repositories {
+             maven {
+                 def stagingUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+                 def releaseUrl = stagingUrl
+                 def snapshotUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
+                 url = version.endsWith('SNAPSHOT') ? snapshotUrl : releaseUrl
+                 credentials {
+                     if (rootProject.hasProperty('ossrhUsername')
+                             && rootProject.hasProperty('ossrhPassword')) {
+                         username = rootProject.ossrhUsername
+                         password = rootProject.ossrhPassword
+                     }
+                 }
+            }
             mavenLocal()
         }
     }
+    
+    signing {
+        required false
+        sign publishing.publications.maven
+    }
+
 
     if (rootProject.properties.get('errorProne', true)) {
         dependencies {
@@ -57,7 +89,7 @@ subprojects {
     jacoco { toolVersion = "0.8.2" }
 
     group = "io.perfmark"
-    version = "1.0.0-SNAPSHOT"
+    version = "0.13.37"
 
     ext {
         libraries = [
