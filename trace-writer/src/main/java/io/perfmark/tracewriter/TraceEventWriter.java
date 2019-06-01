@@ -30,7 +30,7 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jdk.internal.jline.internal.Nullable;
+import javax.annotation.Nullable;
 
 // https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
 public final class TraceEventWriter {
