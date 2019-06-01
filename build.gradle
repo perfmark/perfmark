@@ -46,6 +46,37 @@ subprojects {
 
                 // TODO(carl-mastrangelo): add `artifact javadocJar`
                 artifact sourcesJar
+
+                pom {
+                    name = project.group + ":" + project.name
+                    url = 'https://github.com/perfmark/perfmark'
+                    afterEvaluate {
+                        // description is not available until evaluated.
+                        description = project.description
+                    }
+
+                    scm {
+                        connection = 'scm:git:https://github.com/perfmark/perfmark.git'
+                        developerConnection = 'scm:git@github.com:perfmark/perfmark.git'
+                        url = 'https://github.com/perfmark/perfmark'
+                    }
+
+                    licenses {
+                        license {
+                            name = 'Apache 2.0'
+                            url = 'https://opensource.org/licenses/Apache-2.0'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = "carl-mastrangelo"
+                            name = "Carl Mastrangelo"
+                            email = "carl@carlmastrangelo.com"
+                            url = "https://www.perfmark.io/"
+                        }
+                    }
+                }
             }
         }
 
@@ -92,7 +123,7 @@ subprojects {
     jacoco { toolVersion = "0.8.2" }
 
     group = "io.perfmark"
-    version = "0.13.37-SNAPSHOT"
+    version = "0.14.0-SNAPSHOT"
 
     ext {
         libraries = [
