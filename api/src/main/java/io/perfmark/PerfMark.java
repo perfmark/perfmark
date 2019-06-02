@@ -8,12 +8,7 @@ import io.perfmark.impl.Marker;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +21,6 @@ public final class PerfMark {
           "io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator",
           "io.perfmark.java6.SecretVolatileGenerator$VolatileGenerator"));
 
-  static final long initNanoTime = System.nanoTime();
   private static final Generator generator;
   private static final Logger logger;
 
@@ -34,8 +28,8 @@ public final class PerfMark {
 
   static {
     List<Throwable> errors = new ArrayList<Throwable>();
-    List<Generator> generators =
-        getLoadable(errors, Generator.class, FALLBACK_GENERATORS, PerfMark.class.getClassLoader());
+    List<Generator> generators = PerfMarkStorage.getLoadable(
+        errors, Generator.class, FALLBACK_GENERATORS, PerfMark.class.getClassLoader());
     Level level;
     if (generators.isEmpty()) {
       generator = new NoopGenerator();
@@ -60,57 +54,6 @@ public final class PerfMark {
     for (Throwable error : errors) {
       logger.log(level, "Error encountered loading generator", error);
     }
-  }
-
-  // @VisibleForTesting
-  static <T> List<T> getLoadable(
-      List<? super Throwable> errors,
-      Class<T> clz,
-      List<? extends String> fallbackClassNames,
-      ClassLoader cl) {
-    Map<Class<? extends T>, T> loadables = new LinkedHashMap<Class<? extends T>, T>();
-    List<Throwable> serviceLoaderErrors = new ArrayList<Throwable>();
-    try {
-      ServiceLoader<T> loader = ServiceLoader.load(clz, cl);
-      Iterator<T> it = loader.iterator();
-      for (int i = 0; i < 10 && serviceLoaderErrors.size() < 10; i++) {
-        try {
-          if (it.hasNext()) {
-            T next = it.next();
-            Class<? extends T> subClz = next.getClass().asSubclass(clz);
-            if (!loadables.containsKey(subClz)) {
-              loadables.put(subClz, next);
-            }
-          } else {
-            break;
-          }
-        } catch (ServiceConfigurationError sce) {
-          if (!serviceLoaderErrors.isEmpty()) {
-            Throwable last = serviceLoaderErrors.get(serviceLoaderErrors.size() - 1);
-            if (errorsEqual(sce, last)) {
-              continue;
-            }
-          }
-          serviceLoaderErrors.add(sce);
-        }
-      }
-    } catch (ServiceConfigurationError sce) {
-      serviceLoaderErrors.add(sce);
-    } finally {
-      errors.addAll(serviceLoaderErrors);
-    }
-    for (String fallbackClassName : fallbackClassNames) {
-      try {
-        Class<?> fallbackClz = Class.forName(fallbackClassName, true, cl);
-        if (!loadables.containsKey(fallbackClz)) {
-          Class<? extends T> subClz = fallbackClz.asSubclass(clz);
-          loadables.put(subClz, subClz.getDeclaredConstructor().newInstance());
-        }
-      } catch (Throwable t) {
-        errors.add(t);
-      }
-    }
-    return Collections.unmodifiableList(new ArrayList<T>(loadables.values()));
   }
 
   /**
@@ -371,22 +314,5 @@ public final class PerfMark {
 
   static boolean isEnabled(long gen) {
     return ((gen >>> GEN_OFFSET) & 0x1L) != 0L;
-  }
-
-  @SuppressWarnings("ReferenceEquality") // No Java 8 yet
-  private static boolean errorsEqual(Throwable t1, Throwable t2) {
-    if (t1 == null || t2 == null) {
-      return t1 == t2;
-    }
-    if (t1.getClass() == t2.getClass()) {
-      String msg1 = t1.getMessage();
-      String msg2 = t2.getMessage();
-      if (msg1 == msg2 || (msg1 != null && msg1.equals(msg2))) {
-        if (Arrays.equals(t1.getStackTrace(), t2.getStackTrace())) {
-          return errorsEqual(t1.getCause(), t2.getCause());
-        }
-      }
-    }
-    return false;
   }
 }
