@@ -1,4 +1,4 @@
-package io.perfmark;,
+package io.perfmark;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
