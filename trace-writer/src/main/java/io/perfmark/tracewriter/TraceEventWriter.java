@@ -14,6 +14,8 @@ import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
@@ -32,6 +34,7 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nullable;
 
 /**
@@ -55,10 +58,14 @@ public final class TraceEventWriter {
    * @throws IOException if there is an error writing to the file.
    */
   public static void writeTraceEvents() throws IOException {
-    Path p;
-    try (Writer f = Files.newBufferedWriter(p = pickNextDest(guessDirectory()), UTF_8)) {
+    Path p = pickNextDest(guessDirectory());
+    try (OutputStream os = Files.newOutputStream(p)) {
       logger.info("Writing trace to " + p);
-      writeTraceEvents(f);
+      try (OutputStream gzos = new GZIPOutputStream(os)) {
+        try (Writer osw = new OutputStreamWriter(gzos, UTF_8)) {
+          writeTraceEvents(osw);
+        }
+      }
     }
   }
 
@@ -88,7 +95,7 @@ public final class TraceEventWriter {
   }
 
   private static Path pickNextDest(Path dir) throws IOException {
-    String fmt = "perfmark-trace-%03d.json";
+    String fmt = "perfmark-trace-%03d.json.gz";
     int lo;
     int hi = 0;
     while (true) {
