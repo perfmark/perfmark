@@ -34,13 +34,183 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
-// https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
+/**
+ * Writes the PerfMark results to a "Trace Event" JSON file usable by the Chromium Profiler
+ * "Catapult".   The format is defined at
+ * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
+ */
 public final class TraceEventWriter {
 
   private static final Logger logger = Logger.getLogger(TraceEventWriter.class.getName());
 
-  public static void main(String [] args) {
-    TraceEventWriter.writeTraceEvents();
+  /**
+   * Writes trace events the home directory.  By default, it prefers the location in
+   * {@code $XDG_DATA_HOME/perfmark} environment variable.  If unset, it attempts to
+   * use {@code $HOME/.local/share/perfmark}.
+   *
+   * <p>Authors note: if you are on Windows, or the above defaults aren't right, I'm not really
+   * sure where else is a good place to put this data.  Please file an issue at
+   * https://perfmark.io/ if you have a preference.
+   *
+   * @throws IOException if there is an error writing to the file.
+   */
+  public static void writeTraceEvents() throws IOException {
+    Path p;
+    try (Writer f = Files.newBufferedWriter(p = pickNextDest(guessDirectory()), UTF_8)) {
+      logger.info("Writing trace to " + p);
+      writeTraceEvents(f);
+    }
+  }
+
+  public static void writeTraceEvents(Writer destination) throws IOException {
+    writeTraceEvents(
+        destination, PerfMarkStorage.read(), PerfMarkStorage.getInitNanoTime(), getPid());
+  }
+
+  /**
+   * Writes the trace events gathered from {@link PerfMarkStorage#read()}.  This method is not
+   * API stable.  It will be eventually.
+   */
+  public static void writeTraceEvents(
+      Writer destination,
+      List<? extends MarkList> markLists,
+      long initNanoTime,
+      long pid)
+      throws IOException {
+    List<TraceEvent> traceEvents = new ArrayList<>();
+    new TraceEventWalker(traceEvents, pid, initNanoTime).walk(markLists);
+    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    try {
+      gson.toJson(new TraceEventObject(traceEvents), destination);
+    } catch (JsonIOException e) {
+      throw new IOException(e);
+    }
+  }
+
+  private static Path pickNextDest(Path dir) throws IOException {
+    String fmt = "perfmark-trace-%03d.json";
+    int lo;
+    int hi = 0;
+    while (true) {
+      Path candidate = dir.resolve(String.format(fmt, hi));
+      if (!Files.exists(candidate)) {
+        lo = hi >>> 1;
+        break;
+      }
+      if (hi == 0) {
+        hi++;
+      } else if (hi >>> 1 >= Integer.MAX_VALUE ) {
+        throw new IOException("too many files in dir");
+      } else {
+        hi <<= 1;
+      }
+    }
+    // After this point, hi must always point to a non-existent file.
+    while (hi > lo) {
+      int mid = (hi + lo) >>> 1; // take THAT, overflow!
+      Path candidate = dir.resolve(String.format(fmt, mid));
+      if (Files.exists(candidate)) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    return dir.resolve(String.format(fmt, hi));
+  }
+
+  private static Path guessDirectory() throws IOException {
+    final String PERFMARK_TRACE_DIR = "perfmark";
+    final String sep = File.separator;
+
+    List<Path> dataHomeChoices = new ArrayList<>();
+    String dataHome = System.getenv("XDG_DATA_HOME");
+    if (dataHome != null) {
+      dataHomeChoices.add(new File(dataHome + sep + PERFMARK_TRACE_DIR).toPath());
+    }
+    String home = System.getenv("HOME");
+    if (home != null) {
+      dataHomeChoices.add(
+          new File(home + sep + ".local" + sep + "share" + sep + PERFMARK_TRACE_DIR).toPath());
+    }
+    for (Path path : dataHomeChoices) {
+      if (!Files.exists(path)) {
+        Files.createDirectories(path);
+      } else {
+        if (!Files.isDirectory(path)) {
+          continue;
+        }
+      }
+      return path;
+    }
+    throw new IOException("failed to find a path to write");
+  }
+
+  static final class TraceEventObject {
+    @SerializedName("traceEvents")
+    @SuppressWarnings("unused")
+    final List<TraceEvent> traceEvents;
+
+    @SerializedName("displayTimeUnit")
+    @SuppressWarnings("unused")
+    final String displayTimeUnit = "ns";
+
+    @SerializedName("systemTraceEvents")
+    @SuppressWarnings("unused")
+    final String systemTraceData = "";
+
+    @SerializedName("samples")
+    @SuppressWarnings("unused")
+    final List<Object> samples = new ArrayList<>();
+
+    @SerializedName("stackFrames")
+    @SuppressWarnings("unused")
+    final Map<String, ?> stackFrames = new HashMap<>();
+
+    TraceEventObject(List<TraceEvent> traceEvents) {
+      this.traceEvents = Collections.unmodifiableList(new ArrayList<>(traceEvents));
+    }
+  }
+
+  private static Map<String, ?> tagArgs(@Nullable String tagName, long tagId) {
+    Map<String, Object> tagMap = new LinkedHashMap<>(2);
+    if (tagName != null) {
+      tagMap.put("tag", tagName);
+    }
+    if (tagId != Mark.NO_TAG_ID) {
+      tagMap.put("id", tagId);
+    }
+    return Collections.unmodifiableMap(tagMap);
+  }
+
+  private static long getPid() {
+    List<Throwable> errors = new ArrayList<>(0);
+    Level level = Level.FINE;
+    try {
+      try {
+        Class<?> clz = Class.forName("java.lang.ProcessHandle");
+        Method currentMethod = clz.getMethod("current");
+        Object processHandle = currentMethod.invoke(null);
+        Method pidMethod = clz.getMethod("pid");
+        return (long) pidMethod.invoke(processHandle);
+      } catch (Exception | Error e) {
+        errors.add(e);
+      }
+      try {
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+        int index = name.indexOf('@');
+        if (index != -1) {
+          return Long.parseLong(name.substring(0, index));
+        }
+      } catch (Exception | Error e) {
+        errors.add(e);
+      }
+      level = Level.WARNING;
+    } finally {
+      for (Throwable error : errors) {
+        logger.log(level, "Error getting pid", error);
+      }
+    }
+    return -1;
   }
 
   private static final class TraceEventWalker extends MarkListWalker {
@@ -178,7 +348,7 @@ public final class TraceEventWriter {
               .traceClockNanos(mark.getNanoTime() - initNanoTime));
     }
 
-    final class LinkTuple {
+    static final class LinkTuple {
       final Mark lastTaskStart;
       final Mark link;
       final long threadId;
@@ -209,165 +379,5 @@ public final class TraceEventWriter {
         linkIdToLinkIn.add(linkTuple);
       }
     }
-  }
-
-  private static void writeTraceEvents() {
-    Path p;
-    try (Writer f = Files.newBufferedWriter(p = pickNextDest(guessDirectory()), UTF_8)) {
-      logger.info("Writing trace to " + p);
-      writeTraceEvents(f);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private static Path pickNextDest(Path dir) throws IOException {
-    String fmt = "perfmark-trace-%03d.json";
-    int lo;
-    int hi = 0;
-    while (true) {
-      Path candidate = dir.resolve(String.format(fmt, hi));
-      if (!Files.exists(candidate)) {
-        lo = hi >>> 1;
-        break;
-      }
-      if (hi == 0) {
-        hi++;
-      } else if (hi >>> 1 >= Integer.MAX_VALUE ) {
-        throw new IOException("too many files in dir");
-      } else {
-        hi <<= 1;
-      }
-    }
-    // After this point, hi must always point to a non-existent file.
-    while (hi > lo) {
-      int mid = (hi + lo) >>> 1; // take THAT, overflow!
-      Path candidate = dir.resolve(String.format(fmt, mid));
-      if (Files.exists(candidate)) {
-        lo = mid + 1;
-      } else {
-        hi = mid;
-      }
-    }
-    return dir.resolve(String.format(fmt, hi));
-  }
-
-  private static Path guessDirectory() throws IOException {
-    final String PERFMARK_TRACE_DIR = "perfmark";
-    final String sep = File.separator;
-
-    List<Path> dataHomeChoices = new ArrayList<>();
-    String dataHome = System.getenv("XDG_DATA_HOME");
-    if (dataHome != null) {
-      dataHomeChoices.add(new File(dataHome + sep + PERFMARK_TRACE_DIR).toPath());
-    }
-    String home = System.getenv("HOME");
-    if (home != null) {
-      dataHomeChoices.add(
-          new File(home + sep + ".local" + sep + "share" + sep + PERFMARK_TRACE_DIR).toPath());
-    }
-    for (Path path : dataHomeChoices) {
-      if (!Files.exists(path)) {
-        Files.createDirectories(path);
-      } else {
-        if (!Files.isDirectory(path)) {
-          continue;
-        }
-      }
-      return path;
-    }
-    throw new IOException("failed to find a path to write");
-  }
-
-  private static void writeTraceEvents(Writer destination) throws IOException {
-    List<TraceEvent> traceEvents = buildTraceEvents();
-    Gson gson = new GsonBuilder()
-        .setPrettyPrinting()
-        .create();
-    try {
-      gson.toJson(new TraceEventObject(traceEvents), destination);
-    } catch (JsonIOException e) {
-      throw new IOException(e);
-    }
-  }
-
-  private static List<TraceEvent> buildTraceEvents() {
-    List<MarkList> markLists = PerfMarkStorage.read();
-    long initNanoTime = PerfMarkStorage.getInitNanoTime();
-
-    List<TraceEvent> traceEvents = new ArrayList<>();
-    long pid = getPid();
-
-    new TraceEventWalker(traceEvents, pid, initNanoTime).walk(markLists);
-
-    return traceEvents;
-  }
-
-  static final class TraceEventObject {
-    @SerializedName("traceEvents")
-    @SuppressWarnings("unused")
-    final List<TraceEvent> traceEvents;
-
-    @SerializedName("displayTimeUnit")
-    @SuppressWarnings("unused")
-    final String displayTimeUnit = "ns";
-
-    @SerializedName("systemTraceEvents")
-    @SuppressWarnings("unused")
-    final String systemTraceData = "";
-
-    @SerializedName("samples")
-    @SuppressWarnings("unused")
-    final List<Object> samples = new ArrayList<>();
-
-    @SerializedName("stackFrames")
-    @SuppressWarnings("unused")
-    final Map<String, ?> stackFrames = new HashMap<>();
-
-    TraceEventObject(List<TraceEvent> traceEvents) {
-      this.traceEvents = Collections.unmodifiableList(new ArrayList<>(traceEvents));
-    }
-  }
-
-  private static Map<String, ?> tagArgs(@Nullable String tagName, long tagId) {
-    Map<String, Object> tagMap = new LinkedHashMap<>(2);
-    if (tagName != null) {
-      tagMap.put("tag", tagName);
-    }
-    if (tagId != Mark.NO_TAG_ID) {
-      tagMap.put("id", tagId);
-    }
-    return Collections.unmodifiableMap(tagMap);
-  }
-
-  private static long getPid() {
-    List<Throwable> errors = new ArrayList<>(0);
-    Level level = Level.FINE;
-    try {
-      try {
-        Class<?> clz = Class.forName("java.lang.ProcessHandle");
-        Method currentMethod = clz.getMethod("current");
-        Object processHandle = currentMethod.invoke(null);
-        Method pidMethod = clz.getMethod("pid");
-        return (long) pidMethod.invoke(processHandle);
-      } catch (Exception | Error e) {
-        errors.add(e);
-      }
-      try {
-        String name = ManagementFactory.getRuntimeMXBean().getName();
-        int index = name.indexOf('@');
-        if (index != -1) {
-          return Long.parseLong(name.substring(0, index));
-        }
-      } catch (Exception | Error e) {
-        errors.add(e);
-      }
-      level = Level.WARNING;
-    } finally {
-      for (Throwable error : errors) {
-        logger.log(level, "Error getting pid", error);
-      }
-    }
-    return -1;
   }
 }

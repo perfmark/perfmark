@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 public final class PerfMark {
   private static final long INCREMENT = 1L << GEN_OFFSET;
   static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";
-  static final List<String> FALLBACK_GENERATORS =
+  static final List<? extends String> FALLBACK_GENERATORS =
       Collections.unmodifiableList(Arrays.asList(
           "io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator",
           "io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator",
