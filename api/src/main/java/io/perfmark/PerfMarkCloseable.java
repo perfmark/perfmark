@@ -5,9 +5,7 @@ import java.io.Closeable;
 
 public abstract class PerfMarkCloseable implements Closeable {
 
-  /**
-   * {@link #close()} does not throw a checked exception.
-   */
+  /** {@link #close()} does not throw a checked exception. */
   @Override
   public abstract void close();
 
@@ -50,4 +48,3 @@ public abstract class PerfMarkCloseable implements Closeable {
     }
   }
 }
-

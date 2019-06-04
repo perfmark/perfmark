@@ -16,10 +16,11 @@ public final class PerfMark {
   private static final long INCREMENT = 1L << GEN_OFFSET;
   static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";
   static final List<? extends String> FALLBACK_GENERATORS =
-      Collections.unmodifiableList(Arrays.asList(
-          "io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator",
-          "io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator",
-          "io.perfmark.java6.SecretVolatileGenerator$VolatileGenerator"));
+      Collections.unmodifiableList(
+          Arrays.asList(
+              "io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator",
+              "io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator",
+              "io.perfmark.java6.SecretVolatileGenerator$VolatileGenerator"));
 
   private static final Generator generator;
   private static final Logger logger;
@@ -28,8 +29,9 @@ public final class PerfMark {
 
   static {
     List<Throwable> errors = new ArrayList<Throwable>();
-    List<Generator> generators = PerfMarkStorage.getLoadable(
-        errors, Generator.class, FALLBACK_GENERATORS, PerfMark.class.getClassLoader());
+    List<Generator> generators =
+        PerfMarkStorage.getLoadable(
+            errors, Generator.class, FALLBACK_GENERATORS, PerfMark.class.getClassLoader());
     Level level;
     if (generators.isEmpty()) {
       generator = new NoopGenerator();
@@ -40,8 +42,7 @@ public final class PerfMark {
     }
     boolean startEnabled = false;
     try {
-      startEnabled =
-          Boolean.parseBoolean(System.getProperty(START_ENABLED_PROPERTY, "false"));
+      startEnabled = Boolean.parseBoolean(System.getProperty(START_ENABLED_PROPERTY, "false"));
     } catch (RuntimeException e) {
       errors.add(e);
     } catch (Error e) {
@@ -57,8 +58,8 @@ public final class PerfMark {
   }
 
   /**
-   * Turns on or off PerfMark recording.  Don't call this method too frequently; while neither on
-   * nor off have very high overhead, transitioning between the two may be slow.
+   * Turns on or off PerfMark recording. Don't call this method too frequently; while neither on nor
+   * off have very high overhead, transitioning between the two may be slow.
    *
    * @param value {@code true} to enable PerfMark recording, or {@code false} to disable it.
    */
@@ -72,9 +73,7 @@ public final class PerfMark {
     }
   }
 
-  /**
-   * Returns true if sucessfully changed.
-   */
+  /** Returns true if sucessfully changed. */
   private static synchronized boolean setEnabledQuiet(boolean value) {
     if (isEnabled(actualGeneration) == value) {
       return false;
@@ -265,10 +264,10 @@ public final class PerfMark {
   }
 
   /**
-   * A link connects between two tasks that start asynchronously.  When {@link #link()} is
-   * called, an association between the most recently started task and a yet to be named
-   * task on another thread, is created.  Links are a one-to-many relationship.  A single
-   * started task can have multiple associated tasks on other threads.
+   * A link connects between two tasks that start asynchronously. When {@link #link()} is called, an
+   * association between the most recently started task and a yet to be named task on another
+   * thread, is created. Links are a one-to-many relationship. A single started task can have
+   * multiple associated tasks on other threads.
    *
    * @return A Link to be used in other tasks.
    */

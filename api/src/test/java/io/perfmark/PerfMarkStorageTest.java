@@ -22,21 +22,23 @@ public class PerfMarkStorageTest {
   @Test
   public void getLoadable_usesFallBackTypes() {
     List<Throwable> errors = new ArrayList<Throwable>();
-    ClassLoader cl = new ClassLoader() {
-      @Override
-      @SuppressWarnings("JdkObsolete")
-      public Enumeration<URL> getResources(String name) {
-        return new Vector<URL>().elements();
-      }
+    ClassLoader cl =
+        new ClassLoader() {
+          @Override
+          @SuppressWarnings("JdkObsolete")
+          public Enumeration<URL> getResources(String name) {
+            return new Vector<URL>().elements();
+          }
 
-      @Override
-      public URL getResource(String name) {
-        return null;
-      }
-    };
+          @Override
+          public URL getResource(String name) {
+            return null;
+          }
+        };
 
-    List<Generator> res = PerfMarkStorage.getLoadable(
-        errors, Generator.class, Arrays.asList(PerfMarkTest.FakeGenerator.class.getName()), cl);
+    List<Generator> res =
+        PerfMarkStorage.getLoadable(
+            errors, Generator.class, Arrays.asList(PerfMarkTest.FakeGenerator.class.getName()), cl);
     assertThat(errors).isEmpty();
     assertThat(res).isNotEmpty();
     assertThat(res.get(0)).isInstanceOf(PerfMarkTest.FakeGenerator.class);
@@ -46,20 +48,22 @@ public class PerfMarkStorageTest {
   public void getLoadable_reportsErrorsReadingList() {
     List<Throwable> errors = new ArrayList<Throwable>();
     final IOException expected = new IOException("expected");
-    ClassLoader cl = new ClassLoader() {
-      @Override
-      public Enumeration<URL> getResources(String name) throws IOException {
-        throw expected;
-      }
+    ClassLoader cl =
+        new ClassLoader() {
+          @Override
+          public Enumeration<URL> getResources(String name) throws IOException {
+            throw expected;
+          }
 
-      @Override
-      public URL getResource(String name) {
-        return null;
-      }
-    };
+          @Override
+          public URL getResource(String name) {
+            return null;
+          }
+        };
 
-    List<Generator> res = PerfMarkStorage.getLoadable(
-        errors, Generator.class, Arrays.asList(PerfMarkTest.FakeGenerator.class.getName()), cl);
+    List<Generator> res =
+        PerfMarkStorage.getLoadable(
+            errors, Generator.class, Arrays.asList(PerfMarkTest.FakeGenerator.class.getName()), cl);
 
     assertThat(errors).hasSize(1);
     assertThat(errors.get(0)).isInstanceOf(ServiceConfigurationError.class);
@@ -68,27 +72,30 @@ public class PerfMarkStorageTest {
     assertThat(res.get(0)).isInstanceOf(PerfMarkTest.FakeGenerator.class);
   }
 
-
   @Test
   public void getLoadable_reportsErrorsOnMissingClass() {
     List<Throwable> errors = new ArrayList<Throwable>();
-    ClassLoader cl = new ClassLoader() {
-      @Override
-      @SuppressWarnings("JdkObsolete")
-      public Enumeration<URL> getResources(String name) throws IOException {
-        Enumeration<URL> serviceList = PerfMarkTest.class.getClassLoader().getResources(
-            PerfMarkTest.class.getName().replace('.', '/') + ".class");
-        return serviceList;
-      }
+    ClassLoader cl =
+        new ClassLoader() {
+          @Override
+          @SuppressWarnings("JdkObsolete")
+          public Enumeration<URL> getResources(String name) throws IOException {
+            Enumeration<URL> serviceList =
+                PerfMarkTest.class
+                    .getClassLoader()
+                    .getResources(PerfMarkTest.class.getName().replace('.', '/') + ".class");
+            return serviceList;
+          }
 
-      @Override
-      public URL getResource(String name) {
-        return null;
-      }
-    };
+          @Override
+          public URL getResource(String name) {
+            return null;
+          }
+        };
 
-    List<Generator> res = PerfMarkStorage.getLoadable(
-        errors, Generator.class, Arrays.asList(PerfMarkTest.FakeGenerator.class.getName()), cl);
+    List<Generator> res =
+        PerfMarkStorage.getLoadable(
+            errors, Generator.class, Arrays.asList(PerfMarkTest.FakeGenerator.class.getName()), cl);
 
     assertThat(errors).hasSize(1);
     assertThat(errors.get(0)).isInstanceOf(ServiceConfigurationError.class);
@@ -100,11 +107,12 @@ public class PerfMarkStorageTest {
   @Test
   public void getLoadable_readsFromServiceLoader() {
     List<Throwable> errors = new ArrayList<Throwable>();
-    List<Generator> res = PerfMarkStorage.getLoadable(
-        errors,
-        Generator.class,
-        Collections.<String>emptyList(),
-        PerfMarkTest.class.getClassLoader());
+    List<Generator> res =
+        PerfMarkStorage.getLoadable(
+            errors,
+            Generator.class,
+            Collections.<String>emptyList(),
+            PerfMarkTest.class.getClassLoader());
 
     assertThat(errors).isEmpty();
     assertThat(res).isNotEmpty();
@@ -114,11 +122,12 @@ public class PerfMarkStorageTest {
   @Test
   public void getLoadable_readsFromServiceLoader_dontDoubleRead() {
     List<Throwable> errors = new ArrayList<Throwable>();
-    List<Generator> res = PerfMarkStorage.getLoadable(
-        errors,
-        Generator.class,
-        Arrays.asList(PerfMarkTest.FakeGenerator.class.getName()),
-        PerfMarkTest.class.getClassLoader());
+    List<Generator> res =
+        PerfMarkStorage.getLoadable(
+            errors,
+            Generator.class,
+            Arrays.asList(PerfMarkTest.FakeGenerator.class.getName()),
+            PerfMarkTest.class.getClassLoader());
 
     assertThat(errors).isEmpty();
     assertThat(res).hasSize(1);

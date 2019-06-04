@@ -6,10 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.annotations.SerializedName;
-import io.perfmark.Link;
-import io.perfmark.PerfMark;
 import io.perfmark.PerfMarkStorage;
-import io.perfmark.Tag;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
 import java.io.File;
@@ -29,9 +26,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.RecursiveTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
@@ -39,7 +33,7 @@ import javax.annotation.Nullable;
 
 /**
  * Writes the PerfMark results to a "Trace Event" JSON file usable by the Chromium Profiler
- * "Catapult".   The format is defined at
+ * "Catapult". The format is defined at
  * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
  */
 public final class TraceEventWriter {
@@ -47,13 +41,13 @@ public final class TraceEventWriter {
   private static final Logger logger = Logger.getLogger(TraceEventWriter.class.getName());
 
   /**
-   * Writes trace events the home directory.  By default, it prefers the location in
-   * {@code $XDG_DATA_HOME/perfmark} environment variable.  If unset, it attempts to
-   * use {@code $HOME/.local/share/perfmark}.
+   * Writes trace events the home directory. By default, it prefers the location in {@code
+   * $XDG_DATA_HOME/perfmark} environment variable. If unset, it attempts to use {@code
+   * $HOME/.local/share/perfmark}.
    *
-   * <p>Authors note: if you are on Windows, or the above defaults aren't right, I'm not really
-   * sure where else is a good place to put this data.  Please file an issue at
-   * https://perfmark.io/ if you have a preference.
+   * <p>Authors note: if you are on Windows, or the above defaults aren't right, I'm not really sure
+   * where else is a good place to put this data. Please file an issue at https://perfmark.io/ if
+   * you have a preference.
    *
    * @throws IOException if there is an error writing to the file.
    */
@@ -75,14 +69,11 @@ public final class TraceEventWriter {
   }
 
   /**
-   * Writes the trace events gathered from {@link PerfMarkStorage#read()}.  This method is not
-   * API stable.  It will be eventually.
+   * Writes the trace events gathered from {@link PerfMarkStorage#read()}. This method is not API
+   * stable. It will be eventually.
    */
   public static void writeTraceEvents(
-      Writer destination,
-      List<? extends MarkList> markLists,
-      long initNanoTime,
-      long pid)
+      Writer destination, List<? extends MarkList> markLists, long initNanoTime, long pid)
       throws IOException {
     List<TraceEvent> traceEvents = new ArrayList<>();
     new TraceEventWalker(traceEvents, pid, initNanoTime).walk(markLists);
@@ -106,7 +97,7 @@ public final class TraceEventWriter {
       }
       if (hi == 0) {
         hi++;
-      } else if (hi >>> 1 >= Integer.MAX_VALUE ) {
+      } else if (hi >>> 1 >= Integer.MAX_VALUE) {
         throw new IOException("too many files in dir");
       } else {
         hi <<= 1;
@@ -256,17 +247,19 @@ public final class TraceEventWriter {
           continue;
         }
         if (linkOut.markListId == linkIn.markListId) {
-          //continue;
+          // continue;
         }
         // The name must be the same to match links together.
-        String name = "link("
-            + linkOut.lastTaskStart.getTaskName()
-            + " -> "
-            + linkIn.lastTaskStart.getTaskName()
-            + ")";
+        String name =
+            "link("
+                + linkOut.lastTaskStart.getTaskName()
+                + " -> "
+                + linkIn.lastTaskStart.getTaskName()
+                + ")";
         long localUniqueLinkPairId = uniqueLinkPairId++;
         traceEvents.add(
-            TraceEvent.EVENT.name(name)
+            TraceEvent.EVENT
+                .name(name)
                 .tid(linkOut.threadId)
                 .pid(pid)
                 .phase("s")
@@ -275,7 +268,8 @@ public final class TraceEventWriter {
                 .traceClockNanos(linkOut.lastTaskStart.getNanoTime() - initNanoTime));
 
         traceEvents.add(
-            TraceEvent.EVENT.name(name)
+            TraceEvent.EVENT
+                .name(name)
                 .tid(linkIn.threadId)
                 .pid(pid)
                 .phase("t")

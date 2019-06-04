@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
-
 final class SynchronizedMarkHolder extends MarkHolder {
   private static final long START_OP = Mark.Operation.TASK_START.ordinal();
   private static final long START_NOTAG_OP = Mark.Operation.TASK_NOTAG_START.ordinal();
@@ -45,7 +44,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
     this.maxEvents = maxEvents;
     this.taskNameOrMarkers = new Object[maxEvents];
     this.tagNames = new String[maxEvents];
-    this.tagIds= new long[maxEvents];
+    this.tagIds = new long[maxEvents];
     this.nanoTimes = new long[maxEvents];
     this.durationNanoTimes = new long[maxEvents];
     this.genOps = new long[maxEvents];
@@ -219,7 +218,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
   public List<Mark> read(boolean readerIsWriter) {
     final Object[] localTaskNameOrMarkers = new Object[maxEvents];
     final String[] localTagNames = new String[maxEvents];
-    final long[] localTagIds= new long[maxEvents];
+    final long[] localTagIds = new long[maxEvents];
     final long[] localNanoTimes = new long[maxEvents];
     final long[] localGenOps = new long[maxEvents];
     int localIdx;
@@ -244,21 +243,23 @@ final class SynchronizedMarkHolder extends MarkHolder {
       }
       Object taskNameOrMarker = localTaskNameOrMarkers[localIdx];
       if (taskNameOrMarker instanceof Marker) {
-        marks.addFirst(Mark.create(
-            (Marker) taskNameOrMarker,
-            localTagNames[localIdx],
-            localTagIds[localIdx],
-            localNanoTimes[localIdx],
-            gen,
-            op));
+        marks.addFirst(
+            Mark.create(
+                (Marker) taskNameOrMarker,
+                localTagNames[localIdx],
+                localTagIds[localIdx],
+                localNanoTimes[localIdx],
+                gen,
+                op));
       } else if (taskNameOrMarker instanceof String) {
-        marks.addFirst(Mark.create(
-            (String) taskNameOrMarker,
-            localTagNames[localIdx],
-            localTagIds[localIdx],
-            localNanoTimes[localIdx],
-            gen,
-            op));
+        marks.addFirst(
+            Mark.create(
+                (String) taskNameOrMarker,
+                localTagNames[localIdx],
+                localTagIds[localIdx],
+                localNanoTimes[localIdx],
+                gen,
+                op));
       } else {
         throw new RuntimeException("Bad marker or string " + taskNameOrMarker);
       }

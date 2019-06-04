@@ -24,15 +24,16 @@ import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
 /**
- * Stores PerfMark data across threads.   This class maintains the index to {@link MarkHolder}s
- * for reading.
+ * Stores PerfMark data across threads. This class maintains the index to {@link MarkHolder}s for
+ * reading.
  */
 public final class PerfMarkStorage {
   private static final long initNanoTime = System.nanoTime();
   private static final List<String> FALLBACK_MARK_HOLDERS =
-      Collections.unmodifiableList(Arrays.asList(
-          "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider",
-          "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider"));
+      Collections.unmodifiableList(
+          Arrays.asList(
+              "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider",
+              "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider"));
   static final long NO_THREAD_ID = -1;
   static final String NO_THREAD_NAME = "(unknownThread)";
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
@@ -70,9 +71,7 @@ public final class PerfMarkStorage {
     return initNanoTime;
   }
 
-  /**
-   * Returns a list of {@link MarkList}s across all reachable threads.
-   */
+  /** Returns a list of {@link MarkList}s across all reachable threads. */
   public static List<MarkList> read() {
     MarkHolderRef.cleanQueue(allMarkHolders);
     List<Thread> threads = new ArrayList<Thread>();

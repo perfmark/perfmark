@@ -12,9 +12,7 @@ import org.openjdk.jcstress.annotations.Outcome;
 import org.openjdk.jcstress.annotations.State;
 import org.openjdk.jcstress.infra.results.L_Result;
 
-/**
- * Simulates the PerfMarkStorage racy reader.
- */
+/** Simulates the PerfMarkStorage racy reader. */
 @JCStressTest
 @Outcome(id = "0", expect = Expect.ACCEPTABLE, desc = "0 Writes")
 @Outcome(id = "1", expect = Expect.ACCEPTABLE, desc = "1 Write")
@@ -57,7 +55,6 @@ import org.openjdk.jcstress.infra.results.L_Result;
 public class PerfMarkStorageStress {
   private static final int OFFSET;
   private static final int SIZE = 8;
-
 
   static {
     OFFSET = 31;

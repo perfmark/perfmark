@@ -58,8 +58,8 @@ public final class MarkList {
   }
 
   /**
-   * The globally unique ID for this Mark list.  Unlike {@link #getThreadId()}, this value is
-   * never recycled.
+   * The globally unique ID for this Mark list. Unlike {@link #getThreadId()}, this value is never
+   * recycled.
    *
    * @return the id of this list.
    */
@@ -87,10 +87,18 @@ public final class MarkList {
   @Override
   public String toString() {
     return "MarkList{"
-        + "marks=" + marks + ", "
-        + "threadId=" + threadId + ", "
-        + "markListId=" + markListId + ", "
-        + "threadName=" + threadName + "}";
+        + "marks="
+        + marks
+        + ", "
+        + "threadId="
+        + threadId
+        + ", "
+        + "markListId="
+        + markListId
+        + ", "
+        + "threadName="
+        + threadName
+        + "}";
   }
 
   public Builder toBuilder() {

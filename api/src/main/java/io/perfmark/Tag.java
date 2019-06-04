@@ -3,9 +3,7 @@ package io.perfmark;
 import io.perfmark.impl.Mark;
 import javax.annotation.Nullable;
 
-/**
- * Tag is a dynamic, runtime created identifier (such as an RPC id).
- */
+/** Tag is a dynamic, runtime created identifier (such as an RPC id). */
 public final class Tag {
   static final Tag NO_TAG = new Tag(Mark.NO_TAG_ID);
 

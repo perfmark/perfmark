@@ -14,9 +14,7 @@ import java.util.ConcurrentModificationException;
 import java.util.Deque;
 import java.util.List;
 
-/**
- * VarHandleMarkHolder is a MarkHolder optimized for wait free writes and few reads.
- */
+/** VarHandleMarkHolder is a MarkHolder optimized for wait free writes and few reads. */
 final class VarHandleMarkHolder extends MarkHolder {
   private static final long GEN_MASK = (1 << Generator.GEN_OFFSET) - 1;
   private static final long START_OP = Mark.Operation.TASK_START.ordinal();
@@ -49,6 +47,7 @@ final class VarHandleMarkHolder extends MarkHolder {
   // where to write to next
   @SuppressWarnings("unused") // Used Reflectively
   private volatile long idx;
+
   private final Object[] taskNameOrMarkers;
   private final String[] tagNames;
   private final long[] tagIds;
@@ -71,7 +70,7 @@ final class VarHandleMarkHolder extends MarkHolder {
     this.maxEventsMax = maxEvents - 1L;
     this.taskNameOrMarkers = new Object[maxEvents];
     this.tagNames = new String[maxEvents];
-    this.tagIds= new long[maxEvents];
+    this.tagIds = new long[maxEvents];
     this.nanoTimes = new long[maxEvents];
     this.durationNanoTimes = new long[maxEvents];
     this.genOps = new long[maxEvents];
@@ -254,7 +253,7 @@ final class VarHandleMarkHolder extends MarkHolder {
   public List<Mark> read(boolean readerIsWriter) {
     final Object[] localTaskNameOrMarkers = new Object[maxEvents];
     final String[] localTagNames = new String[maxEvents];
-    final long[] localTagIds= new long[maxEvents];
+    final long[] localTagIds = new long[maxEvents];
     final long[] localNanoTimes = new long[maxEvents];
     final long[] localGenOps = new long[maxEvents];
     long startIdx = (long) IDX.getOpaque(this);
@@ -288,21 +287,23 @@ final class VarHandleMarkHolder extends MarkHolder {
       }
       Object taskNameOrMarker = localTaskNameOrMarkers[readIdx];
       if (taskNameOrMarker instanceof Marker) {
-        marks.addFirst(Mark.create(
-            (Marker) taskNameOrMarker,
-            localTagNames[readIdx],
-            localTagIds[readIdx],
-            localNanoTimes[readIdx],
-            gen,
-            op));
+        marks.addFirst(
+            Mark.create(
+                (Marker) taskNameOrMarker,
+                localTagNames[readIdx],
+                localTagIds[readIdx],
+                localNanoTimes[readIdx],
+                gen,
+                op));
       } else if (taskNameOrMarker instanceof String) {
-        marks.addFirst(Mark.create(
-            (String) taskNameOrMarker,
-            localTagNames[readIdx],
-            localTagIds[readIdx],
-            localNanoTimes[readIdx],
-            gen,
-            op));
+        marks.addFirst(
+            Mark.create(
+                (String) taskNameOrMarker,
+                localTagNames[readIdx],
+                localTagIds[readIdx],
+                localNanoTimes[readIdx],
+                gen,
+                op));
       } else {
         throw new RuntimeException("Bad marker or string " + taskNameOrMarker);
       }

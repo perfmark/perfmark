@@ -38,9 +38,10 @@ public class VarHandleMarkHolderTest {
 
     List<Mark> marks = mh.read(true);
     assertEquals(2, marks.size());
-    List<Mark> expected = Arrays.asList(
-        Mark.create("task", "tag", 2, 3, gen, TASK_START),
-        Mark.create("task", "tag", 2, 4, gen, TASK_END));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create("task", "tag", 2, 3, gen, TASK_START),
+            Mark.create("task", "tag", 2, 4, gen, TASK_END));
     assertEquals(expected, marks);
   }
 
@@ -52,9 +53,10 @@ public class VarHandleMarkHolderTest {
 
     List<Mark> marks = mh.read(true);
     assertEquals(2, marks.size());
-    List<Mark> expected = Arrays.asList(
-        Mark.create(marker, "tag", 2, 3, gen, TASK_START),
-        Mark.create(marker, "tag", 2, 4, gen, TASK_END));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create(marker, "tag", 2, 3, gen, TASK_START),
+            Mark.create(marker, "tag", 2, 4, gen, TASK_END));
     assertEquals(expected, marks);
   }
 
@@ -65,9 +67,10 @@ public class VarHandleMarkHolderTest {
 
     List<Mark> marks = mh.read(true);
     assertEquals(2, marks.size());
-    List<Mark> expected = Arrays.asList(
-        Mark.create("task", NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
-        Mark.create("task", NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_END));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create("task", NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
+            Mark.create("task", NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_END));
     assertEquals(expected, marks);
   }
 
@@ -79,9 +82,10 @@ public class VarHandleMarkHolderTest {
 
     List<Mark> marks = mh.read(true);
     assertEquals(2, marks.size());
-    List<Mark> expected = Arrays.asList(
-        Mark.create(marker, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
-        Mark.create(marker, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_END));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create(marker, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
+            Mark.create(marker, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_END));
     assertEquals(expected, marks);
   }
 
@@ -95,11 +99,12 @@ public class VarHandleMarkHolderTest {
     List<Mark> marks = mh.read(true);
 
     assertEquals(4, marks.size());
-    List<Mark> expected = Arrays.asList(
-        Mark.create("task1", NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
-        Mark.create("task2", NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_START),
-        Mark.create("task2", NO_TAG_NAME, NO_TAG_ID, 5, gen, TASK_NOTAG_END),
-        Mark.create("task1", NO_TAG_NAME, NO_TAG_ID, 6, gen, TASK_NOTAG_END));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create("task1", NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
+            Mark.create("task2", NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_START),
+            Mark.create("task2", NO_TAG_NAME, NO_TAG_ID, 5, gen, TASK_NOTAG_END),
+            Mark.create("task1", NO_TAG_NAME, NO_TAG_ID, 6, gen, TASK_NOTAG_END));
     assertEquals(expected, marks);
   }
 
@@ -115,11 +120,12 @@ public class VarHandleMarkHolderTest {
     List<Mark> marks = mh.read(true);
 
     assertEquals(4, marks.size());
-    List<Mark> expected = Arrays.asList(
-        Mark.create("task1", "tag1", 9, 8, gen, EVENT),
-        Mark.create(marker, "tag1", 9, 7, gen, EVENT),
-        Mark.create("task2", NO_TAG_NAME, NO_TAG_ID, 5, gen, EVENT_NOTAG),
-        Mark.create(marker, NO_TAG_NAME, NO_TAG_ID, 6, gen, EVENT_NOTAG));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create("task1", "tag1", 9, 8, gen, EVENT),
+            Mark.create(marker, "tag1", 9, 7, gen, EVENT),
+            Mark.create("task2", NO_TAG_NAME, NO_TAG_ID, 5, gen, EVENT_NOTAG),
+            Mark.create(marker, NO_TAG_NAME, NO_TAG_ID, 6, gen, EVENT_NOTAG));
     assertEquals(expected, marks);
   }
 
@@ -134,11 +140,12 @@ public class VarHandleMarkHolderTest {
     List<Mark> marks = mh.read(true);
 
     assertEquals(marks.size(), 4);
-    List<Mark> expected = Arrays.asList(
-        Mark.create("task1", NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
-        Mark.create(marker, NO_TAG_NAME, 9, NO_NANOTIME, gen, LINK),
-        Mark.create(marker, NO_TAG_NAME, -9, NO_NANOTIME, gen, LINK),
-        Mark.create("task1", NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_END));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create("task1", NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_NOTAG_START),
+            Mark.create(marker, NO_TAG_NAME, 9, NO_NANOTIME, gen, LINK),
+            Mark.create(marker, NO_TAG_NAME, -9, NO_NANOTIME, gen, LINK),
+            Mark.create("task1", NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_NOTAG_END));
     assertEquals(expected, marks);
   }
 

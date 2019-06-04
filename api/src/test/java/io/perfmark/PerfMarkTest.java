@@ -39,17 +39,18 @@ public class PerfMarkTest {
     Filter oldFilter = logger.getFilter();
     // This causes a cycle in case PerfMark tries to log during init.
     // Also, it silences initial nagging about missing generators.
-    logger.setFilter(new Filter() {
-      @Override
-      public boolean isLoggable(LogRecord record) {
-        PerfMark.startTask("isLoggable");
-        try {
-          return false;
-        } finally {
-          PerfMark.stopTask("isLoggable");
-        }
-      }
-    });
+    logger.setFilter(
+        new Filter() {
+          @Override
+          public boolean isLoggable(LogRecord record) {
+            PerfMark.startTask("isLoggable");
+            try {
+              return false;
+            } finally {
+              PerfMark.stopTask("isLoggable");
+            }
+          }
+        });
     // Try to get PerfMark to accidentally log that it is enabled.  We are careful to not
     // accidentally cause class initialization early here, as START_ENABLED_PROPERTY is a
     // constant.
@@ -91,19 +92,26 @@ public class PerfMarkTest {
     List<Mark> marks = getMine(PerfMarkStorage.read());
 
     assertEquals(marks.size(), 10);
-    List<Mark> expected = Arrays.asList(
-        Mark.create("task1", tag1.tagName, tag1.tagId, marks.get(0).getNanoTime(), gen, TASK_START),
-        Mark.create("task2", tag2.tagName, tag2.tagId, marks.get(1).getNanoTime(), gen, TASK_START),
-        Mark.create("task3", tag3.tagName, tag3.tagId, marks.get(2).getNanoTime(), gen, TASK_START),
-        Mark.create(
-            "task4", NO_TAG_NAME, NO_TAG_ID, marks.get(3).getNanoTime(), gen, TASK_NOTAG_START),
-        Mark.create(Marker.NONE, NO_TAG_NAME, link.getId(), NO_NANOTIME, gen, LINK),
-        Mark.create(Marker.NONE, NO_TAG_NAME, -link.getId(), NO_NANOTIME, gen, LINK),
-        Mark.create(
-            "task4", NO_TAG_NAME, NO_TAG_ID, marks.get(6).getNanoTime(), gen, TASK_NOTAG_END),
-        Mark.create("task3", tag3.tagName, tag3.tagId, marks.get(7).getNanoTime(), gen, TASK_END),
-        Mark.create("task2", tag2.tagName, tag2.tagId, marks.get(8).getNanoTime(), gen, TASK_END),
-        Mark.create("task1", tag1.tagName, tag1.tagId, marks.get(9).getNanoTime(), gen, TASK_END));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create(
+                "task1", tag1.tagName, tag1.tagId, marks.get(0).getNanoTime(), gen, TASK_START),
+            Mark.create(
+                "task2", tag2.tagName, tag2.tagId, marks.get(1).getNanoTime(), gen, TASK_START),
+            Mark.create(
+                "task3", tag3.tagName, tag3.tagId, marks.get(2).getNanoTime(), gen, TASK_START),
+            Mark.create(
+                "task4", NO_TAG_NAME, NO_TAG_ID, marks.get(3).getNanoTime(), gen, TASK_NOTAG_START),
+            Mark.create(Marker.NONE, NO_TAG_NAME, link.getId(), NO_NANOTIME, gen, LINK),
+            Mark.create(Marker.NONE, NO_TAG_NAME, -link.getId(), NO_NANOTIME, gen, LINK),
+            Mark.create(
+                "task4", NO_TAG_NAME, NO_TAG_ID, marks.get(6).getNanoTime(), gen, TASK_NOTAG_END),
+            Mark.create(
+                "task3", tag3.tagName, tag3.tagId, marks.get(7).getNanoTime(), gen, TASK_END),
+            Mark.create(
+                "task2", tag2.tagName, tag2.tagId, marks.get(8).getNanoTime(), gen, TASK_END),
+            Mark.create(
+                "task1", tag1.tagName, tag1.tagId, marks.get(9).getNanoTime(), gen, TASK_END));
     assertEquals(expected, marks);
   }
 
@@ -136,19 +144,26 @@ public class PerfMarkTest {
     List<Mark> marks = getMine(PerfMarkStorage.read());
 
     assertEquals(marks.size(), 10);
-    List<Mark> expected = Arrays.asList(
-        Mark.create(marker1, tag1.tagName, tag1.tagId, marks.get(0).getNanoTime(), gen, TASK_START),
-        Mark.create(marker2, tag2.tagName, tag2.tagId, marks.get(1).getNanoTime(), gen, TASK_START),
-        Mark.create(marker3, tag3.tagName, tag3.tagId, marks.get(2).getNanoTime(), gen, TASK_START),
-        Mark.create(
-            marker4, NO_TAG_NAME, NO_TAG_ID, marks.get(3).getNanoTime(), gen, TASK_NOTAG_START),
-        Mark.create(marker5, NO_TAG_NAME, link.getId(), NO_NANOTIME, gen, LINK),
-        Mark.create(marker5, NO_TAG_NAME, -link.getId(), NO_NANOTIME, gen, LINK),
-        Mark.create(
-            marker4, NO_TAG_NAME, NO_TAG_ID, marks.get(6).getNanoTime(), gen, TASK_NOTAG_END),
-        Mark.create(marker3, tag3.tagName, tag3.tagId, marks.get(7).getNanoTime(), gen, TASK_END),
-        Mark.create(marker2, tag2.tagName, tag2.tagId, marks.get(8).getNanoTime(), gen, TASK_END),
-        Mark.create(marker1, tag1.tagName, tag1.tagId, marks.get(9).getNanoTime(), gen, TASK_END));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create(
+                marker1, tag1.tagName, tag1.tagId, marks.get(0).getNanoTime(), gen, TASK_START),
+            Mark.create(
+                marker2, tag2.tagName, tag2.tagId, marks.get(1).getNanoTime(), gen, TASK_START),
+            Mark.create(
+                marker3, tag3.tagName, tag3.tagId, marks.get(2).getNanoTime(), gen, TASK_START),
+            Mark.create(
+                marker4, NO_TAG_NAME, NO_TAG_ID, marks.get(3).getNanoTime(), gen, TASK_NOTAG_START),
+            Mark.create(marker5, NO_TAG_NAME, link.getId(), NO_NANOTIME, gen, LINK),
+            Mark.create(marker5, NO_TAG_NAME, -link.getId(), NO_NANOTIME, gen, LINK),
+            Mark.create(
+                marker4, NO_TAG_NAME, NO_TAG_ID, marks.get(6).getNanoTime(), gen, TASK_NOTAG_END),
+            Mark.create(
+                marker3, tag3.tagName, tag3.tagId, marks.get(7).getNanoTime(), gen, TASK_END),
+            Mark.create(
+                marker2, tag2.tagName, tag2.tagId, marks.get(8).getNanoTime(), gen, TASK_END),
+            Mark.create(
+                marker1, tag1.tagName, tag1.tagId, marks.get(9).getNanoTime(), gen, TASK_END));
     assertEquals(expected, marks);
   }
 
@@ -171,15 +186,18 @@ public class PerfMarkTest {
     List<Mark> marks = getMine(PerfMarkStorage.read());
 
     assertEquals(marks.size(), 6);
-    List<Mark> expected = Arrays.asList(
-        Mark.create("task1", tag.tagName, tag.tagId, marks.get(0).getNanoTime(), gen, TASK_START),
-        Mark.create(
-            "task2", NO_TAG_NAME, NO_TAG_ID, marks.get(1).getNanoTime(), gen, TASK_NOTAG_START),
-        Mark.create(Marker.NONE, NO_TAG_NAME, link.getId(), NO_NANOTIME, gen, LINK),
-        Mark.create(Marker.NONE, NO_TAG_NAME, -link.getId(), NO_NANOTIME, gen, LINK),
-        Mark.create(
-            "task2", NO_TAG_NAME, NO_TAG_ID, marks.get(4).getNanoTime(), gen, TASK_NOTAG_END),
-        Mark.create("task1", tag.tagName, tag.tagId, marks.get(5).getNanoTime(), gen, TASK_END));
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create(
+                "task1", tag.tagName, tag.tagId, marks.get(0).getNanoTime(), gen, TASK_START),
+            Mark.create(
+                "task2", NO_TAG_NAME, NO_TAG_ID, marks.get(1).getNanoTime(), gen, TASK_NOTAG_START),
+            Mark.create(Marker.NONE, NO_TAG_NAME, link.getId(), NO_NANOTIME, gen, LINK),
+            Mark.create(Marker.NONE, NO_TAG_NAME, -link.getId(), NO_NANOTIME, gen, LINK),
+            Mark.create(
+                "task2", NO_TAG_NAME, NO_TAG_ID, marks.get(4).getNanoTime(), gen, TASK_NOTAG_END),
+            Mark.create(
+                "task1", tag.tagName, tag.tagId, marks.get(5).getNanoTime(), gen, TASK_END));
     assertEquals(expected, marks);
   }
 
@@ -221,79 +239,67 @@ public class PerfMarkTest {
 
     @Override
     public void start(long gen, String taskName, long nanoTime) {
-      marks.add(Mark.create(
-          taskName,
-          Mark.NO_TAG_NAME,
-          Mark.NO_TAG_ID,
-          nanoTime,
-          gen,
-          Mark.Operation.TASK_NOTAG_START));
+      marks.add(
+          Mark.create(
+              taskName,
+              Mark.NO_TAG_NAME,
+              Mark.NO_TAG_ID,
+              nanoTime,
+              gen,
+              Mark.Operation.TASK_NOTAG_START));
     }
 
     @Override
     public void start(long gen, Marker marker, long nanoTime) {
-      marks.add(Mark.create(
-          marker,
-          Mark.NO_TAG_NAME,
-          Mark.NO_TAG_ID,
-          nanoTime,
-          gen,
-          Mark.Operation.TASK_NOTAG_START));
+      marks.add(
+          Mark.create(
+              marker,
+              Mark.NO_TAG_NAME,
+              Mark.NO_TAG_ID,
+              nanoTime,
+              gen,
+              Mark.Operation.TASK_NOTAG_START));
     }
 
     @Override
     public void link(long gen, long linkId, Marker marker) {
-      marks.add(Mark.create(
-          marker,
-          Mark.NO_TAG_NAME,
-          linkId,
-          Mark.NO_NANOTIME,
-          gen,
-          Mark.Operation.LINK));
+      marks.add(
+          Mark.create(
+              marker, Mark.NO_TAG_NAME, linkId, Mark.NO_NANOTIME, gen, Mark.Operation.LINK));
     }
 
     @Override
     public void stop(long gen, String taskName, String tagName, long tagId, long nanoTime) {
-      marks.add(Mark.create(
-          taskName,
-          tagName,
-          tagId,
-          nanoTime,
-          gen,
-          TASK_END));
+      marks.add(Mark.create(taskName, tagName, tagId, nanoTime, gen, TASK_END));
     }
 
     @Override
     public void stop(long gen, Marker marker, String tagName, long tagId, long nanoTime) {
-      marks.add(Mark.create(
-          marker,
-          tagName,
-          tagId,
-          nanoTime,
-          gen,
-          TASK_END));
+      marks.add(Mark.create(marker, tagName, tagId, nanoTime, gen, TASK_END));
     }
 
     @Override
     public void stop(long gen, String taskName, long nanoTime) {
-      marks.add(Mark.create(
-          taskName,
-          Mark.NO_TAG_NAME,
-          Mark.NO_TAG_ID,
-          nanoTime,
-          gen,
-          Mark.Operation.TASK_NOTAG_END));
+      marks.add(
+          Mark.create(
+              taskName,
+              Mark.NO_TAG_NAME,
+              Mark.NO_TAG_ID,
+              nanoTime,
+              gen,
+              Mark.Operation.TASK_NOTAG_END));
     }
 
     @Override
     public void stop(long gen, Marker marker, long nanoTime) {
-      marks.add(Mark.create(
-          marker,
-          Mark.NO_TAG_NAME,
-          Mark.NO_TAG_ID,
-          nanoTime,
-          gen,
-          Mark.Operation.TASK_NOTAG_END));
+      marks.add(
+          Mark.create(
+              marker,
+              Mark.NO_TAG_NAME,
+              Mark.NO_TAG_ID,
+              nanoTime,
+              gen,
+              Mark.Operation.TASK_NOTAG_END));
     }
 
     @Override
@@ -310,24 +316,21 @@ public class PerfMarkTest {
 
     @Override
     public void event(long gen, String eventName, long nanoTime, long durationNanos) {
-      marks.add(Mark.create(
-          eventName,
-          Mark.NO_TAG_NAME,
-          Mark.NO_TAG_ID,
-          nanoTime,
-          gen,
-          Mark.Operation.EVENT_NOTAG));
+      marks.add(
+          Mark.create(
+              eventName,
+              Mark.NO_TAG_NAME,
+              Mark.NO_TAG_ID,
+              nanoTime,
+              gen,
+              Mark.Operation.EVENT_NOTAG));
     }
 
     @Override
     public void event(long gen, Marker marker, long nanoTime, long durationNanos) {
-      marks.add(Mark.create(
-          marker,
-          Mark.NO_TAG_NAME,
-          Mark.NO_TAG_ID,
-          nanoTime,
-          gen,
-          Mark.Operation.EVENT_NOTAG));
+      marks.add(
+          Mark.create(
+              marker, Mark.NO_TAG_NAME, Mark.NO_TAG_ID, nanoTime, gen, Mark.Operation.EVENT_NOTAG));
     }
 
     @Override

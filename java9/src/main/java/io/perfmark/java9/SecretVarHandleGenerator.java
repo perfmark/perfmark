@@ -8,7 +8,7 @@ final class SecretVarHandleGenerator {
 
   /**
    * This class let's PerfMark have fairly low overhead detection if it is enabled, with reasonable
-   * time between enabled and other threads noticing.  Since this uses Java 9 APIs, it may not be
+   * time between enabled and other threads noticing. Since this uses Java 9 APIs, it may not be
    * available.
    */
   public static final class VarHandleGenerator extends Generator {

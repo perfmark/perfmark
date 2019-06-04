@@ -58,7 +58,8 @@ public final class Mark {
     } else {
       throw new IllegalArgumentException("wrong marker type " + taskNameOrMarker);
     }
-    tagCheck: {
+    tagCheck:
+    {
       switch (operation) {
         case TASK_START: // fall-through
         case TASK_END: // fall-through
@@ -100,6 +101,7 @@ public final class Mark {
     ;
 
     private static final Operation[] values = Operation.values();
+
     static {
       assert values.length <= (1 << Generator.GEN_OFFSET);
     }
@@ -168,14 +170,30 @@ public final class Mark {
   @Override
   public String toString() {
     return "Mark{"
-        + "taskName=" + taskName + ", "
-        + "tagName=" + tagName + ", "
-        + "tagId=" + tagId + ", "
-        + "linkId=" + linkId + ", "
-        + "marker=" + marker + ", "
-        + "nanoTime=" + nanoTime + ", "
-        + "generation=" + generation + ", "
-        + "operation=" + operation + "}";
+        + "taskName="
+        + taskName
+        + ", "
+        + "tagName="
+        + tagName
+        + ", "
+        + "tagId="
+        + tagId
+        + ", "
+        + "linkId="
+        + linkId
+        + ", "
+        + "marker="
+        + marker
+        + ", "
+        + "nanoTime="
+        + nanoTime
+        + ", "
+        + "generation="
+        + generation
+        + ", "
+        + "operation="
+        + operation
+        + "}";
   }
 
   private static <T> T checkNotNull(T t, String name) {

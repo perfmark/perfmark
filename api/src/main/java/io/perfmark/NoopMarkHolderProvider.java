@@ -48,8 +48,12 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
 
     @Override
     public void event(
-        long gen, String eventName, String tagName, long tagId, long nanoTime, long durationNanos) {
-    }
+        long gen,
+        String eventName,
+        String tagName,
+        long tagId,
+        long nanoTime,
+        long durationNanos) {}
 
     @Override
     public void event(

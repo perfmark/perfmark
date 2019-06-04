@@ -2,15 +2,7 @@ package io.perfmark.java9;
 
 import io.perfmark.Link;
 import io.perfmark.PerfMark;
-import io.perfmark.PerfMarkStorage;
 import io.perfmark.Tag;
-import io.perfmark.impl.Mark;
-import io.perfmark.impl.MarkList;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;

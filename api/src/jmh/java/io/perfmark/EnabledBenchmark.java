@@ -1,9 +1,5 @@
 package io.perfmark;
 
-import io.perfmark.Link;
-import io.perfmark.PerfMark;
-import io.perfmark.PerfMarkCloseable;
-import io.perfmark.Tag;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;

@@ -1,7 +1,7 @@
 package io.perfmark;
 
 /**
- * Internal class for accessing package protected methods of the PerfMark API.  If you need to use
+ * Internal class for accessing package protected methods of the PerfMark API. If you need to use
  * this class, please file an issue on GitHub first with your use case.
  */
 public final class Internal {

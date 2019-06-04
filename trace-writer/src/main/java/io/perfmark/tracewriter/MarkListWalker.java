@@ -120,7 +120,8 @@ class MarkListWalker {
     long[] nanoTimeBounds = new long[2]; // first, last
     nanoTimeBounds[0] = System.nanoTime(); // forces each subsequent overwrite to succeed.
 
-    loop: for (Mark mark : marks) {
+    loop:
+    for (Mark mark : marks) {
       setNanoTimeBounds(nanoTimeBounds, mark);
       switch (mark.getOperation()) {
         case TASK_START:
