@@ -33,14 +33,6 @@ public class EnabledBenchmark {
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void startStopClosable() {
-    PerfMarkCloseable pc = PerfMark.record("hi", TAG);
-    pc.close();
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public Tag createTag() {
     return PerfMark.createTag("tag", 2);
   }

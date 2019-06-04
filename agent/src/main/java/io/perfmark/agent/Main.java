@@ -22,6 +22,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+@SuppressWarnings("CatchAndPrintStackTrace") // I don't care for debugging.
 public final class Main {
 
   private static final String MARKER_FACTORY = "io/perfmark/impl/SecretMarkerFactory$MarkerFactory";
@@ -41,20 +42,20 @@ public final class Main {
       System.err.println("I BRAN");
     }
 
-    public static void main(String [] args) throws Exception {
+    public static void main(String[] args) throws Exception {
       System.err.println("I BRAN");
       PerfMark.startTask("hi");
-
 
       class Babs {
         {
           PerfMark.startTask("hi9");
 
           System.err.println("AQUI");
-          Runnable r = () -> {
-            PerfMark.startTask("hi6");
-            System.err.println("ALLI");
-          };
+          Runnable r =
+              () -> {
+                PerfMark.startTask("hi6");
+                System.err.println("ALLI");
+              };
           r.run();
         }
       }
@@ -70,7 +71,7 @@ public final class Main {
     }
   }
 
-  private static final  Map<List<String>, List<String>> buildMap() {
+  private static final Map<List<String>, List<String>> buildMap() {
     Map<List<String>, List<String>> map = new HashMap<>();
     map.put(
         Arrays.asList(SRC_OWNER, "startTask", "(Ljava/lang/String;Lio/perfmark/Tag;)V"),
@@ -108,56 +109,62 @@ public final class Main {
       ClassReader cr = new ClassReader(classfileBuffer);
       final List<StackTraceElement> markers = new ArrayList<>();
 
-      cr.accept(new ClassVisitor(Opcodes.ASM7) {
-
-        @Override
-        public MethodVisitor visitMethod(
-            int access, final String methodName, String descriptor, String signature,
-            String[] exceptions) {
-          MethodVisitor mv = super.visitMethod(access, methodName, descriptor, signature, exceptions);
-          return new MethodVisitor(Opcodes.ASM7, mv) {
-            int line;
+      cr.accept(
+          new ClassVisitor(Opcodes.ASM7) {
 
             @Override
-            public void visitLineNumber(int line, Label start) {
-              this.line = line;
-              super.visitLineNumber(line, start);
-            }
+            public MethodVisitor visitMethod(
+                int access,
+                final String methodName,
+                String descriptor,
+                String signature,
+                String[] exceptions) {
+              MethodVisitor mv =
+                  super.visitMethod(access, methodName, descriptor, signature, exceptions);
+              return new MethodVisitor(Opcodes.ASM7, mv) {
+                int line;
 
-            @Override
-            public void visitMethodInsn(
-                int opcode, String owner, String name, String descriptor, boolean isInterface) {
-              if (SRC_OWNER.equals(owner)) {
-                List<String> dest = REWRITE_MAP.get(Arrays.asList(SRC_OWNER, name, descriptor));
-                if (dest != null) {
-                  String clzName = className.replace('/', '.');
-                  int dollar = clzName.indexOf('$');
-                  String fileName;
-                  if (dollar == -1) {
-                    fileName = clzName;
-                  } else {
-                    fileName = clzName.substring(0, dollar);
-                  }
-                  if (!fileName.isEmpty()) {
-                    int dot = fileName.lastIndexOf('.');
-                    if (dot != -1) {
-                      fileName = fileName.substring(dot+1);
+                @Override
+                public void visitLineNumber(int line, Label start) {
+                  this.line = line;
+                  super.visitLineNumber(line, start);
+                }
+
+                @Override
+                public void visitMethodInsn(
+                    int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                  if (SRC_OWNER.equals(owner)) {
+                    List<String> dest = REWRITE_MAP.get(Arrays.asList(SRC_OWNER, name, descriptor));
+                    if (dest != null) {
+                      String clzName = className.replace('/', '.');
+                      int dollar = clzName.indexOf('$');
+                      String fileName;
+                      if (dollar == -1) {
+                        fileName = clzName;
+                      } else {
+                        fileName = clzName.substring(0, dollar);
+                      }
+                      if (!fileName.isEmpty()) {
+                        int dot = fileName.lastIndexOf('.');
+                        if (dot != -1) {
+                          fileName = fileName.substring(dot + 1);
+                        }
+                      }
+                      // TODO: this is broken for private top level classes.
+                      if (!fileName.isEmpty()) {
+                        fileName += ".java";
+                      } else {
+                        fileName = null;
+                      }
+                      markers.add(new StackTraceElement(clzName, methodName, fileName, line));
                     }
                   }
-                  // TODO: this is broken for private top level classes.
-                  if (!fileName.isEmpty()) {
-                    fileName += ".java";
-                  } else {
-                    fileName = null;
-                  }
-                  markers.add(new StackTraceElement(clzName, methodName, fileName, line));
+                  super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
                 }
-              }
-              super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+              };
             }
-          };
-        }
-      }, 0);
+          },
+          0);
 
       ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
       ClassVisitor cv =
@@ -171,8 +178,8 @@ public final class Main {
             public void visitEnd() {
               if (!clinitVisited) {
                 clinitVisited = true;
-                MethodVisitor mv = visitMethod(
-                    Opcodes.ACC_STATIC, "<clinit>", "()V", null, new String[0]);
+                MethodVisitor mv =
+                    visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, new String[0]);
                 mv.visitAnnotationDefault();
                 mv.visitCode();
                 mv.visitInsn(Opcodes.RETURN);
@@ -185,7 +192,11 @@ public final class Main {
 
             @Override
             public MethodVisitor visitMethod(
-                int access, final String name, String descriptor, String signature, String[] exceptions) {
+                int access,
+                final String name,
+                String descriptor,
+                String signature,
+                String[] exceptions) {
 
               if (!markerFieldsReady) {
                 markerFieldsReady = true;
@@ -200,7 +211,8 @@ public final class Main {
                 }
               }
 
-              final MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+              final MethodVisitor mv =
+                  super.visitMethod(access, name, descriptor, signature, exceptions);
               return new MethodVisitor(Opcodes.ASM7, mv) {
 
                 @Override
@@ -208,7 +220,8 @@ public final class Main {
                   if (name.equals("<clinit>")) {
                     clinitVisited = true;
                     for (int i = 0; i < markers.size(); i++) {
-                      visitLdcInsn(markers.get(i).getClassName() + '.' + markers.get(i).getMethodName());
+                      visitLdcInsn(
+                          markers.get(i).getClassName() + '.' + markers.get(i).getMethodName());
                       visitTypeInsn(Opcodes.NEW, "java/lang/StackTraceElement");
                       visitInsn(Opcodes.DUP);
                       visitLdcInsn(markers.get(i).getClassName());
@@ -216,7 +229,7 @@ public final class Main {
                       visitLdcInsn(markers.get(i).getFileName());
                       visitLdcInsn(markers.get(i).getLineNumber());
                       super.visitMethodInsn(
-                            Opcodes.INVOKESPECIAL,
+                          Opcodes.INVOKESPECIAL,
                           "java/lang/StackTraceElement",
                           "<init>",
                           "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V",
@@ -245,7 +258,8 @@ public final class Main {
                       String fieldName = "IO_PERFMARK_MARKER<" + i + '>';
 
                       visitInsn(Opcodes.POP);
-                      visitFieldInsn(Opcodes.GETSTATIC, className, fieldName, "Lio/perfmark/impl/Marker;");
+                      visitFieldInsn(
+                          Opcodes.GETSTATIC, className, fieldName, "Lio/perfmark/impl/Marker;");
 
                       assert dest.size() == 3 : "Wrong size for dest" + dest;
                       owner = dest.get(0);
@@ -268,7 +282,6 @@ public final class Main {
           e.printStackTrace();
         }
       }
-
 
       return cw.toByteArray();
     }

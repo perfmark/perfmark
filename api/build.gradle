@@ -4,18 +4,14 @@ sourceCompatibility = 1.6
 targetCompatibility = 1.6
 
 dependencies {
-    compile project(':perfmark-impl-api'),
-            libraries.jsr305,
+    compile libraries.jsr305,
             libraries.errorprone
-    testCompile 'org.assertj:assertj-core:3.12.2'
+    testCompile project(':perfmark-impl'),
+            project(':perfmark-java6'),
+            'org.assertj:assertj-core:3.12.2'
 
     jmh project(':perfmark-java9'),
             project(':perfmark-java7')
-}
-
-compileJmhJava {
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
 }
 
 compileTestJava {

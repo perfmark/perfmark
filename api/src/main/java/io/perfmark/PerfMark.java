@@ -1,59 +1,46 @@
 package io.perfmark;
 
-import static io.perfmark.impl.Generator.GEN_OFFSET;
-
 import com.google.errorprone.annotations.CompileTimeConstant;
-import io.perfmark.impl.Generator;
-import io.perfmark.impl.Marker;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * PerfMark can be automatically enabled by setting the System property {@code
+ * io.perfmark.PerfMark.startEnabled} to true.
+ */
 public final class PerfMark {
-  private static final long INCREMENT = 1L << GEN_OFFSET;
-  static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";
-  static final List<? extends String> FALLBACK_GENERATORS =
-      Collections.unmodifiableList(
-          Arrays.asList(
-              "io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator",
-              "io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator",
-              "io.perfmark.java6.SecretVolatileGenerator$VolatileGenerator"));
-
-  private static final Generator generator;
-  private static final Logger logger;
-
-  private static long actualGeneration;
+  // TODO(carl-mastrangelo): maybe hide this in a lazy class.
+  static final Tag NO_TAG = new Tag(Impl.NO_TAG_NAME, Impl.NO_TAG_ID);
+  static final Link NO_LINK = new Link(Impl.NO_LINK_ID);
+  private static final Impl impl;
 
   static {
-    List<Throwable> errors = new ArrayList<Throwable>();
-    List<Generator> generators =
-        PerfMarkStorage.getLoadable(
-            errors, Generator.class, FALLBACK_GENERATORS, PerfMark.class.getClassLoader());
-    Level level;
-    if (generators.isEmpty()) {
-      generator = new NoopGenerator();
-      level = Level.WARNING;
-    } else {
-      generator = generators.get(0);
-      level = Level.FINE;
-    }
-    boolean startEnabled = false;
+    Impl instance = null;
+    Level level = Level.WARNING;
+    Throwable err = null;
+    Class<?> clz = null;
     try {
-      startEnabled = Boolean.parseBoolean(System.getProperty(START_ENABLED_PROPERTY, "false"));
-    } catch (RuntimeException e) {
-      errors.add(e);
-    } catch (Error e) {
-      errors.add(e);
+      clz = Class.forName("io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
+    } catch (ClassNotFoundException e) {
+      level = Level.FINE;
+      err = e;
+    } catch (Throwable t) {
+      err = t;
     }
-    boolean success = setEnabledQuiet(startEnabled);
-    logger = Logger.getLogger(PerfMark.class.getName());
-    logger.log(level, "Using {0}", new Object[] {generator.getClass()});
-    logEnabledChange(startEnabled, success);
-    for (Throwable error : errors) {
-      logger.log(level, "Error encountered loading generator", error);
+    if (clz != null) {
+      try {
+        instance = clz.asSubclass(Impl.class).getConstructor().newInstance();
+      } catch (Throwable t) {
+        err = t;
+      }
+    }
+    if (instance != null) {
+      impl = instance;
+    } else {
+      impl = new NoopImpl();
+    }
+    if (err != null) {
+      Logger.getLogger(PerfMark.class.getName()).log(level, "Error during PerfMark.<clinit>", err);
     }
   }
 
@@ -63,201 +50,57 @@ public final class PerfMark {
    *
    * @param value {@code true} to enable PerfMark recording, or {@code false} to disable it.
    */
-  public static synchronized void setEnabled(boolean value) {
-    logEnabledChange(value, setEnabledQuiet(value));
-  }
-
-  private static synchronized void logEnabledChange(boolean value, boolean success) {
-    if (success && logger.isLoggable(Level.FINE)) {
-      logger.fine((value ? "Enabling" : "Disabling") + " PerfMark recorder");
-    }
-  }
-
-  /** Returns true if sucessfully changed. */
-  private static synchronized boolean setEnabledQuiet(boolean value) {
-    if (isEnabled(actualGeneration) == value) {
-      return false;
-    }
-    if (actualGeneration == Generator.FAILURE) {
-      return false;
-    }
-    generator.setGeneration(actualGeneration += INCREMENT);
-    return true;
-  }
-
-  // For Testing
-  static synchronized long getActualGeneration() {
-    return actualGeneration;
+  public static void setEnabled(boolean value) {
+    impl.setEnabled(value);
   }
 
   public static void startTask(@CompileTimeConstant String taskName, Tag tag) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.startAnyways(gen, taskName, tag);
+    impl.startTask(taskName, tag.tagName, tag.tagId);
   }
 
   public static void startTask(@CompileTimeConstant String taskName) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.startAnyways(gen, taskName);
+    impl.startTask(taskName);
   }
 
   public static void event(@CompileTimeConstant String eventName, Tag tag) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.eventAnyways(gen, eventName, tag);
+    impl.event(eventName, tag.tagName, tag.tagId);
   }
 
   public static void event(@CompileTimeConstant String eventName) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.eventAnyways(gen, eventName);
+    impl.event(eventName);
   }
 
   public static void stopTask(@CompileTimeConstant String taskName, Tag tag) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.stopAnyways(gen, taskName, tag);
+    impl.stopTask(taskName, tag.tagName, tag.tagId);
   }
 
   public static void stopTask(@CompileTimeConstant String taskName) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.stopAnyways(gen, taskName);
-  }
-
-  static final class PackageAccess {
-    private PackageAccess() {
-      throw new AssertionError("nope");
-    }
-
-    public static final class Public {
-
-      public static void startTask(Marker marker, Tag tag) {
-        final long gen = getGen();
-        if (!isEnabled(gen)) {
-          return;
-        }
-        PerfMarkStorage.startAnyways(gen, marker, tag);
-      }
-
-      public static void startTask(Marker marker) {
-        final long gen = getGen();
-        if (!isEnabled(gen)) {
-          return;
-        }
-        PerfMarkStorage.startAnyways(gen, marker);
-      }
-
-      public static void stopTask(Marker marker, Tag tag) {
-        final long gen = getGen();
-        if (!isEnabled(gen)) {
-          return;
-        }
-        PerfMarkStorage.stopAnyways(gen, marker, tag);
-      }
-
-      public static void stopTask(Marker marker) {
-        final long gen = getGen();
-        if (!isEnabled(gen)) {
-          return;
-        }
-        PerfMarkStorage.stopAnyways(gen, marker);
-      }
-
-      public static void event(Marker marker, Tag tag) {
-        final long gen = getGen();
-        if (!isEnabled(gen)) {
-          return;
-        }
-        PerfMarkStorage.eventAnyways(gen, marker, tag);
-      }
-
-      public static void event(Marker marker) {
-        final long gen = getGen();
-        if (!isEnabled(gen)) {
-          return;
-        }
-        PerfMarkStorage.eventAnyways(gen, marker);
-      }
-
-      public static Link link(Marker marker) {
-        long gen = getGen();
-        if (!isEnabled(gen)) {
-          return Link.NONE;
-        }
-        long inboundLinkId = Link.linkIdAlloc.incrementAndGet();
-        PerfMarkStorage.linkAnyways(gen, inboundLinkId, marker);
-        return new Link(inboundLinkId);
-      }
-
-      public static void link(long linkId, Marker marker) {
-        long gen = getGen();
-        if (!isEnabled(gen)) {
-          return;
-        }
-        PerfMarkStorage.linkAnyways(gen, -linkId, marker);
-      }
-
-      private Public() {
-        throw new AssertionError("nope");
-      }
-    }
-  }
-
-  public static PerfMarkCloseable record(@CompileTimeConstant String taskName, Tag tag) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return PerfMarkCloseable.NOOP;
-    }
-    PerfMarkStorage.startAnyways(gen, taskName, tag);
-    return new PerfMarkCloseable.TaskTagAutoCloseable(taskName, tag);
-  }
-
-  public static PerfMarkCloseable record(@CompileTimeConstant String taskName) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return PerfMarkCloseable.NOOP;
-    }
-    PerfMarkStorage.startAnyways(gen, taskName);
-    return new PerfMarkCloseable.TaskAutoCloseable(taskName);
+    impl.stopTask(taskName);
   }
 
   public static Tag createTag() {
-    return Tag.NO_TAG;
+    return NO_TAG;
   }
 
   public static Tag createTag(long id) {
-    if (!isEnabled(getGen())) {
-      return Tag.NO_TAG;
+    if (!impl.shouldCreateTag()) {
+      return NO_TAG;
     } else {
-      return new Tag(id);
+      return new Tag(Impl.NO_TAG_NAME, id);
     }
   }
 
   public static Tag createTag(String name) {
-    if (!isEnabled(getGen())) {
-      return Tag.NO_TAG;
+    if (!impl.shouldCreateTag()) {
+      return NO_TAG;
     } else {
-      return new Tag(name);
+      return new Tag(name, Impl.NO_TAG_ID);
     }
   }
 
   public static Tag createTag(String name, long id) {
-    if (!isEnabled(getGen())) {
-      return Tag.NO_TAG;
+    if (!impl.shouldCreateTag()) {
+      return NO_TAG;
     } else {
       return new Tag(name, id);
     }
@@ -272,46 +115,17 @@ public final class PerfMark {
    * @return A Link to be used in other tasks.
    */
   public static Link link() {
-    long gen = getGen();
-    if (!isEnabled(gen)) {
-      return Link.NONE;
+    long linkId = impl.linkAndGetId();
+    if (linkId == Impl.NO_LINK_ID) {
+      return NO_LINK;
+    } else {
+      return new Link(linkId);
     }
-    long inboundLinkId = Link.linkIdAlloc.incrementAndGet();
-    PerfMarkStorage.linkAnyways(gen, inboundLinkId, Marker.NONE);
-    return new Link(inboundLinkId);
   }
 
   static void link(long linkId) {
-    long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.linkAnyways(gen, -linkId, Marker.NONE);
-  }
-
-  static void stopTaskNonConstant(String taskName, Tag tag) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.stopAnyways(gen, taskName, tag);
-  }
-
-  static void stopTaskNonConstant(String taskName) {
-    final long gen = getGen();
-    if (!isEnabled(gen)) {
-      return;
-    }
-    PerfMarkStorage.stopAnyways(gen, taskName);
+    impl.link(linkId);
   }
 
   private PerfMark() {}
-
-  static long getGen() {
-    return generator.getGeneration();
-  }
-
-  static boolean isEnabled(long gen) {
-    return ((gen >>> GEN_OFFSET) & 0x1L) != 0L;
-  }
 }

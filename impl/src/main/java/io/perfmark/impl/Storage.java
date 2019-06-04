@@ -1,21 +1,13 @@
-package io.perfmark;
+package io.perfmark.impl;
 
-import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.MarkHolderProvider;
-import io.perfmark.impl.MarkList;
-import io.perfmark.impl.Marker;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -23,19 +15,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
-/**
- * Stores PerfMark data across threads. This class maintains the index to {@link MarkHolder}s for
- * reading.
- */
-public final class PerfMarkStorage {
-  private static final long initNanoTime = System.nanoTime();
-  private static final List<String> FALLBACK_MARK_HOLDERS =
-      Collections.unmodifiableList(
-          Arrays.asList(
-              "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider",
-              "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider"));
-  static final long NO_THREAD_ID = -1;
-  static final String NO_THREAD_NAME = "(unknownThread)";
+public final class Storage {
+  private static final long INIT_NANO_TIME = System.nanoTime();
+
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
   // and need to use these static variables.
   static final ConcurrentMap<MarkHolderRef, Reference<? extends Thread>> allMarkHolders =
@@ -45,30 +27,63 @@ public final class PerfMarkStorage {
   private static final Logger logger;
 
   static {
-    List<Throwable> errors = new ArrayList<Throwable>();
-    List<MarkHolderProvider> markHolders =
-        getLoadable(
-            errors,
-            MarkHolderProvider.class,
-            FALLBACK_MARK_HOLDERS,
-            PerfMarkStorage.class.getClassLoader());
-    Level level;
-    if (markHolders.isEmpty()) {
-      markHolderProvider = new NoopMarkHolderProvider();
-      level = Level.WARNING;
-    } else {
-      markHolderProvider = markHolders.get(0);
-      level = Level.FINE;
+    List<MarkHolderProvider> providers = new ArrayList<MarkHolderProvider>();
+    List<Throwable> fines = new ArrayList<Throwable>();
+    List<Throwable> warnings = new ArrayList<Throwable>();
+    Class<?> clz = null;
+    try {
+      clz =
+          Class.forName(
+              "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider");
+    } catch (ClassNotFoundException e) {
+      fines.add(e);
+    } catch (Throwable t) {
+      warnings.add(t);
     }
-    logger = Logger.getLogger(PerfMarkStorage.class.getName());
-    logger.log(level, "Using {0}", new Object[] {markHolderProvider.getClass()});
-    for (Throwable error : errors) {
-      logger.log(level, "Error encountered loading mark holder", error);
+    if (clz != null) {
+      try {
+        providers.add(clz.asSubclass(MarkHolderProvider.class).getConstructor().newInstance());
+      } catch (Throwable t) {
+        warnings.add(t);
+      }
+      clz = null;
+    }
+    try {
+      clz =
+          Class.forName(
+              "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider");
+    } catch (ClassNotFoundException e) {
+      fines.add(e);
+    } catch (Throwable t) {
+      warnings.add(t);
+    }
+    if (clz != null) {
+      try {
+        providers.add(clz.asSubclass(MarkHolderProvider.class).getConstructor().newInstance());
+      } catch (Throwable t) {
+        warnings.add(t);
+      }
+      clz = null;
+    }
+
+    if (!providers.isEmpty()) {
+      markHolderProvider = providers.get(0);
+    } else {
+      markHolderProvider = new NoopMarkHolderProvider();
+    }
+
+    logger = Logger.getLogger(Storage.class.getName());
+
+    for (Throwable error : warnings) {
+      logger.log(Level.WARNING, "Error loading MarkHolderProvider", error);
+    }
+    for (Throwable error : fines) {
+      logger.log(Level.FINE, "Error loading MarkHolderProvider", error);
     }
   }
 
   public static long getInitNanoTime() {
-    return initNanoTime;
+    return INIT_NANO_TIME;
   }
 
   /** Returns a list of {@link MarkList}s across all reachable threads. */
@@ -92,14 +107,14 @@ public final class PerfMarkStorage {
     }
     assert markHolders.size() == threads.size();
     List<MarkList> markLists = new ArrayList<MarkList>(markHolders.size());
-    long noThreadIds = NO_THREAD_ID;
+    long noThreadIds = MarkList.NO_THREAD_ID;
     for (int i = 0; i < markHolders.size(); i++) {
       final long threadId;
       final String threadName;
       @Nullable Thread writer = threads.get(i);
       if (writer == null) {
         threadId = noThreadIds--;
-        threadName = NO_THREAD_NAME;
+        threadName = MarkList.NO_THREAD_NAME;
       } else {
         threadId = writer.getId();
         threadName = writer.getName();
@@ -116,12 +131,12 @@ public final class PerfMarkStorage {
     return Collections.unmodifiableList(markLists);
   }
 
-  static void startAnyways(long gen, String taskName, Tag tag) {
-    localMarkHolder.get().start(gen, taskName, tag.tagName, tag.tagId, System.nanoTime());
+  static void startAnyways(long gen, String taskName, @Nullable String tagName, long tagId) {
+    localMarkHolder.get().start(gen, taskName, tagName, tagId, System.nanoTime());
   }
 
-  static void startAnyways(long gen, Marker marker, Tag tag) {
-    localMarkHolder.get().start(gen, marker, tag.tagName, tag.tagId, System.nanoTime());
+  static void startAnyways(long gen, Marker marker, @Nullable String tagName, long tagId) {
+    localMarkHolder.get().start(gen, marker, tagName, tagId, System.nanoTime());
   }
 
   static void startAnyways(long gen, String taskName) {
@@ -132,14 +147,14 @@ public final class PerfMarkStorage {
     localMarkHolder.get().start(gen, marker, System.nanoTime());
   }
 
-  static void stopAnyways(long gen, String taskName, Tag tag) {
+  static void stopAnyways(long gen, String taskName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().stop(gen, taskName, tag.tagName, tag.tagId, nanoTime);
+    localMarkHolder.get().stop(gen, taskName, tagName, tagId, nanoTime);
   }
 
-  static void stopAnyways(long gen, Marker marker, Tag tag) {
+  static void stopAnyways(long gen, Marker marker, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().stop(gen, marker, tag.tagName, tag.tagId, nanoTime);
+    localMarkHolder.get().stop(gen, marker, tagName, tagId, nanoTime);
   }
 
   static void stopAnyways(long gen, String taskName) {
@@ -152,14 +167,14 @@ public final class PerfMarkStorage {
     localMarkHolder.get().stop(gen, marker, nanoTime);
   }
 
-  static void eventAnyways(long gen, String eventName, Tag tag) {
+  static void eventAnyways(long gen, String eventName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().event(gen, eventName, tag.tagName, tag.tagId, nanoTime, 0);
+    localMarkHolder.get().event(gen, eventName, tagName, tagId, nanoTime, 0);
   }
 
-  static void eventAnyways(long gen, Marker marker, Tag tag) {
+  static void eventAnyways(long gen, Marker marker, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().event(gen, marker, tag.tagName, tag.tagId, nanoTime, 0);
+    localMarkHolder.get().event(gen, marker, tagName, tagId, nanoTime, 0);
   }
 
   static void eventAnyways(long gen, String eventName) {
@@ -176,7 +191,7 @@ public final class PerfMarkStorage {
     localMarkHolder.get().link(gen, linkId, marker);
   }
 
-  static void resetForTest() {
+  public static void resetForTest() {
     localMarkHolder.get().resetForTest();
   }
 
@@ -206,63 +221,13 @@ public final class PerfMarkStorage {
       super(holder, markHolderRefQueue);
     }
 
-    static void cleanQueue(Map<MarkHolderRef, ?> allSpans) {
+    static void cleanQueue(Map<?, ?> allSpans) {
       Reference<?> ref;
       while ((ref = markHolderRefQueue.poll()) != null) {
         ref.clear();
         allSpans.remove(ref);
       }
     }
-  }
-
-  static <T> List<T> getLoadable(
-      List<? super Throwable> errors,
-      Class<T> clz,
-      List<? extends String> fallbackClassNames,
-      ClassLoader cl) {
-    Map<Class<? extends T>, T> loadables = new LinkedHashMap<Class<? extends T>, T>();
-    List<Throwable> serviceLoaderErrors = new ArrayList<Throwable>();
-    try {
-      ServiceLoader<T> loader = ServiceLoader.load(clz, cl);
-      Iterator<T> it = loader.iterator();
-      for (int i = 0; i < 10 && serviceLoaderErrors.size() < 10; i++) {
-        try {
-          if (it.hasNext()) {
-            T next = it.next();
-            Class<? extends T> subClz = next.getClass().asSubclass(clz);
-            if (!loadables.containsKey(subClz)) {
-              loadables.put(subClz, next);
-            }
-          } else {
-            break;
-          }
-        } catch (ServiceConfigurationError sce) {
-          if (!serviceLoaderErrors.isEmpty()) {
-            Throwable last = serviceLoaderErrors.get(serviceLoaderErrors.size() - 1);
-            if (errorsEqual(sce, last)) {
-              continue;
-            }
-          }
-          serviceLoaderErrors.add(sce);
-        }
-      }
-    } catch (ServiceConfigurationError sce) {
-      serviceLoaderErrors.add(sce);
-    } finally {
-      errors.addAll(serviceLoaderErrors);
-    }
-    for (String fallbackClassName : fallbackClassNames) {
-      try {
-        Class<?> fallbackClz = Class.forName(fallbackClassName, true, cl);
-        if (!loadables.containsKey(fallbackClz)) {
-          Class<? extends T> subClz = fallbackClz.asSubclass(clz);
-          loadables.put(subClz, subClz.getDeclaredConstructor().newInstance());
-        }
-      } catch (Throwable t) {
-        errors.add(t);
-      }
-    }
-    return Collections.unmodifiableList(new ArrayList<T>(loadables.values()));
   }
 
   @SuppressWarnings("ReferenceEquality") // No Java 8 yet
@@ -282,7 +247,7 @@ public final class PerfMarkStorage {
     return false;
   }
 
-  private PerfMarkStorage() {
+  private Storage() {
     throw new AssertionError("nope");
   }
 }

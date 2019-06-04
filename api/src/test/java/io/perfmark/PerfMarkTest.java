@@ -12,12 +12,14 @@ import static io.perfmark.impl.Mark.Operation.TASK_START;
 import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.Internal;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkHolderProvider;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.Marker;
+import io.perfmark.impl.Storage;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +37,10 @@ public class PerfMarkTest {
 
   @BeforeClass
   public static void beforeClass() throws Exception {
+    Class<?> implClz = Class.forName("io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
+    Field propertyField = implClz.getDeclaredField("START_ENABLED_PROPERTY");
+    propertyField.setAccessible(true);
+    String startEnabledProperty = (String) propertyField.get(null);
     Logger logger = Logger.getLogger(PerfMark.class.getName());
     Filter oldFilter = logger.getFilter();
     // This causes a cycle in case PerfMark tries to log during init.
@@ -54,15 +60,15 @@ public class PerfMarkTest {
     // Try to get PerfMark to accidentally log that it is enabled.  We are careful to not
     // accidentally cause class initialization early here, as START_ENABLED_PROPERTY is a
     // constant.
-    String oldProperty = System.getProperty(PerfMark.START_ENABLED_PROPERTY);
-    System.setProperty(PerfMark.START_ENABLED_PROPERTY, "true");
+    String oldProperty = System.getProperty(startEnabledProperty);
+    System.setProperty(startEnabledProperty, "true");
     try {
       Class.forName(PerfMark.class.getName());
     } finally {
       if (oldProperty == null) {
-        System.clearProperty(PerfMark.START_ENABLED_PROPERTY);
+        System.clearProperty(startEnabledProperty);
       } else {
-        System.setProperty(PerfMark.START_ENABLED_PROPERTY, oldProperty);
+        System.setProperty(startEnabledProperty, oldProperty);
       }
       logger.setFilter(oldFilter);
     }
@@ -70,10 +76,10 @@ public class PerfMarkTest {
 
   @Test
   public void allMethodForward_taskName() {
-    PerfMarkStorage.resetForTest();
+    Storage.resetForTest();
     PerfMark.setEnabled(true);
 
-    long gen = PerfMark.getGen();
+    long gen = getGen();
 
     Tag tag1 = PerfMark.createTag(1);
     Tag tag2 = PerfMark.createTag("two");
@@ -89,7 +95,7 @@ public class PerfMarkTest {
     PerfMark.stopTask("task2", tag2);
     PerfMark.stopTask("task1", tag1);
 
-    List<Mark> marks = getMine(PerfMarkStorage.read());
+    List<Mark> marks = getMine(Storage.read());
 
     assertEquals(marks.size(), 10);
     List<Mark> expected =
@@ -102,8 +108,8 @@ public class PerfMarkTest {
                 "task3", tag3.tagName, tag3.tagId, marks.get(2).getNanoTime(), gen, TASK_START),
             Mark.create(
                 "task4", NO_TAG_NAME, NO_TAG_ID, marks.get(3).getNanoTime(), gen, TASK_NOTAG_START),
-            Mark.create(Marker.NONE, NO_TAG_NAME, link.getId(), NO_NANOTIME, gen, LINK),
-            Mark.create(Marker.NONE, NO_TAG_NAME, -link.getId(), NO_NANOTIME, gen, LINK),
+            Mark.create(Marker.NONE, NO_TAG_NAME, link.linkId, NO_NANOTIME, gen, LINK),
+            Mark.create(Marker.NONE, NO_TAG_NAME, -link.linkId, NO_NANOTIME, gen, LINK),
             Mark.create(
                 "task4", NO_TAG_NAME, NO_TAG_ID, marks.get(6).getNanoTime(), gen, TASK_NOTAG_END),
             Mark.create(
@@ -112,92 +118,6 @@ public class PerfMarkTest {
                 "task2", tag2.tagName, tag2.tagId, marks.get(8).getNanoTime(), gen, TASK_END),
             Mark.create(
                 "task1", tag1.tagName, tag1.tagId, marks.get(9).getNanoTime(), gen, TASK_END));
-    assertEquals(expected, marks);
-  }
-
-  @Test
-  public void allMethodForward_marker() {
-    PerfMarkStorage.resetForTest();
-    PerfMark.setEnabled(true);
-
-    long gen = PerfMark.getGen();
-
-    Tag tag1 = PerfMark.createTag(1);
-    Tag tag2 = PerfMark.createTag("two");
-    Tag tag3 = PerfMark.createTag("three", 3);
-    Marker marker1 = Internal.createMarker("task1");
-    Marker marker2 = Internal.createMarker("task2");
-    Marker marker3 = Internal.createMarker("task3");
-    Marker marker4 = Internal.createMarker("task4");
-    Marker marker5 = Internal.createMarker("(link)");
-    PerfMark.PackageAccess.Public.startTask(marker1, tag1);
-    PerfMark.PackageAccess.Public.startTask(marker2, tag2);
-    PerfMark.PackageAccess.Public.startTask(marker3, tag3);
-    PerfMark.PackageAccess.Public.startTask(marker4);
-    Link link = PerfMark.PackageAccess.Public.link(marker5);
-    PerfMark.PackageAccess.Public.link(link.getId(), marker5);
-    PerfMark.PackageAccess.Public.stopTask(marker4);
-    PerfMark.PackageAccess.Public.stopTask(marker3, tag3);
-    PerfMark.PackageAccess.Public.stopTask(marker2, tag2);
-    PerfMark.PackageAccess.Public.stopTask(marker1, tag1);
-
-    List<Mark> marks = getMine(PerfMarkStorage.read());
-
-    assertEquals(marks.size(), 10);
-    List<Mark> expected =
-        Arrays.asList(
-            Mark.create(
-                marker1, tag1.tagName, tag1.tagId, marks.get(0).getNanoTime(), gen, TASK_START),
-            Mark.create(
-                marker2, tag2.tagName, tag2.tagId, marks.get(1).getNanoTime(), gen, TASK_START),
-            Mark.create(
-                marker3, tag3.tagName, tag3.tagId, marks.get(2).getNanoTime(), gen, TASK_START),
-            Mark.create(
-                marker4, NO_TAG_NAME, NO_TAG_ID, marks.get(3).getNanoTime(), gen, TASK_NOTAG_START),
-            Mark.create(marker5, NO_TAG_NAME, link.getId(), NO_NANOTIME, gen, LINK),
-            Mark.create(marker5, NO_TAG_NAME, -link.getId(), NO_NANOTIME, gen, LINK),
-            Mark.create(
-                marker4, NO_TAG_NAME, NO_TAG_ID, marks.get(6).getNanoTime(), gen, TASK_NOTAG_END),
-            Mark.create(
-                marker3, tag3.tagName, tag3.tagId, marks.get(7).getNanoTime(), gen, TASK_END),
-            Mark.create(
-                marker2, tag2.tagName, tag2.tagId, marks.get(8).getNanoTime(), gen, TASK_END),
-            Mark.create(
-                marker1, tag1.tagName, tag1.tagId, marks.get(9).getNanoTime(), gen, TASK_END));
-    assertEquals(expected, marks);
-  }
-
-  @Test
-  public void allCloseablesForward_taskName() {
-    PerfMarkStorage.resetForTest();
-    PerfMark.setEnabled(true);
-
-    long gen = PerfMark.getGen();
-
-    Tag tag = PerfMark.createTag(1);
-    Link link;
-    try (PerfMarkCloseable closeable1 = PerfMark.record("task1", tag)) {
-      try (PerfMarkCloseable closeable2 = PerfMark.record("task2")) {
-        link = PerfMark.link();
-        link.link();
-      }
-    }
-
-    List<Mark> marks = getMine(PerfMarkStorage.read());
-
-    assertEquals(marks.size(), 6);
-    List<Mark> expected =
-        Arrays.asList(
-            Mark.create(
-                "task1", tag.tagName, tag.tagId, marks.get(0).getNanoTime(), gen, TASK_START),
-            Mark.create(
-                "task2", NO_TAG_NAME, NO_TAG_ID, marks.get(1).getNanoTime(), gen, TASK_NOTAG_START),
-            Mark.create(Marker.NONE, NO_TAG_NAME, link.getId(), NO_NANOTIME, gen, LINK),
-            Mark.create(Marker.NONE, NO_TAG_NAME, -link.getId(), NO_NANOTIME, gen, LINK),
-            Mark.create(
-                "task2", NO_TAG_NAME, NO_TAG_ID, marks.get(4).getNanoTime(), gen, TASK_NOTAG_END),
-            Mark.create(
-                "task1", tag.tagName, tag.tagId, marks.get(5).getNanoTime(), gen, TASK_END));
     assertEquals(expected, marks);
   }
 
@@ -353,5 +273,16 @@ public class PerfMarkTest {
       }
     }
     return null;
+  }
+
+  private static long getGen() {
+    try {
+      Class<?> implClz = Class.forName("io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
+      Method method = implClz.getDeclaredMethod("getGen");
+      method.setAccessible(true);
+      return (long) method.invoke(null);
+    } catch (Exception e) {
+      throw new AssertionError(e);
+    }
   }
 }

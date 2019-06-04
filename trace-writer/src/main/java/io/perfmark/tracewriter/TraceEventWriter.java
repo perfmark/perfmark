@@ -6,9 +6,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.annotations.SerializedName;
-import io.perfmark.PerfMarkStorage;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
+import io.perfmark.impl.Storage;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -64,13 +64,12 @@ public final class TraceEventWriter {
   }
 
   public static void writeTraceEvents(Writer destination) throws IOException {
-    writeTraceEvents(
-        destination, PerfMarkStorage.read(), PerfMarkStorage.getInitNanoTime(), getPid());
+    writeTraceEvents(destination, Storage.read(), Storage.getInitNanoTime(), getPid());
   }
 
   /**
-   * Writes the trace events gathered from {@link PerfMarkStorage#read()}. This method is not API
-   * stable. It will be eventually.
+   * Writes the trace events gathered from {@link Storage#read()}. This method is not API stable. It
+   * will be eventually.
    */
   public static void writeTraceEvents(
       Writer destination, List<? extends MarkList> markLists, long initNanoTime, long pid)

@@ -4,9 +4,9 @@ import java.util.Arrays;
 import javax.annotation.Nullable;
 
 public final class Mark {
-  public static final long NO_LINK_ID = 0;
-  public static final long NO_TAG_ID = Long.MIN_VALUE;
-  public static final String NO_TAG_NAME = null;
+  public static final String NO_TAG_NAME = SecretPerfMarkImpl.PerfMarkImpl.NO_TAG_NAME;
+  public static final long NO_TAG_ID = SecretPerfMarkImpl.PerfMarkImpl.NO_TAG_ID;
+  public static final long NO_LINK_ID = SecretPerfMarkImpl.PerfMarkImpl.NO_LINK_ID;
   public static final long NO_NANOTIME = 0;
 
   @Nullable private final String taskName;
@@ -38,7 +38,7 @@ public final class Mark {
     return new Mark(marker, tagName, tagId, nanoTime, generation, operation);
   }
 
-  Mark(
+  private Mark(
       Object taskNameOrMarker,
       @Nullable String tagName,
       long tagId,

@@ -4,7 +4,8 @@ sourceCompatibility = 1.6
 targetCompatibility = 1.6
 
 dependencies {
-    compile libraries.jsr305,
+    compile project(':perfmark-api'),
+            libraries.jsr305,
             libraries.errorprone
 }
 

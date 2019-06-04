@@ -5,7 +5,7 @@ targetCompatibility = 1.7
 
 dependencies {
     compile project(':perfmark-api'),
-            project(':perfmark-impl-api'),
+            project(':perfmark-impl'),
             project(':perfmark-java6'),
             libraries.jsr305,
             libraries.gson

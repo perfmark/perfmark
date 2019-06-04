@@ -1,6 +1,4 @@
-package io.perfmark;
-
-import io.perfmark.impl.Generator;
+package io.perfmark.impl;
 
 /** Noop Generator for use when no other generator can be used. */
 final class NoopGenerator extends Generator {

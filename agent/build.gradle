@@ -9,7 +9,7 @@ dependencies {
             "org.ow2.asm:asm:7.1",
             "org.ow2.asm:asm-util:7.1",
             project(":perfmark-api"),
-            project(":perfmark-impl-api"),
+            project(":perfmark-impl"),
             libraries.errorprone
 }
 
