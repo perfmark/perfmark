@@ -141,9 +141,10 @@ public final class Main {
                   if (!fileName.isEmpty()) {
                     int dot = fileName.lastIndexOf('.');
                     if (dot != -1) {
-                      fileName = fileName.substring(dot+1, fileName.length());
+                      fileName = fileName.substring(dot+1);
                     }
                   }
+                  // TODO: this is broken for private top level classes.
                   if (!fileName.isEmpty()) {
                     fileName += ".java";
                   } else {
