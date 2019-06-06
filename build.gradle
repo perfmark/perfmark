@@ -105,6 +105,10 @@ subprojects {
         sign publishing.publications.maven
     }
 
+    [publishMavenPublicationToMavenRepository, publishMavenPublicationToMavenLocal]*.onlyIf {
+        !name.contains("perfmark-agent")
+    }
+
 
     if (rootProject.properties.get('errorProne', true)) {
         dependencies {
