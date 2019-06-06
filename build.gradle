@@ -129,7 +129,7 @@ subprojects {
     jacoco { toolVersion = "0.8.2" }
 
     group = "io.perfmark"
-    version = "0.16.0"
+    version = "0.16.1-SNAPSHOT"
 
     ext {
         libraries = [
