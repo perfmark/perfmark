@@ -175,7 +175,7 @@ public final class TraceEventWriter {
 
   private static Map<String, ?> tagArgs(@Nullable String tagName, long tagId) {
     Map<String, Object> tagMap = new LinkedHashMap<>(2);
-    if (tagName != null) {
+    if (!(tagName == null || tagName.equals(Mark.NO_TAG_NAME))) {
       tagMap.put("tag", tagName);
     }
     if (tagId != Mark.NO_TAG_ID) {
