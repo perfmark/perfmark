@@ -129,7 +129,7 @@ public final class TraceEventWriter {
     if (dataHome != null) {
       dataHomeChoices.add(new File(dataHome + sep + PERFMARK_TRACE_DIR).toPath());
     }
-    String home = System.getenv("HOME");
+    String home = System.getProperty("user.home");
     if (home != null) {
       dataHomeChoices.add(
           new File(home + sep + ".local" + sep + "share" + sep + PERFMARK_TRACE_DIR).toPath());
@@ -144,7 +144,7 @@ public final class TraceEventWriter {
       }
       return path;
     }
-    throw new IOException("failed to find a path to write");
+    return new File(".").toPath();
   }
 
   static final class TraceEventObject {
