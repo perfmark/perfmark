@@ -12,5 +12,5 @@ project(':perfmark-impl').projectDir = "$rootDir/impl" as File
 project(':perfmark-java6').projectDir = "$rootDir/java6" as File
 project(':perfmark-java7').projectDir = "$rootDir/java7" as File
 project(':perfmark-java9').projectDir = "$rootDir/java9" as File
-project(':perfmark-tracewriter').projectDir = "$rootDir/trace-writer" as File
+project(':perfmark-tracewriter').projectDir = "$rootDir/tracewriter" as File
 project(':perfmark-agent').projectDir = "$rootDir/agent" as File
