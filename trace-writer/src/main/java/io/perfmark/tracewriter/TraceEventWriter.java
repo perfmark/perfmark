@@ -64,7 +64,8 @@ public final class TraceEventWriter {
   }
 
   public static void writeTraceEvents(Writer destination) throws IOException {
-    writeTraceEvents(destination, Storage.read(), Storage.getInitNanoTime(), getPid());
+    writeTraceEvents(
+        destination, Storage.read(), Storage.getInitNanoTime(), System.nanoTime(), getPid());
   }
 
   /**
@@ -72,10 +73,14 @@ public final class TraceEventWriter {
    * will be eventually.
    */
   public static void writeTraceEvents(
-      Writer destination, List<? extends MarkList> markLists, long initNanoTime, long pid)
+      Writer destination,
+      List<? extends MarkList> markLists,
+      long initNanoTime,
+      long nowNanoTime,
+      long pid)
       throws IOException {
     List<TraceEvent> traceEvents = new ArrayList<>();
-    new TraceEventWalker(traceEvents, pid, initNanoTime).walk(markLists);
+    new TraceEventWalker(traceEvents, pid, initNanoTime).walk(markLists, nowNanoTime);
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     try {
       gson.toJson(new TraceEventObject(traceEvents), destination);

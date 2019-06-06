@@ -17,7 +17,7 @@ class MarkListWalker {
   MarkListWalker() {}
 
   // TODO: make sure the generations dont have any timestamp overlap
-  final void walk(List<? extends MarkList> markLists) {
+  final void walk(List<? extends MarkList> markLists, long nowNanoTime) {
     Map<Long, List<MarkList>> generationToMarkLists = groupMarkListsByGeneration(markLists);
     for (Map.Entry<Long, List<MarkList>> entry : generationToMarkLists.entrySet()) {
       enterGeneration(entry.getKey());
@@ -27,7 +27,7 @@ class MarkListWalker {
         Deque<Mark> fakeEnds = new ArrayDeque<>();
         Set<Mark> unmatchedPairMarks =
             Collections.newSetFromMap(new IdentityHashMap<Mark, Boolean>());
-        createFakes(fakeStarts, fakeEnds, unmatchedPairMarks, markList.getMarks());
+        createFakes(fakeStarts, fakeEnds, unmatchedPairMarks, markList.getMarks(), nowNanoTime);
         for (Mark mark : fakeStarts) {
           onTaskStart(mark, true, false);
         }
@@ -115,10 +115,12 @@ class MarkListWalker {
       Deque<? super Mark> fakeStarts,
       Deque<? super Mark> fakeEnds,
       Set<? super Mark> unmatchedPairMarks,
-      List<Mark> marks) {
+      List<Mark> marks,
+      long nowNanoTime) {
     final Deque<Mark> unmatchedMarks = new ArrayDeque<>();
     long[] nanoTimeBounds = new long[2]; // first, last
-    nanoTimeBounds[0] = System.nanoTime(); // forces each subsequent overwrite to succeed.
+    nanoTimeBounds[0] = nowNanoTime; // forces each subsequent overwrite to succeed.
+    nanoTimeBounds[1] = nowNanoTime;
 
     loop:
     for (Mark mark : marks) {
@@ -165,7 +167,9 @@ class MarkListWalker {
         if (mark.getNanoTime() - nanoTimeBounds[0] < 0) {
           nanoTimeBounds[0] = mark.getNanoTime();
         }
-        nanoTimeBounds[1] = mark.getNanoTime();
+        if (mark.getNanoTime() - nanoTimeBounds[1] > 0) {
+          nanoTimeBounds[1] = mark.getNanoTime();
+        }
         return;
       case LINK:
         return;
