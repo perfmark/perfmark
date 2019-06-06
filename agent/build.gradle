@@ -22,4 +22,4 @@ jar {
     }
 }
 
-print sourceSets.main.runtimeClasspath.asPath
+// print sourceSets.main.runtimeClasspath.asPath
