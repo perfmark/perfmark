@@ -9,9 +9,8 @@ import java.util.logging.Logger;
  * io.perfmark.PerfMark.startEnabled} to true.
  */
 public final class PerfMark {
-  // TODO(carl-mastrangelo): maybe hide this in a lazy class.
-  static final Tag NO_TAG = new Tag(Impl.NO_TAG_NAME, Impl.NO_TAG_ID);
-  static final Link NO_LINK = new Link(Impl.NO_LINK_ID);
+  private static final Tag NO_TAG = new Tag(Impl.NO_TAG_NAME, Impl.NO_TAG_ID);
+  private static final Link NO_LINK = new Link(Impl.NO_LINK_ID);
   private static final Impl impl;
 
   static {
@@ -37,7 +36,7 @@ public final class PerfMark {
     if (instance != null) {
       impl = instance;
     } else {
-      impl = new NoopImpl();
+      impl = new Impl();
     }
     if (err != null) {
       Logger.getLogger(PerfMark.class.getName()).log(level, "Error during PerfMark.<clinit>", err);

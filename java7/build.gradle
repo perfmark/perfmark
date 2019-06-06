@@ -8,6 +8,15 @@ dependencies {
             libraries.jsr305
 }
 
+javadoc {
+    exclude 'io/perfmark/java7**'
+}
+
+jar {
+    exclude 'io/perfmark/java7/Internal*'
+}
+
+
 jmh {
     timeOnIteration = "1s"
     warmup = "1s"

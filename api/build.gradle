@@ -19,6 +19,10 @@ compileTestJava {
     targetCompatibility = 1.7
 }
 
+javadoc {
+    exclude 'io/perfmark/Impl**'
+}
+
 jmh {
     timeOnIteration = "1s"
     warmup = "1s"

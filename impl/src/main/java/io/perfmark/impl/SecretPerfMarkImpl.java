@@ -100,7 +100,7 @@ final class SecretPerfMarkImpl {
     }
 
     public PerfMarkImpl() {
-      super("I'm pretty sure I know what I'm doing");
+      super();
     }
 
     @Override
