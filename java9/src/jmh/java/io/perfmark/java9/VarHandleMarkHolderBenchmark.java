@@ -75,6 +75,41 @@ public class VarHandleMarkHolderBenchmark {
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void link() {
+    markHolder.link(1, 9999);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void link_marker() {
     markHolder.link(1, 9999, MARKER);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void event_name_tag() {
+    markHolder.event(1, "hi", "tag", 2, 8, 1234);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void event_name_noTag() {
+    markHolder.event(1, "hi", 8, 1234);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void event_marker_tag() {
+    markHolder.event(1, "hi", Marker.NONE, "tag", 2, 8, 1234);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void event_marker_noTag() {
+    markHolder.event(1, "hi", Marker.NONE, 8, 1234);
   }
 }

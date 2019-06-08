@@ -224,8 +224,8 @@ final class SynchronizedMarkHolder extends MarkHolder {
 
   @Override
   public synchronized void event(
-      long gen, String taskName, Marker marker, long nanoTime, long durationNanos) {
-    taskNames[idx] = taskName;
+      long gen, String eventName, Marker marker, long nanoTime, long durationNanos) {
+    taskNames[idx] = eventName;
     markers[idx] = marker;
     nanoTimes[idx] = nanoTime;
     durationNanoTimes[idx] = durationNanos;
