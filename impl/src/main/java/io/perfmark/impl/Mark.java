@@ -20,26 +20,18 @@ public final class Mark {
 
   public static Mark create(
       String taskName,
-      @Nullable String tagName,
-      long tagId,
-      long nanoTime,
-      long generation,
-      Operation operation) {
-    return new Mark(taskName, tagName, tagId, nanoTime, generation, operation);
-  }
-
-  public static Mark create(
       Marker marker,
       @Nullable String tagName,
       long tagId,
       long nanoTime,
       long generation,
       Operation operation) {
-    return new Mark(marker, tagName, tagId, nanoTime, generation, operation);
+    return new Mark(taskName, marker, tagName, tagId, nanoTime, generation, operation);
   }
 
   private Mark(
-      Object taskNameOrMarker,
+      String taskName,
+      Marker marker,
       @Nullable String tagName,
       long tagId,
       long nanoTime,
@@ -49,28 +41,53 @@ public final class Mark {
     if (operation == Operation.NONE) {
       throw new IllegalArgumentException("bad operation");
     }
-    if (taskNameOrMarker instanceof Marker) {
-      this.marker = (Marker) taskNameOrMarker;
-      this.taskName = ((Marker) taskNameOrMarker).getTaskName();
-    } else if (taskNameOrMarker instanceof String) {
-      this.marker = null;
-      this.taskName = (String) taskNameOrMarker;
-    } else {
-      throw new IllegalArgumentException("wrong marker type " + taskNameOrMarker);
+    markerCheck:
+    {
+      switch (operation) {
+        case TASK_START_M: // fall-through
+        case TASK_START_TM: // fall-through
+        case TASK_END_M: // fall-through
+        case TASK_END_TM: // fall-through
+        case EVENT_M: // fall-through
+        case EVENT_TM: // fall-through
+        case LINK_M:
+          this.marker = marker;
+          break markerCheck;
+        case TASK_START: // fall-through
+        case TASK_START_T: // fall-through
+        case TASK_END: // fall-through
+        case TASK_END_T: // fall-through
+        case EVENT: // fall-through
+        case EVENT_T: // fall-through
+        case LINK: // fall-through
+          this.marker = Marker.NONE;
+          break markerCheck;
+        case NONE:
+          // fall-through
+      }
+      throw new AssertionError(String.valueOf(operation));
     }
+
     tagCheck:
     {
       switch (operation) {
-        case TASK_START: // fall-through
-        case TASK_END: // fall-through
-        case EVENT:
+        case TASK_START_T: // fall-through
+        case TASK_START_TM: // fall-through
+        case TASK_END_T: // fall-through
+        case TASK_END_TM: // fall-through
+        case EVENT_T:
+        case EVENT_TM:
           this.tagName = tagName;
           this.tagId = tagId;
           break tagCheck;
-        case TASK_NOTAG_START: // fall-through
-        case TASK_NOTAG_END: // fall-through
-        case EVENT_NOTAG: // fall-through
-        case LINK:
+        case TASK_START: // fall-through
+        case TASK_START_M: // fall-through
+        case TASK_END: // fall-through
+        case TASK_END_M: // fall-through
+        case EVENT: // fall-through
+        case EVENT_M: // fall-through
+        case LINK: // fall-through
+        case LINK_M:
           this.tagName = NO_TAG_NAME;
           this.tagId = NO_TAG_ID;
           break tagCheck;
@@ -79,10 +96,12 @@ public final class Mark {
       }
       throw new AssertionError(String.valueOf(operation));
     }
-    if (operation == Operation.LINK) {
+    if (operation == Operation.LINK || operation == Operation.LINK_M) {
+      this.taskName = null;
       this.nanoTime = NO_NANOTIME;
       this.linkId = tagId;
     } else {
+      this.taskName = taskName;
       this.nanoTime = nanoTime;
       this.linkId = NO_LINK_ID;
     }
@@ -92,12 +111,19 @@ public final class Mark {
   public enum Operation {
     NONE,
     TASK_START,
-    TASK_NOTAG_START,
+    TASK_START_T,
+    TASK_START_M,
+    TASK_START_TM,
     TASK_END,
-    TASK_NOTAG_END,
+    TASK_END_T,
+    TASK_END_M,
+    TASK_END_TM,
     EVENT,
-    EVENT_NOTAG,
+    EVENT_T,
+    EVENT_M,
+    EVENT_TM,
     LINK,
+    LINK_M,
     ;
 
     private static final Operation[] values = Operation.values();

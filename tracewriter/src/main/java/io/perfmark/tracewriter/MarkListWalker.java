@@ -53,23 +53,30 @@ class MarkListWalker {
 
   private void onRealMark(Mark mark, Collection<Mark> unmatchedPairMarks) {
     switch (mark.getOperation()) {
-      case NONE:
-        break;
       case TASK_START:
-      case TASK_NOTAG_START:
+      case TASK_START_T:
+      case TASK_START_M:
+      case TASK_START_TM:
         onTaskStart(mark, false, unmatchedPairMarks.contains(mark));
         return;
       case TASK_END:
-      case TASK_NOTAG_END:
+      case TASK_END_T:
+      case TASK_END_M:
+      case TASK_END_TM:
         onTaskEnd(mark, unmatchedPairMarks.contains(mark), false);
         return;
       case EVENT:
-      case EVENT_NOTAG:
+      case EVENT_T:
+      case EVENT_M:
+      case EVENT_TM:
         onEvent(mark);
         return;
       case LINK:
+      case LINK_M:
         onLink(mark);
         return;
+      case NONE:
+        break;
     }
     throw new AssertionError();
   }
@@ -127,11 +134,15 @@ class MarkListWalker {
       setNanoTimeBounds(nanoTimeBounds, mark);
       switch (mark.getOperation()) {
         case TASK_START:
-        case TASK_NOTAG_START:
+        case TASK_START_T:
+        case TASK_START_M:
+        case TASK_START_TM:
           unmatchedMarks.addLast(mark);
           continue loop;
         case TASK_END:
-        case TASK_NOTAG_END:
+        case TASK_END_T:
+        case TASK_END_M:
+        case TASK_END_TM:
           if (!unmatchedMarks.isEmpty()) {
             // TODO: maybe double check the tags and task names match
             unmatchedMarks.removeLast();
@@ -141,8 +152,11 @@ class MarkListWalker {
           }
           continue loop;
         case EVENT:
-        case EVENT_NOTAG:
+        case EVENT_T:
+        case EVENT_M:
+        case EVENT_TM:
         case LINK:
+        case LINK_M:
           continue loop;
         case NONE:
           break;
@@ -158,12 +172,18 @@ class MarkListWalker {
 
   private static void setNanoTimeBounds(long[] nanoTimeBounds, Mark mark) {
     switch (mark.getOperation()) {
-      case TASK_NOTAG_START:
       case TASK_START:
-      case TASK_NOTAG_END:
+      case TASK_START_T:
+      case TASK_START_M:
+      case TASK_START_TM:
       case TASK_END:
+      case TASK_END_T:
+      case TASK_END_M:
+      case TASK_END_TM:
       case EVENT:
-      case EVENT_NOTAG:
+      case EVENT_T:
+      case EVENT_M:
+      case EVENT_TM:
         if (mark.getNanoTime() - nanoTimeBounds[0] < 0) {
           nanoTimeBounds[0] = mark.getNanoTime();
         }
@@ -172,6 +192,7 @@ class MarkListWalker {
         }
         return;
       case LINK:
+      case LINK_M:
         return;
       case NONE:
         break;
@@ -180,120 +201,66 @@ class MarkListWalker {
   }
 
   private static Mark createFakeEnd(Mark start, long lastNanoTime) {
-    if (start.getMarker() != null) {
+    Mark.Operation op;
+    out:
+    {
       switch (start.getOperation()) {
         case TASK_START:
-          return Mark.create(
-              start.getMarker(),
-              start.getTagName(),
-              start.getTagId(),
-              lastNanoTime,
-              start.getGeneration(),
-              Mark.Operation.TASK_END);
-        case TASK_NOTAG_START:
-          return Mark.create(
-              start.getMarker(),
-              Mark.NO_TAG_NAME,
-              Mark.NO_TAG_ID,
-              lastNanoTime,
-              start.getGeneration(),
-              Mark.Operation.TASK_NOTAG_END);
-        case LINK:
-        case NONE:
-        case TASK_END:
-        case TASK_NOTAG_END:
-        case EVENT:
-        case EVENT_NOTAG:
-          break;
-      }
-      throw new AssertionError();
-    } else {
-      String taskName = String.valueOf(start.getTaskName()); // Uses "null" if null.
-      switch (start.getOperation()) {
-        case TASK_START:
-          return Mark.create(
-              taskName,
-              start.getTagName(),
-              start.getTagId(),
-              lastNanoTime,
-              start.getGeneration(),
-              Mark.Operation.TASK_END);
-        case TASK_NOTAG_START:
-          return Mark.create(
-              taskName,
-              Mark.NO_TAG_NAME,
-              Mark.NO_TAG_ID,
-              lastNanoTime,
-              start.getGeneration(),
-              Mark.Operation.TASK_NOTAG_END);
-        case LINK:
-        case NONE:
-        case TASK_END:
-        case TASK_NOTAG_END:
-        case EVENT:
-        case EVENT_NOTAG:
+          op = Mark.Operation.TASK_END;
+          break out;
+        case TASK_START_T:
+          op = Mark.Operation.TASK_END_T;
+          break out;
+        case TASK_START_M:
+          op = Mark.Operation.TASK_END_M;
+          break out;
+        case TASK_START_TM:
+          op = Mark.Operation.TASK_END_TM;
+          break out;
+        default:
           break;
       }
       throw new AssertionError();
     }
+    return Mark.create(
+        String.valueOf(start.getTaskName()),
+        start.getMarker(),
+        start.getTagName(),
+        start.getTagId(),
+        lastNanoTime,
+        start.getGeneration(),
+        op);
   }
 
   private static Mark createFakeStart(Mark end, long firstNanoTime) {
-    if (end.getMarker() != null) {
+    Mark.Operation op;
+    out:
+    {
       switch (end.getOperation()) {
         case TASK_END:
-          return Mark.create(
-              end.getMarker(),
-              end.getTagName(),
-              end.getTagId(),
-              firstNanoTime,
-              end.getGeneration(),
-              Mark.Operation.TASK_START);
-        case TASK_NOTAG_END:
-          return Mark.create(
-              end.getMarker(),
-              Mark.NO_TAG_NAME,
-              Mark.NO_TAG_ID,
-              firstNanoTime,
-              end.getGeneration(),
-              Mark.Operation.TASK_NOTAG_START);
-        case LINK:
-        case NONE:
-        case TASK_START:
-        case TASK_NOTAG_START:
-        case EVENT:
-        case EVENT_NOTAG:
-          break;
-      }
-      throw new AssertionError();
-    } else {
-      String taskName = String.valueOf(end.getTaskName()); // Uses "null" if null.
-      switch (end.getOperation()) {
-        case TASK_END:
-          return Mark.create(
-              taskName,
-              end.getTagName(),
-              end.getTagId(),
-              firstNanoTime,
-              end.getGeneration(),
-              Mark.Operation.TASK_START);
-        case TASK_NOTAG_END:
-          return Mark.create(
-              taskName,
-              Mark.NO_TAG_NAME,
-              Mark.NO_TAG_ID,
-              firstNanoTime,
-              end.getGeneration(),
-              Mark.Operation.TASK_NOTAG_START);
-        case LINK:
-        case NONE:
-        case TASK_START:
-        case TASK_NOTAG_START:
-        case EVENT:
-        case EVENT_NOTAG:
+          op = Mark.Operation.TASK_START;
+          break out;
+        case TASK_END_T:
+          op = Mark.Operation.TASK_START_T;
+          break out;
+        case TASK_END_M:
+          op = Mark.Operation.TASK_START_M;
+          break out;
+        case TASK_END_TM:
+          op = Mark.Operation.TASK_START_TM;
+          break out;
+        default:
           break;
       }
       throw new AssertionError();
     }
+    return Mark.create(
+        String.valueOf(end.getTaskName()),
+        end.getMarker(),
+        end.getTagName(),
+        end.getTagId(),
+        firstNanoTime,
+        end.getGeneration(),
+        op);
   }
 }

@@ -18,22 +18,29 @@ import java.util.List;
 final class VarHandleMarkHolder extends MarkHolder {
   private static final long GEN_MASK = (1 << Generator.GEN_OFFSET) - 1;
   private static final long START_OP = Mark.Operation.TASK_START.ordinal();
-  private static final long START_NOTAG_OP = Mark.Operation.TASK_NOTAG_START.ordinal();
+  private static final long START_T_OP = Mark.Operation.TASK_START_T.ordinal();
+  private static final long START_M_OP = Mark.Operation.TASK_START_M.ordinal();
+  private static final long START_TM_OP = Mark.Operation.TASK_START_TM.ordinal();
   private static final long STOP_OP = Mark.Operation.TASK_END.ordinal();
-  private static final long STOP_NOTAG_OP = Mark.Operation.TASK_NOTAG_END.ordinal();
+  private static final long STOP_T_OP = Mark.Operation.TASK_END_T.ordinal();
+  private static final long STOP_M_OP = Mark.Operation.TASK_END_M.ordinal();
+  private static final long STOP_TM_OP = Mark.Operation.TASK_END_TM.ordinal();
   private static final long EVENT_OP = Mark.Operation.EVENT.ordinal();
-  private static final long EVENT_NOTAG_OP = Mark.Operation.EVENT_NOTAG.ordinal();
+  private static final long EVENT_T_OP = Mark.Operation.EVENT_T.ordinal();
+  private static final long EVENT_M_OP = Mark.Operation.EVENT_M.ordinal();
+  private static final long EVENT_TM_OP = Mark.Operation.EVENT_TM.ordinal();
   private static final long LINK_OP = Mark.Operation.LINK.ordinal();
+  private static final long LINK_M_OP = Mark.Operation.LINK_M.ordinal();
 
   private static final VarHandle IDX;
-  private static final VarHandle OBJECTS;
+  private static final VarHandle MARKERS;
   private static final VarHandle STRINGS;
   private static final VarHandle LONGS;
 
   static {
     try {
       IDX = MethodHandles.lookup().findVarHandle(VarHandleMarkHolder.class, "idx", long.class);
-      OBJECTS = MethodHandles.arrayElementVarHandle(Object[].class);
+      MARKERS = MethodHandles.arrayElementVarHandle(Marker[].class);
       STRINGS = MethodHandles.arrayElementVarHandle(String[].class);
       LONGS = MethodHandles.arrayElementVarHandle(long[].class);
     } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -48,7 +55,8 @@ final class VarHandleMarkHolder extends MarkHolder {
   @SuppressWarnings("unused") // Used Reflectively
   private volatile long idx;
 
-  private final Object[] taskNameOrMarkers;
+  private final Object[] taskNames;
+  private final Object[] markers;
   private final String[] tagNames;
   private final long[] tagIds;
   private final long[] nanoTimes;
@@ -68,7 +76,8 @@ final class VarHandleMarkHolder extends MarkHolder {
     }
     this.maxEvents = maxEvents;
     this.maxEventsMax = maxEvents - 1L;
-    this.taskNameOrMarkers = new Object[maxEvents];
+    this.taskNames = new String[maxEvents];
+    this.markers = new Marker[maxEvents];
     this.tagNames = new String[maxEvents];
     this.tagIds = new long[maxEvents];
     this.nanoTimes = new long[maxEvents];
@@ -80,24 +89,26 @@ final class VarHandleMarkHolder extends MarkHolder {
   public void start(long gen, String taskName, String tagName, long tagId, long nanoTime) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, taskName);
+    STRINGS.setOpaque(taskNames, i, taskName);
     STRINGS.setOpaque(tagNames, i, tagName);
     LONGS.setOpaque(tagIds, i, tagId);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
-    LONGS.setOpaque(genOps, i, gen + START_OP);
+    LONGS.setOpaque(genOps, i, gen + START_T_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
 
   @Override
-  public void start(long gen, Marker marker, String tagName, long tagId, long nanoTime) {
+  public void start(
+      long gen, String taskName, Marker marker, String tagName, long tagId, long nanoTime) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
+    STRINGS.setOpaque(taskNames, i, taskName);
+    MARKERS.setOpaque(markers, i, marker);
     STRINGS.setOpaque(tagNames, i, tagName);
     LONGS.setOpaque(tagIds, i, tagId);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
-    LONGS.setOpaque(genOps, i, gen + START_OP);
+    LONGS.setOpaque(genOps, i, gen + START_TM_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
@@ -106,20 +117,31 @@ final class VarHandleMarkHolder extends MarkHolder {
   public void start(long gen, String taskName, long nanoTime) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, taskName);
+    STRINGS.setOpaque(taskNames, i, taskName);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
-    LONGS.setOpaque(genOps, i, gen + START_NOTAG_OP);
+    LONGS.setOpaque(genOps, i, gen + START_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
 
   @Override
-  public void start(long gen, Marker marker, long nanoTime) {
+  public void start(long gen, String taskName, Marker marker, long nanoTime) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
+    STRINGS.setOpaque(taskNames, i, taskName);
+    MARKERS.setOpaque(markers, i, marker);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
-    LONGS.setOpaque(genOps, i, gen + START_NOTAG_OP);
+    LONGS.setOpaque(genOps, i, gen + START_M_OP);
+    IDX.setRelease(this, localIdx + 1);
+    VarHandle.storeStoreFence();
+  }
+
+  @Override
+  public void link(long gen, long linkId) {
+    long localIdx = (long) IDX.get(this);
+    int i = (int) (localIdx & maxEventsMax);
+    LONGS.setOpaque(tagIds, i, linkId);
+    LONGS.setOpaque(genOps, i, gen + LINK_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
@@ -129,8 +151,8 @@ final class VarHandleMarkHolder extends MarkHolder {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
     LONGS.setOpaque(tagIds, i, linkId);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
-    LONGS.setOpaque(genOps, i, gen + LINK_OP);
+    MARKERS.setOpaque(markers, i, marker);
+    LONGS.setOpaque(genOps, i, gen + LINK_M_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
@@ -139,24 +161,26 @@ final class VarHandleMarkHolder extends MarkHolder {
   public void stop(long gen, String taskName, String tagName, long tagId, long nanoTime) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
+    STRINGS.setOpaque(taskNames, i, taskName);
     STRINGS.setOpaque(tagNames, i, tagName);
     LONGS.setOpaque(tagIds, i, tagId);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, taskName);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
-    LONGS.setOpaque(genOps, i, gen + STOP_OP);
+    LONGS.setOpaque(genOps, i, gen + STOP_T_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
 
   @Override
-  public void stop(long gen, Marker marker, String tagName, long tagId, long nanoTime) {
+  public void stop(
+      long gen, String taskName, Marker marker, String tagName, long tagId, long nanoTime) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
+    STRINGS.setOpaque(taskNames, i, taskName);
+    MARKERS.setOpaque(markers, i, marker);
     STRINGS.setOpaque(tagNames, i, tagName);
     LONGS.setOpaque(tagIds, i, tagId);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
-    LONGS.setOpaque(genOps, i, gen + STOP_OP);
+    LONGS.setOpaque(genOps, i, gen + STOP_TM_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
@@ -165,20 +189,21 @@ final class VarHandleMarkHolder extends MarkHolder {
   public void stop(long gen, String taskName, long nanoTime) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, taskName);
+    STRINGS.setOpaque(taskNames, i, taskName);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
-    LONGS.setOpaque(genOps, i, gen + STOP_NOTAG_OP);
+    LONGS.setOpaque(genOps, i, gen + STOP_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
 
   @Override
-  public void stop(long gen, Marker marker, long nanoTime) {
+  public void stop(long gen, String taskName, Marker marker, long nanoTime) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
+    STRINGS.setOpaque(taskNames, i, taskName);
+    MARKERS.setOpaque(markers, i, marker);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
-    LONGS.setOpaque(genOps, i, gen + STOP_NOTAG_OP);
+    LONGS.setOpaque(genOps, i, gen + STOP_M_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
@@ -188,27 +213,34 @@ final class VarHandleMarkHolder extends MarkHolder {
       long gen, String eventName, String tagName, long tagId, long nanoTime, long durationNanos) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, eventName);
+    STRINGS.setOpaque(taskNames, i, eventName);
     STRINGS.setOpaque(tagNames, i, tagName);
     LONGS.setOpaque(tagIds, i, tagId);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
     LONGS.setOpaque(durationNanoTimes, i, durationNanos);
-    LONGS.setOpaque(genOps, i, gen + EVENT_OP);
+    LONGS.setOpaque(genOps, i, gen + EVENT_T_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
 
   @Override
   public void event(
-      long gen, Marker marker, String tagName, long tagId, long nanoTime, long durationNanos) {
+      long gen,
+      String eventName,
+      Marker marker,
+      String tagName,
+      long tagId,
+      long nanoTime,
+      long durationNanos) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
+    STRINGS.setOpaque(taskNames, i, eventName);
+    MARKERS.setOpaque(markers, i, marker);
     STRINGS.setOpaque(tagNames, i, tagName);
     LONGS.setOpaque(tagIds, i, tagId);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
     LONGS.setOpaque(durationNanoTimes, i, durationNanos);
-    LONGS.setOpaque(genOps, i, gen + EVENT_OP);
+    LONGS.setOpaque(genOps, i, gen + EVENT_TM_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
@@ -217,29 +249,31 @@ final class VarHandleMarkHolder extends MarkHolder {
   public void event(long gen, String eventName, long nanoTime, long durationNanos) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, eventName);
+    STRINGS.setOpaque(taskNames, i, eventName);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
     LONGS.setOpaque(durationNanoTimes, i, durationNanos);
-    LONGS.setOpaque(genOps, i, gen + EVENT_NOTAG_OP);
+    LONGS.setOpaque(genOps, i, gen + EVENT_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
 
   @Override
-  public void event(long gen, Marker marker, long nanoTime, long durationNanos) {
+  public void event(long gen, String eventName, Marker marker, long nanoTime, long durationNanos) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
-    OBJECTS.setOpaque(taskNameOrMarkers, i, marker);
+    STRINGS.setOpaque(taskNames, i, eventName);
+    MARKERS.setOpaque(markers, i, marker);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
     LONGS.setOpaque(durationNanoTimes, i, durationNanos);
-    LONGS.setOpaque(genOps, i, gen + EVENT_NOTAG_OP);
+    LONGS.setOpaque(genOps, i, gen + EVENT_M_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
 
   @Override
   public void resetForTest() {
-    Arrays.fill(taskNameOrMarkers, null);
+    Arrays.fill(taskNames, null);
+    Arrays.fill(markers, null);
     Arrays.fill(tagNames, null);
     Arrays.fill(tagIds, 0);
     Arrays.fill(nanoTimes, 0);
@@ -251,7 +285,8 @@ final class VarHandleMarkHolder extends MarkHolder {
 
   @Override
   public List<Mark> read(boolean readerIsWriter) {
-    final Object[] localTaskNameOrMarkers = new Object[maxEvents];
+    final String[] localTaskNames = new String[maxEvents];
+    final Marker[] localMarkers = new Marker[maxEvents];
     final String[] localTagNames = new String[maxEvents];
     final long[] localTagIds = new long[maxEvents];
     final long[] localNanoTimes = new long[maxEvents];
@@ -260,7 +295,8 @@ final class VarHandleMarkHolder extends MarkHolder {
     VarHandle.loadLoadFence();
     int size = (int) Math.min(startIdx, maxEvents);
     for (int i = 0; i < size; i++) {
-      localTaskNameOrMarkers[i] = (Object) OBJECTS.getOpaque(taskNameOrMarkers, i);
+      localTaskNames[i] = (String) STRINGS.getOpaque(taskNames, i);
+      localMarkers[i] = (Marker) MARKERS.getOpaque(markers, i);
       localTagNames[i] = (String) STRINGS.getOpaque(tagNames, i);
       localTagIds[i] = (long) LONGS.getOpaque(tagIds, i);
       localNanoTimes[i] = (long) LONGS.getOpaque(nanoTimes, i);
@@ -285,28 +321,15 @@ final class VarHandleMarkHolder extends MarkHolder {
       if (op == Mark.Operation.NONE) {
         throw new ConcurrentModificationException("Read of storage was not threadsafe");
       }
-      Object taskNameOrMarker = localTaskNameOrMarkers[readIdx];
-      if (taskNameOrMarker instanceof Marker) {
-        marks.addFirst(
-            Mark.create(
-                (Marker) taskNameOrMarker,
-                localTagNames[readIdx],
-                localTagIds[readIdx],
-                localNanoTimes[readIdx],
-                gen,
-                op));
-      } else if (taskNameOrMarker instanceof String) {
-        marks.addFirst(
-            Mark.create(
-                (String) taskNameOrMarker,
-                localTagNames[readIdx],
-                localTagIds[readIdx],
-                localNanoTimes[readIdx],
-                gen,
-                op));
-      } else {
-        throw new RuntimeException("Bad marker or string " + taskNameOrMarker);
-      }
+      marks.addFirst(
+          Mark.create(
+              localTaskNames[readIdx],
+              localMarkers[readIdx],
+              localTagNames[readIdx],
+              localTagIds[readIdx],
+              localNanoTimes[readIdx],
+              gen,
+              op));
     }
 
     return Collections.unmodifiableList(new ArrayList<>(marks));

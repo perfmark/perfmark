@@ -158,7 +158,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.startAnyways(gen, taskName);
+      Storage.startAnyways(gen, taskName, marker);
     }
 
     @Override
@@ -185,7 +185,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.stopAnyways(gen, taskName, tagName, tagId);
+      Storage.stopAnyways(gen, taskName, marker, tagName, tagId);
     }
 
     public static void stopTask(String taskName, Marker marker) {
@@ -193,7 +193,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.stopAnyways(gen, taskName);
+      Storage.stopAnyways(gen, taskName, marker);
     }
 
     @Override
@@ -220,7 +220,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.eventAnyways(gen, eventName, tagName, tagId);
+      Storage.eventAnyways(gen, eventName, marker, tagName, tagId);
     }
 
     public static void event(String eventName, Marker marker) {
@@ -228,7 +228,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.eventAnyways(gen, eventName);
+      Storage.eventAnyways(gen, eventName, marker);
     }
 
     @Override
@@ -243,7 +243,7 @@ final class SecretPerfMarkImpl {
         return NO_LINK_ID;
       }
       long linkId = linkIdAlloc.getAndIncrement();
-      Storage.linkAnyways(gen, linkId, Marker.NONE);
+      Storage.linkAnyways(gen, linkId);
       return linkId;
     }
 
@@ -263,7 +263,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.linkAnyways(gen, -linkId, Marker.NONE);
+      Storage.linkAnyways(gen, -linkId);
     }
 
     public static void link(long linkId, Marker marker) {

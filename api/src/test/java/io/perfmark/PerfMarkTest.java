@@ -3,26 +3,21 @@ package io.perfmark;
 import static io.perfmark.impl.Mark.NO_NANOTIME;
 import static io.perfmark.impl.Mark.NO_TAG_ID;
 import static io.perfmark.impl.Mark.NO_TAG_NAME;
-import static io.perfmark.impl.Mark.Operation.EVENT;
 import static io.perfmark.impl.Mark.Operation.LINK;
 import static io.perfmark.impl.Mark.Operation.TASK_END;
-import static io.perfmark.impl.Mark.Operation.TASK_NOTAG_END;
-import static io.perfmark.impl.Mark.Operation.TASK_NOTAG_START;
+import static io.perfmark.impl.Mark.Operation.TASK_END_T;
 import static io.perfmark.impl.Mark.Operation.TASK_START;
+import static io.perfmark.impl.Mark.Operation.TASK_START_T;
 import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
-import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.MarkHolderProvider;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.Marker;
 import io.perfmark.impl.Storage;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Filter;
 import java.util.logging.LogRecord;
@@ -101,23 +96,71 @@ public class PerfMarkTest {
     List<Mark> expected =
         Arrays.asList(
             Mark.create(
-                "task1", tag1.tagName, tag1.tagId, marks.get(0).getNanoTime(), gen, TASK_START),
+                "task1",
+                Marker.NONE,
+                tag1.tagName,
+                tag1.tagId,
+                marks.get(0).getNanoTime(),
+                gen,
+                TASK_START_T),
             Mark.create(
-                "task2", tag2.tagName, tag2.tagId, marks.get(1).getNanoTime(), gen, TASK_START),
+                "task2",
+                Marker.NONE,
+                tag2.tagName,
+                tag2.tagId,
+                marks.get(1).getNanoTime(),
+                gen,
+                TASK_START_T),
             Mark.create(
-                "task3", tag3.tagName, tag3.tagId, marks.get(2).getNanoTime(), gen, TASK_START),
+                "task3",
+                Marker.NONE,
+                tag3.tagName,
+                tag3.tagId,
+                marks.get(2).getNanoTime(),
+                gen,
+                TASK_START_T),
             Mark.create(
-                "task4", NO_TAG_NAME, NO_TAG_ID, marks.get(3).getNanoTime(), gen, TASK_NOTAG_START),
-            Mark.create(Marker.NONE, NO_TAG_NAME, link.linkId, NO_NANOTIME, gen, LINK),
-            Mark.create(Marker.NONE, NO_TAG_NAME, -link.linkId, NO_NANOTIME, gen, LINK),
+                "task4",
+                Marker.NONE,
+                NO_TAG_NAME,
+                NO_TAG_ID,
+                marks.get(3).getNanoTime(),
+                gen,
+                TASK_START),
+            Mark.create(null, Marker.NONE, NO_TAG_NAME, link.linkId, NO_NANOTIME, gen, LINK),
+            Mark.create(null, Marker.NONE, NO_TAG_NAME, -link.linkId, NO_NANOTIME, gen, LINK),
             Mark.create(
-                "task4", NO_TAG_NAME, NO_TAG_ID, marks.get(6).getNanoTime(), gen, TASK_NOTAG_END),
+                "task4",
+                Marker.NONE,
+                NO_TAG_NAME,
+                NO_TAG_ID,
+                marks.get(6).getNanoTime(),
+                gen,
+                TASK_END),
             Mark.create(
-                "task3", tag3.tagName, tag3.tagId, marks.get(7).getNanoTime(), gen, TASK_END),
+                "task3",
+                Marker.NONE,
+                tag3.tagName,
+                tag3.tagId,
+                marks.get(7).getNanoTime(),
+                gen,
+                TASK_END_T),
             Mark.create(
-                "task2", tag2.tagName, tag2.tagId, marks.get(8).getNanoTime(), gen, TASK_END),
+                "task2",
+                Marker.NONE,
+                tag2.tagName,
+                tag2.tagId,
+                marks.get(8).getNanoTime(),
+                gen,
+                TASK_END_T),
             Mark.create(
-                "task1", tag1.tagName, tag1.tagId, marks.get(9).getNanoTime(), gen, TASK_END));
+                "task1",
+                Marker.NONE,
+                tag1.tagName,
+                tag1.tagId,
+                marks.get(9).getNanoTime(),
+                gen,
+                TASK_END_T));
     assertEquals(expected, marks);
   }
 
@@ -133,134 +176,6 @@ public class PerfMarkTest {
     @Override
     public long getGeneration() {
       return generation;
-    }
-  }
-
-  public static final class FakeMarkHolderProvider extends MarkHolderProvider {
-
-    @Override
-    public MarkHolder create() {
-      return new FakeMarkHolder();
-    }
-  }
-
-  public static final class FakeMarkHolder extends MarkHolder {
-    private final List<Mark> marks = new ArrayList<>();
-
-    @Override
-    public void start(long gen, String taskName, String tagName, long tagId, long nanoTime) {
-      marks.add(Mark.create(taskName, tagName, tagId, nanoTime, gen, TASK_START));
-    }
-
-    @Override
-    public void start(long gen, Marker marker, String tagName, long tagId, long nanoTime) {
-      marks.add(Mark.create(marker, tagName, tagId, nanoTime, gen, TASK_START));
-    }
-
-    @Override
-    public void start(long gen, String taskName, long nanoTime) {
-      marks.add(
-          Mark.create(
-              taskName,
-              Mark.NO_TAG_NAME,
-              Mark.NO_TAG_ID,
-              nanoTime,
-              gen,
-              Mark.Operation.TASK_NOTAG_START));
-    }
-
-    @Override
-    public void start(long gen, Marker marker, long nanoTime) {
-      marks.add(
-          Mark.create(
-              marker,
-              Mark.NO_TAG_NAME,
-              Mark.NO_TAG_ID,
-              nanoTime,
-              gen,
-              Mark.Operation.TASK_NOTAG_START));
-    }
-
-    @Override
-    public void link(long gen, long linkId, Marker marker) {
-      marks.add(
-          Mark.create(
-              marker, Mark.NO_TAG_NAME, linkId, Mark.NO_NANOTIME, gen, Mark.Operation.LINK));
-    }
-
-    @Override
-    public void stop(long gen, String taskName, String tagName, long tagId, long nanoTime) {
-      marks.add(Mark.create(taskName, tagName, tagId, nanoTime, gen, TASK_END));
-    }
-
-    @Override
-    public void stop(long gen, Marker marker, String tagName, long tagId, long nanoTime) {
-      marks.add(Mark.create(marker, tagName, tagId, nanoTime, gen, TASK_END));
-    }
-
-    @Override
-    public void stop(long gen, String taskName, long nanoTime) {
-      marks.add(
-          Mark.create(
-              taskName,
-              Mark.NO_TAG_NAME,
-              Mark.NO_TAG_ID,
-              nanoTime,
-              gen,
-              Mark.Operation.TASK_NOTAG_END));
-    }
-
-    @Override
-    public void stop(long gen, Marker marker, long nanoTime) {
-      marks.add(
-          Mark.create(
-              marker,
-              Mark.NO_TAG_NAME,
-              Mark.NO_TAG_ID,
-              nanoTime,
-              gen,
-              Mark.Operation.TASK_NOTAG_END));
-    }
-
-    @Override
-    public void event(
-        long gen, String eventName, String tagName, long tagId, long nanoTime, long durationNanos) {
-      marks.add(Mark.create(eventName, tagName, tagId, nanoTime, gen, EVENT));
-    }
-
-    @Override
-    public void event(
-        long gen, Marker marker, String tagName, long tagId, long nanoTime, long durationNanos) {
-      marks.add(Mark.create(marker, tagName, tagId, nanoTime, gen, EVENT));
-    }
-
-    @Override
-    public void event(long gen, String eventName, long nanoTime, long durationNanos) {
-      marks.add(
-          Mark.create(
-              eventName,
-              Mark.NO_TAG_NAME,
-              Mark.NO_TAG_ID,
-              nanoTime,
-              gen,
-              Mark.Operation.EVENT_NOTAG));
-    }
-
-    @Override
-    public void event(long gen, Marker marker, long nanoTime, long durationNanos) {
-      marks.add(
-          Mark.create(
-              marker, Mark.NO_TAG_NAME, Mark.NO_TAG_ID, nanoTime, gen, Mark.Operation.EVENT_NOTAG));
-    }
-
-    @Override
-    public void resetForTest() {
-      marks.clear();
-    }
-
-    @Override
-    public List<Mark> read(boolean readerIsWriter) {
-      return Collections.unmodifiableList(new ArrayList<>(marks));
     }
   }
 

@@ -19,28 +19,33 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
     public void start(long gen, String taskName, String tagName, long tagId, long nanoTime) {}
 
     @Override
-    public void start(long gen, Marker marker, String tagName, long tagId, long nanoTime) {}
+    public void start(
+        long gen, String taskName, Marker marker, String tagName, long tagId, long nanoTime) {}
 
     @Override
     public void start(long gen, String taskName, long nanoTime) {}
 
     @Override
-    public void start(long gen, Marker marker, long nanoTime) {}
+    public void start(long gen, String taskName, Marker marker, long nanoTime) {}
 
     @Override
     public void link(long gen, long linkId, Marker marker) {}
 
     @Override
+    public void link(long gen, long linkId) {}
+
+    @Override
     public void stop(long gen, String taskName, String tagName, long tagId, long nanoTime) {}
 
     @Override
-    public void stop(long gen, Marker marker, String tagName, long tagId, long nanoTime) {}
+    public void stop(
+        long gen, String taskName, Marker marker, String tagName, long tagId, long nanoTime) {}
 
     @Override
     public void stop(long gen, String taskName, long nanoTime) {}
 
     @Override
-    public void stop(long gen, Marker marker, long nanoTime) {}
+    public void stop(long gen, String taskName, Marker marker, long nanoTime) {}
 
     @Override
     public void event(
@@ -53,13 +58,20 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
 
     @Override
     public void event(
-        long gen, Marker marker, String tagName, long tagId, long nanoTime, long durationNanos) {}
+        long gen,
+        String taskName,
+        Marker marker,
+        String tagName,
+        long tagId,
+        long nanoTime,
+        long durationNanos) {}
 
     @Override
     public void event(long gen, String eventName, long nanoTime, long durationNanos) {}
 
     @Override
-    public void event(long gen, Marker marker, long nanoTime, long durationNanos) {}
+    public void event(
+        long gen, String taskName, Marker marker, long nanoTime, long durationNanos) {}
 
     @Override
     public void resetForTest() {}
