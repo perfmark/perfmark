@@ -54,7 +54,7 @@ public final class PerfMark {
   }
 
   public static void startTask(@CompileTimeConstant String taskName, Tag tag) {
-    impl.startTask(taskName, tag.tagName, tag.tagId);
+    impl.startTask(taskName, tag);
   }
 
   public static void startTask(@CompileTimeConstant String taskName) {
@@ -62,7 +62,7 @@ public final class PerfMark {
   }
 
   public static void event(@CompileTimeConstant String eventName, Tag tag) {
-    impl.event(eventName, tag.tagName, tag.tagId);
+    impl.event(eventName, tag);
   }
 
   public static void event(@CompileTimeConstant String eventName) {
@@ -70,7 +70,7 @@ public final class PerfMark {
   }
 
   public static void stopTask(@CompileTimeConstant String taskName, Tag tag) {
-    impl.stopTask(taskName, tag.tagName, tag.tagId);
+    impl.stopTask(taskName, tag);
   }
 
   public static void stopTask(@CompileTimeConstant String taskName) {

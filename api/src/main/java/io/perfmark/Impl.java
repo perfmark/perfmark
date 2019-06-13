@@ -17,15 +17,15 @@ public class Impl {
 
   protected void setEnabled(boolean value) {}
 
-  protected void startTask(String taskName, @Nullable String tagName, long tagId) {}
+  protected void startTask(String taskName, Tag tag) {}
 
   protected void startTask(String taskName) {}
 
-  protected void event(String eventName, @Nullable String tagName, long tagId) {}
+  protected void event(String eventName, Tag tag) {}
 
   protected void event(String eventName) {}
 
-  protected void stopTask(String taskName, @Nullable String tagName, long tagId) {}
+  protected void stopTask(String taskName, Tag tag) {}
 
   protected void stopTask(String taskName) {}
 
@@ -38,4 +38,13 @@ public class Impl {
   }
 
   protected void link(long linkId) {}
+
+  @Nullable
+  protected static final String tagName(Tag tag) {
+    return tag.tagName;
+  }
+
+  protected static final long tagId(Tag tag) {
+    return tag.tagId;
+  }
 }
