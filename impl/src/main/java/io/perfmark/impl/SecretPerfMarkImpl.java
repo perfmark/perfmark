@@ -114,7 +114,7 @@ final class SecretPerfMarkImpl {
       }
     }
 
-    /** Returns true if sucessfully changed. */
+    /** Returns true if successfully changed. */
     private static synchronized boolean setEnabledQuiet(boolean value) {
       if (isEnabled(actualGeneration) == value) {
         return false;
