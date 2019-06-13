@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -119,6 +120,11 @@ public final class Main {
 
       cr.accept(
           new ClassVisitor(Opcodes.ASM7) {
+
+            @Override
+            public void visitAttribute(Attribute attribute) {
+              super.visitAttribute(attribute);
+            }
 
             @Override
             public MethodVisitor visitMethod(
