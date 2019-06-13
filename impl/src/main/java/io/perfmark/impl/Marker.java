@@ -7,31 +7,22 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public final class Marker {
 
-  public static final Marker NONE = new Marker("(notask)", null);
+  public static final Marker NONE = new Marker(null);
 
-  private final String taskName;
   private final @Nullable StackTraceElement location;
 
-  Marker(String taskName, @Nullable StackTraceElement location) {
-    if (taskName == null) {
-      throw new NullPointerException("taskName");
-    }
-    this.taskName = taskName;
+  Marker(@Nullable StackTraceElement location) {
     this.location = location;
-  }
-
-  public String getTaskName() {
-    return taskName;
   }
 
   @Override
   public String toString() {
-    return "Marker{" + taskName + "," + location + "}";
+    return "Marker{" + location + "}";
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(new Object[] {taskName, location});
+    return Arrays.hashCode(new Object[] {location});
   }
 
   @Override
@@ -40,7 +31,6 @@ public final class Marker {
       return false;
     }
     Marker other = (Marker) obj;
-    return Arrays.equals(
-        new Object[] {taskName, location}, new Object[] {other.taskName, other.location});
+    return Arrays.equals(new Object[] {location}, new Object[] {other.location});
   }
 }

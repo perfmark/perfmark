@@ -5,8 +5,8 @@ import javax.annotation.Nullable;
 final class SecretMarkerFactory {
 
   public static final class MarkerFactory {
-    public static Marker createMarker(String taskName, @Nullable StackTraceElement location) {
-      return new Marker(taskName, location);
+    public static Marker createMarker(@Nullable StackTraceElement location) {
+      return new Marker(location);
     }
 
     private MarkerFactory() {

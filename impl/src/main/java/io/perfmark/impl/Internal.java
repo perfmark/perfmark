@@ -2,8 +2,8 @@ package io.perfmark.impl;
 
 public final class Internal {
 
-  public static Marker createMarker(String taskName) {
-    return new Marker(taskName, null);
+  public static Marker createMarker() {
+    return new Marker(null);
   }
 
   private Internal() {

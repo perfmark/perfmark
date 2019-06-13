@@ -65,7 +65,7 @@ public class SynchronizedMarkHolderTest {
 
   @Test
   public void taskTagStartStop_marker() {
-    Marker marker = io.perfmark.impl.Internal.createMarker("(link)");
+    Marker marker = io.perfmark.impl.Internal.createMarker();
     mh.start(gen, "task", marker, 3);
     mh.stop(gen, "task", marker, 4);
 
@@ -80,7 +80,7 @@ public class SynchronizedMarkHolderTest {
 
   @Test
   public void taskStartStop_tag_marker() {
-    Marker marker = io.perfmark.impl.Internal.createMarker("(link)");
+    Marker marker = io.perfmark.impl.Internal.createMarker();
     mh.start(gen, "task", marker, "tag", 2, 3);
     mh.stop(gen, "task", marker, "tag", 2, 4);
 
@@ -114,7 +114,7 @@ public class SynchronizedMarkHolderTest {
 
   @Test
   public void event() {
-    Marker marker = Internal.createMarker("event");
+    Marker marker = Internal.createMarker();
 
     mh.event(gen, "task1", 8, -1);
     mh.event(gen, "ev", marker, 7, -1);
@@ -135,7 +135,7 @@ public class SynchronizedMarkHolderTest {
 
   @Test
   public void event_tag() {
-    Marker marker = Internal.createMarker("event");
+    Marker marker = Internal.createMarker();
 
     mh.event(gen, "task1", "tag", 4, 8, -1);
     mh.event(gen, "ev", marker, "tag", 4, 7, -1);
@@ -175,7 +175,7 @@ public class SynchronizedMarkHolderTest {
 
   @Test
   public void linkInLinkOut_marker() {
-    Marker marker = Internal.createMarker("(link)");
+    Marker marker = Internal.createMarker();
     mh.start(gen, "task1", 3);
     mh.link(gen, 9, marker);
     mh.link(gen, -9, marker);
