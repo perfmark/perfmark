@@ -28,7 +28,7 @@ public final class Main {
   private static final String MARKER_FACTORY = "io/perfmark/impl/SecretMarkerFactory$MarkerFactory";
 
   private static final String SRC_OWNER = "io/perfmark/PerfMark";
-  private static final String DST_OWNER = "io/perfmark/PerfMark$PackageAccess$Public";
+  private static final String DST_OWNER = "io/perfmark/impl/SecretPerfMarkImpl$PerfMarkImpl";
   private static final Map<? extends List<String>, ? extends List<String>> REWRITE_MAP = buildMap();
 
   public static final class MySelf {
@@ -40,6 +40,7 @@ public final class Main {
     static {
       PerfMark.startTask("hi2");
       System.err.println("I BRAN");
+      new AnotherLittleClass().run();
     }
 
     public static void main(String[] args) throws Exception {
@@ -61,7 +62,7 @@ public final class Main {
       }
       new Babs();
 
-      for (Field a : Babs.class.getDeclaredFields()) {
+      for (Field a : AnotherLittleClass.class.getDeclaredFields()) {
         a.setAccessible(true);
         System.err.print("Field " + a);
         System.err.println(a.get(null) + "");
@@ -75,22 +76,29 @@ public final class Main {
     Map<List<String>, List<String>> map = new HashMap<>();
     map.put(
         Arrays.asList(SRC_OWNER, "startTask", "(Ljava/lang/String;Lio/perfmark/Tag;)V"),
-        Arrays.asList(DST_OWNER, "startTask", "(Lio/perfmark/impl/Marker;Lio/perfmark/Tag;)V"));
+        Arrays.asList(
+            DST_OWNER,
+            "startTask",
+            "(Ljava/lang/String;Lio/perfmark/Tag;Lio/perfmark/impl/Marker;)V"));
     map.put(
         Arrays.asList(SRC_OWNER, "startTask", "(Ljava/lang/String;)V"),
-        Arrays.asList(DST_OWNER, "startTask", "(Lio/perfmark/impl/Marker;)V"));
+        Arrays.asList(DST_OWNER, "startTask", "(Ljava/lang/String;Lio/perfmark/impl/Marker;)V"));
     map.put(
         Arrays.asList(SRC_OWNER, "stopTask", "(Ljava/lang/String;Lio/perfmark/Tag;)V"),
-        Arrays.asList(DST_OWNER, "stopTask", "(Lio/perfmark/impl/Marker;Lio/perfmark/Tag;)V"));
+        Arrays.asList(
+            DST_OWNER,
+            "stopTask",
+            "(Ljava/lang/String;Lio/perfmark/Tag;Lio/perfmark/impl/Marker;)V"));
     map.put(
         Arrays.asList(SRC_OWNER, "stopTask", "(Ljava/lang/String;)V"),
-        Arrays.asList(DST_OWNER, "stopTask", "(Lio/perfmark/impl/Marker;)V"));
+        Arrays.asList(DST_OWNER, "stopTask", "(Ljava/lang/String;Lio/perfmark/impl/Marker;)V"));
     map.put(
         Arrays.asList(SRC_OWNER, "event", "(Ljava/lang/String;Lio/perfmark/Tag;)V"),
-        Arrays.asList(DST_OWNER, "event", "(Lio/perfmark/impl/Marker;Lio/perfmark/Tag;)V"));
+        Arrays.asList(
+            DST_OWNER, "event", "(Ljava/lang/String;Lio/perfmark/Tag;Lio/perfmark/impl/Marker;)V"));
     map.put(
         Arrays.asList(SRC_OWNER, "event", "(Ljava/lang/String;)V"),
-        Arrays.asList(DST_OWNER, "event", "(Lio/perfmark/impl/Marker;)V"));
+        Arrays.asList(DST_OWNER, "event", "(Ljava/lang/String;Lio/perfmark/impl/Marker;)V"));
     return Collections.unmodifiableMap(map);
   }
 
@@ -257,7 +265,6 @@ public final class Main {
                       int i = markerIndex++;
                       String fieldName = "IO_PERFMARK_MARKER<" + i + '>';
 
-                      visitInsn(Opcodes.POP);
                       visitFieldInsn(
                           Opcodes.GETSTATIC, className, fieldName, "Lio/perfmark/impl/Marker;");
 
@@ -285,5 +292,11 @@ public final class Main {
 
       return cw.toByteArray();
     }
+  }
+}
+
+class AnotherLittleClass {
+  void run() {
+    PerfMark.event("record");
   }
 }
