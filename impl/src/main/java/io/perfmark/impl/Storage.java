@@ -4,7 +4,6 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -235,23 +234,6 @@ public final class Storage {
         allSpans.remove(ref);
       }
     }
-  }
-
-  @SuppressWarnings("ReferenceEquality") // No Java 8 yet
-  private static boolean errorsEqual(Throwable t1, Throwable t2) {
-    if (t1 == null || t2 == null) {
-      return t1 == t2;
-    }
-    if (t1.getClass() == t2.getClass()) {
-      String msg1 = t1.getMessage();
-      String msg2 = t2.getMessage();
-      if (msg1 == msg2 || (msg1 != null && msg1.equals(msg2))) {
-        if (Arrays.equals(t1.getStackTrace(), t2.getStackTrace())) {
-          return errorsEqual(t1.getCause(), t2.getCause());
-        }
-      }
-    }
-    return false;
   }
 
   private Storage() {
