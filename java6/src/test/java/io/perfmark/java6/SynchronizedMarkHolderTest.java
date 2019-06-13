@@ -40,7 +40,7 @@ public class SynchronizedMarkHolderTest {
     mh.start(gen, "task", 3);
     mh.stop(gen, "task", 4);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
     assertEquals(2, marks.size());
     List<Mark> expected =
         Arrays.asList(
@@ -54,7 +54,7 @@ public class SynchronizedMarkHolderTest {
     mh.start(gen, "task", "tag", 9, 3);
     mh.stop(gen, "task", "tag", 9, 4);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
     assertEquals(2, marks.size());
     List<Mark> expected =
         Arrays.asList(
@@ -69,7 +69,7 @@ public class SynchronizedMarkHolderTest {
     mh.start(gen, "task", marker, 3);
     mh.stop(gen, "task", marker, 4);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
     assertEquals(2, marks.size());
     List<Mark> expected =
         Arrays.asList(
@@ -84,7 +84,7 @@ public class SynchronizedMarkHolderTest {
     mh.start(gen, "task", marker, "tag", 2, 3);
     mh.stop(gen, "task", marker, "tag", 2, 4);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
     assertEquals(2, marks.size());
     List<Mark> expected =
         Arrays.asList(
@@ -100,7 +100,7 @@ public class SynchronizedMarkHolderTest {
     mh.stop(gen, "task2", 5);
     mh.stop(gen, "task1", 6);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
 
     assertEquals(4, marks.size());
     List<Mark> expected =
@@ -121,7 +121,7 @@ public class SynchronizedMarkHolderTest {
     mh.event(gen, "task2", 5, -1);
     mh.event(gen, "ev", marker, 6, -1);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
 
     assertEquals(4, marks.size());
     List<Mark> expected =
@@ -142,7 +142,7 @@ public class SynchronizedMarkHolderTest {
     mh.event(gen, "task2", "tag", 4, 5, -1);
     mh.event(gen, "ev", marker, "tag", 4, 6, -1);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
 
     assertEquals(4, marks.size());
     List<Mark> expected =
@@ -161,7 +161,7 @@ public class SynchronizedMarkHolderTest {
     mh.link(gen, -9);
     mh.stop(gen, "task1", 4);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
 
     assertEquals(marks.size(), 4);
     List<Mark> expected =
@@ -181,7 +181,7 @@ public class SynchronizedMarkHolderTest {
     mh.link(gen, -9, marker);
     mh.stop(gen, "task1", 4);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
 
     assertEquals(marks.size(), 4);
     List<Mark> expected =
@@ -197,7 +197,7 @@ public class SynchronizedMarkHolderTest {
   public void read_getsAllIfWriter() {
     mh.start(gen, "task", 3);
 
-    List<Mark> marks = mh.read(true);
+    List<Mark> marks = mh.read(false);
 
     assertEquals(marks.size(), 1);
   }
@@ -210,7 +210,7 @@ public class SynchronizedMarkHolderTest {
       mh.start(gen, "task", 3);
     }
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = mh.read(true);
     assertEquals(events, marks.size());
   }
 
@@ -222,7 +222,7 @@ public class SynchronizedMarkHolderTest {
       mh.start(gen, "task", 3);
     }
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = mh.read(true);
     assertEquals(events, marks.size());
   }
 }

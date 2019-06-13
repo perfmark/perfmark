@@ -47,7 +47,7 @@ public abstract class MarkHolder {
 
   public abstract void resetForTest();
 
-  public abstract List<Mark> read(boolean readerIsWriter);
+  public abstract List<Mark> read(boolean concurrentWrites);
 
   public int maxMarks() {
     return NO_MAX_MARKS;

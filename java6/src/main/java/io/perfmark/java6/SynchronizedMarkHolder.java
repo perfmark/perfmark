@@ -248,7 +248,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
   }
 
   @Override
-  public List<Mark> read(boolean readerIsWriter) {
+  public List<Mark> read(boolean concurrentWrites) {
     final String[] localTaskNames = new String[maxEvents];
     final Marker[] localMarkers = new Marker[maxEvents];
     final String[] localTagNames = new String[maxEvents];

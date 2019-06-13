@@ -73,7 +73,7 @@ public class PerfMarkStorageStress {
   @Actor
   @SuppressWarnings("ReferenceEquality")
   public void reader(L_Result r) {
-    List<Mark> marks = holder.read(false);
+    List<Mark> marks = holder.read(true);
     int ret = marks.size();
     for (int i = 0; i < marks.size(); i++) {
       Mark mark = marks.get(i);

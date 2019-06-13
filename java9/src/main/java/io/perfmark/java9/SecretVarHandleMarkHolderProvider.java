@@ -12,7 +12,7 @@ final class SecretVarHandleMarkHolderProvider {
       MarkHolder holder = create();
       holder.start(1, "bogus", 0);
       holder.stop(1, "bogus", 0);
-      int size = holder.read(true).size();
+      int size = holder.read(false).size();
       if (size != 2) {
         throw new AssertionError("Wrong size " + size);
       }

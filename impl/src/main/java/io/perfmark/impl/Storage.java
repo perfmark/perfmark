@@ -1,6 +1,5 @@
 package io.perfmark.impl;
 
-import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -10,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -19,8 +19,8 @@ public final class Storage {
 
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
   // and need to use these static variables.
-  static final ConcurrentMap<MarkHolderRef, Reference<? extends Thread>> allMarkHolders =
-      new ConcurrentHashMap<MarkHolderRef, Reference<? extends Thread>>();
+  static final ConcurrentMap<MarkHolderRef, Boolean> allMarkHolders =
+      new ConcurrentHashMap<MarkHolderRef, Boolean>();
   private static final ThreadLocal<MarkHolder> localMarkHolder = new MarkHolderThreadLocal();
   static final MarkHolderProvider markHolderProvider;
   private static final Logger logger;
@@ -87,44 +87,28 @@ public final class Storage {
 
   /** Returns a list of {@link MarkList}s across all reachable threads. */
   public static List<MarkList> read() {
-    MarkHolderRef.cleanQueue(allMarkHolders);
-    List<Thread> threads = new ArrayList<Thread>();
-    List<Long> markHolderIds = new ArrayList<Long>();
-    List<MarkHolder> markHolders = new ArrayList<MarkHolder>();
+    List<MarkHolderRef> deadMarkHolderRefs = MarkHolderRef.cleanQueue(allMarkHolders);
     // Capture a snapshot of the index with as little skew as possible.  Don't pre-size the lists
     // since it would mean scanning allMarkHolders twice.  Instead, try to get a strong ref to each
     // of the MarkHolders before they could get GC'd.
-    for (Map.Entry<MarkHolderRef, Reference<? extends Thread>> entry : allMarkHolders.entrySet()) {
-      MarkHolder mh = entry.getKey().get();
-      if (mh == null) {
-        continue;
-      }
-      @Nullable Thread writer = entry.getValue().get();
-      markHolders.add(mh);
-      markHolderIds.add(entry.getKey().markHolderId);
-      threads.add(writer);
-    }
-    assert markHolders.size() == threads.size();
-    List<MarkList> markLists = new ArrayList<MarkList>(markHolders.size());
-    long noThreadIds = MarkList.NO_THREAD_ID;
-    for (int i = 0; i < markHolders.size(); i++) {
-      final long threadId;
+    List<MarkHolderRef> markHolderRefs = new ArrayList<MarkHolderRef>(allMarkHolders.keySet());
+    markHolderRefs.addAll(deadMarkHolderRefs);
+    List<MarkList> markLists = new ArrayList<MarkList>(markHolderRefs.size());
+    for (MarkHolderRef ref : markHolderRefs) {
       final String threadName;
-      @Nullable Thread writer = threads.get(i);
-      if (writer == null) {
-        threadId = noThreadIds--;
-        threadName = MarkList.NO_THREAD_NAME;
+      @Nullable Thread writer = ref.get();
+      if (writer != null) {
+        ref.lastThreadName.set(threadName = writer.getName());
       } else {
-        threadId = writer.getId();
-        threadName = writer.getName();
+        threadName = ref.lastThreadName.get();
       }
-      boolean readerIsWriter = Thread.currentThread() == writer;
+      boolean concurrentWrites = Thread.currentThread() != writer;
       markLists.add(
           MarkList.newBuilder()
-              .setMarks(markHolders.get(i).read(readerIsWriter))
+              .setMarks(ref.holder.read(concurrentWrites))
               .setThreadName(threadName)
-              .setThreadId(threadId)
-              .setMarkListId(markHolderIds.get(i))
+              .setThreadId(ref.threadId)
+              .setMarkListId(ref.markHolderId)
               .build());
     }
     return Collections.unmodifiableList(markLists);
@@ -198,7 +182,7 @@ public final class Storage {
   }
 
   public static void resetForTest() {
-    localMarkHolder.get().resetForTest();
+    localMarkHolder.remove();
   }
 
   private static final class MarkHolderThreadLocal extends ThreadLocal<MarkHolder> {
@@ -207,32 +191,40 @@ public final class Storage {
 
     @Override
     protected MarkHolder initialValue() {
-      MarkHolderRef.cleanQueue(allMarkHolders);
+      @SuppressWarnings("unused")
+      Object unused = MarkHolderRef.cleanQueue(allMarkHolders);
       MarkHolder holder = markHolderProvider.create();
-      MarkHolderRef ref = new MarkHolderRef(holder);
-      Reference<Thread> writer = new WeakReference<Thread>(Thread.currentThread());
-      allMarkHolders.put(ref, writer);
+      MarkHolderRef ref = new MarkHolderRef(Thread.currentThread(), holder);
+      allMarkHolders.put(ref, Boolean.TRUE);
       return holder;
     }
   }
 
-  private static final class MarkHolderRef extends WeakReference<MarkHolder> {
-    private static final ReferenceQueue<MarkHolder> markHolderRefQueue =
-        new ReferenceQueue<MarkHolder>();
+  private static final class MarkHolderRef extends WeakReference<Thread> {
+    private static final ReferenceQueue<Thread> markHolderRefQueue = new ReferenceQueue<Thread>();
     private static final AtomicLong markHolderIdAllocator = new AtomicLong();
 
+    final MarkHolder holder;
     final long markHolderId = markHolderIdAllocator.incrementAndGet();
+    final long threadId;
+    final AtomicReference<String> lastThreadName;
 
-    MarkHolderRef(MarkHolder holder) {
-      super(holder, markHolderRefQueue);
+    MarkHolderRef(Thread thread, MarkHolder holder) {
+      super(thread, markHolderRefQueue);
+      this.holder = holder;
+      this.threadId = thread.getId();
+      this.lastThreadName = new AtomicReference<String>(thread.getName());
     }
 
-    static void cleanQueue(Map<?, ?> allSpans) {
-      Reference<?> ref;
-      while ((ref = markHolderRefQueue.poll()) != null) {
+    static List<MarkHolderRef> cleanQueue(Map<?, ?> allSpans) {
+      MarkHolderRef ref;
+      List<MarkHolderRef> deadRefs = new ArrayList<MarkHolderRef>();
+      while ((ref = (MarkHolderRef) markHolderRefQueue.poll()) != null) {
         ref.clear();
         allSpans.remove(ref);
+        deadRefs.add(ref);
       }
+      return Collections.unmodifiableList(deadRefs);
     }
   }
 

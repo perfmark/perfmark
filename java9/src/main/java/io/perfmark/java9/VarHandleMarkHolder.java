@@ -284,7 +284,7 @@ final class VarHandleMarkHolder extends MarkHolder {
   }
 
   @Override
-  public List<Mark> read(boolean readerIsWriter) {
+  public List<Mark> read(boolean concurrentWrites) {
     final String[] localTaskNames = new String[maxEvents];
     final Marker[] localMarkers = new Marker[maxEvents];
     final String[] localTagNames = new String[maxEvents];
@@ -310,7 +310,7 @@ final class VarHandleMarkHolder extends MarkHolder {
     // If we are reading from ourselves (such as in a test), we can assume there isn't an in
     // progress write modifying the oldest entry.  Additionally, if the writer has not yet
     // wrapped around, the last entry cannot have been corrupted.
-    boolean tailValid = readerIsWriter || endIdx < maxEvents - 1;
+    boolean tailValid = !concurrentWrites || endIdx < maxEvents - 1;
     endIdx += !tailValid ? 1 : 0;
     long eventsToDrop = endIdx - startIdx;
     final Deque<Mark> marks = new ArrayDeque<>(size);
