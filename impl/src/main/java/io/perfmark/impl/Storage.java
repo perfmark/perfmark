@@ -3,6 +3,7 @@ package io.perfmark.impl;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -87,12 +88,12 @@ public final class Storage {
 
   /** Returns a list of {@link MarkList}s across all reachable threads. */
   public static List<MarkList> read() {
-    List<MarkHolderRef> deadMarkHolderRefs = MarkHolderRef.cleanQueue(allMarkHolders);
+    List<MarkHolderRef> markHolderRefs = new ArrayList<MarkHolderRef>();
+    MarkHolderRef.cleanQueue(markHolderRefs, allMarkHolders);
     // Capture a snapshot of the index with as little skew as possible.  Don't pre-size the lists
     // since it would mean scanning allMarkHolders twice.  Instead, try to get a strong ref to each
     // of the MarkHolders before they could get GC'd.
-    List<MarkHolderRef> markHolderRefs = new ArrayList<MarkHolderRef>(allMarkHolders.keySet());
-    markHolderRefs.addAll(deadMarkHolderRefs);
+    markHolderRefs.addAll(allMarkHolders.keySet());
     List<MarkList> markLists = new ArrayList<MarkList>(markHolderRefs.size());
     for (MarkHolderRef ref : markHolderRefs) {
       final String threadName;
@@ -102,7 +103,7 @@ public final class Storage {
       } else {
         threadName = ref.lastThreadName.get();
       }
-      boolean concurrentWrites = Thread.currentThread() != writer;
+      boolean concurrentWrites = !(Thread.currentThread() == writer || writer == null);
       markLists.add(
           MarkList.newBuilder()
               .setMarks(ref.holder.read(concurrentWrites))
@@ -191,8 +192,7 @@ public final class Storage {
 
     @Override
     protected MarkHolder initialValue() {
-      @SuppressWarnings("unused")
-      Object unused = MarkHolderRef.cleanQueue(allMarkHolders);
+      MarkHolderRef.cleanQueue(null, allMarkHolders);
       MarkHolder holder = markHolderProvider.create();
       MarkHolderRef ref = new MarkHolderRef(Thread.currentThread(), holder);
       allMarkHolders.put(ref, Boolean.TRUE);
@@ -216,15 +216,16 @@ public final class Storage {
       this.lastThreadName = new AtomicReference<String>(thread.getName());
     }
 
-    static List<MarkHolderRef> cleanQueue(Map<?, ?> allSpans) {
+    static void cleanQueue(
+        @Nullable Collection<? super MarkHolderRef> deadRefs, Map<?, ?> allSpans) {
       MarkHolderRef ref;
-      List<MarkHolderRef> deadRefs = new ArrayList<MarkHolderRef>();
       while ((ref = (MarkHolderRef) markHolderRefQueue.poll()) != null) {
         ref.clear();
         allSpans.remove(ref);
-        deadRefs.add(ref);
+        if (deadRefs != null) {
+          deadRefs.add(ref);
+        }
       }
-      return Collections.unmodifiableList(deadRefs);
     }
   }
 
