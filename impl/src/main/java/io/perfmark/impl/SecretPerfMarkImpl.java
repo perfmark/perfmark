@@ -150,7 +150,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.startAnyways(gen, taskName, tagName, tagId);
+      Storage.startAnyways(gen, taskName, marker, tagName, tagId);
     }
 
     public static void startTask(String taskName, Marker marker) {
