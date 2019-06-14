@@ -5,7 +5,6 @@ targetCompatibility = 1.8
 
 dependencies {
     compile libraries.jsr305,
-            "net.bytebuddy:byte-buddy:1.9.13",
             "org.ow2.asm:asm:7.1",
             "org.ow2.asm:asm-util:7.1",
             project(":perfmark-api"),

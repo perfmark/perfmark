@@ -19,6 +19,11 @@ compileTestJava {
     targetCompatibility = 1.7
 }
 
+compileJmhJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
 javadoc {
     exclude 'io/perfmark/Impl**'
 }
