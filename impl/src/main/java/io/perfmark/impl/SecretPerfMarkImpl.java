@@ -1,7 +1,6 @@
 package io.perfmark.impl;
 
 import io.perfmark.Impl;
-import io.perfmark.Tag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -127,12 +126,12 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void startTask(String taskName, Tag tag) {
+    protected void startTask(String taskName, @Nullable String tagName, long tagId) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.startAnyways(gen, taskName, tagName(tag), tagId(tag));
+      Storage.startAnyways(gen, taskName, tagName, tagId);
     }
 
     @Override
@@ -144,12 +143,13 @@ final class SecretPerfMarkImpl {
       Storage.startAnyways(gen, taskName);
     }
 
-    public static void startTask(String taskName, Tag tag, Marker marker) {
+    public static void startTask(
+        String taskName, @Nullable String tagName, long tagId, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.startAnyways(gen, taskName, marker, tagName(tag), tagId(tag));
+      Storage.startAnyways(gen, taskName, marker, tagName, tagId);
     }
 
     public static void startTask(String taskName, Marker marker) {
@@ -161,12 +161,12 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void stopTask(String taskName, Tag tag) {
+    protected void stopTask(String taskName, @Nullable String tagName, long tagId) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.stopAnyways(gen, taskName, tagName(tag), tagId(tag));
+      Storage.stopAnyways(gen, taskName, tagName, tagId);
     }
 
     @Override
@@ -178,12 +178,13 @@ final class SecretPerfMarkImpl {
       Storage.stopAnyways(gen, taskName);
     }
 
-    public static void stopTask(String taskName, Tag tag, Marker marker) {
+    public static void stopTask(
+        String taskName, @Nullable String tagName, long tagId, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.stopAnyways(gen, taskName, marker, tagName(tag), tagId(tag));
+      Storage.stopAnyways(gen, taskName, marker, tagName, tagId);
     }
 
     public static void stopTask(String taskName, Marker marker) {
@@ -195,12 +196,12 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void event(String eventName, Tag tag) {
+    protected void event(String eventName, @Nullable String tagName, long tagId) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.eventAnyways(gen, eventName, tagName(tag), tagId(tag));
+      Storage.eventAnyways(gen, eventName, tagName, tagId);
     }
 
     @Override
@@ -212,12 +213,13 @@ final class SecretPerfMarkImpl {
       Storage.eventAnyways(gen, eventName);
     }
 
-    public static void event(String eventName, Tag tag, Marker marker) {
+    public static void event(
+        String eventName, @Nullable String tagName, long tagId, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.eventAnyways(gen, eventName, marker, tagName(tag), tagId(tag));
+      Storage.eventAnyways(gen, eventName, marker, tagName, tagId);
     }
 
     public static void event(String eventName, Marker marker) {

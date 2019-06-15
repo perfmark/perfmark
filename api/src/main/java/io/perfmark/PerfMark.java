@@ -66,7 +66,7 @@ public final class PerfMark {
    * @param tag a user provided tag for the task.
    */
   public static void startTask(@CompileTimeConstant String taskName, Tag tag) {
-    impl.startTask(taskName, tag);
+    impl.startTask(taskName, tag.tagName, tag.tagId);
   }
 
   /**
@@ -93,7 +93,7 @@ public final class PerfMark {
    * @param tag a user provided tag for the event.
    */
   public static void event(@CompileTimeConstant String eventName, Tag tag) {
-    impl.event(eventName, tag);
+    impl.event(eventName, tag.tagName, tag.tagId);
   }
 
   /**
@@ -121,7 +121,7 @@ public final class PerfMark {
    * @param tag the tag of the task being ended.
    */
   public static void stopTask(@CompileTimeConstant String taskName, Tag tag) {
-    impl.stopTask(taskName, tag);
+    impl.stopTask(taskName, tag.tagName, tag.tagId);
   }
 
   /**
