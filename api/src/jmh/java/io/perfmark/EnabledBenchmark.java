@@ -51,19 +51,4 @@ public class EnabledBenchmark {
   public void event() {
     PerfMark.event("hi", TAG);
   }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public int recordTaskResult_lambda() {
-    return PerfMark.recordTaskResult("hi", TAG, () -> 0);
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void recordTask_lambda() {
-    PerfMark.recordTask("hi", TAG, () -> {});
-  }
-
 }

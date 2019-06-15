@@ -1,7 +1,6 @@
 package io.perfmark;
 
 import com.google.errorprone.annotations.CompileTimeConstant;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -218,61 +217,6 @@ public final class PerfMark {
       return NO_LINK;
     } else {
       return new Link(linkId);
-    }
-  }
-
-  /** This is an <strong>experimental</strong> interface for use with Java 8 Lambdas. */
-  public interface CheckedCallable<V, E extends Exception> extends Callable<V> {
-    @Override
-    V call() throws E;
-  }
-
-  /** This is an <strong>experimental</strong> interface for use with Java 8 Lambdas. */
-  public interface CheckedRunnable<E extends Exception> {
-    void run() throws E;
-  }
-
-  /** This is an <strong>experimental</strong> function for use with Java 8 Lambdas. */
-  public static <E extends Exception> void recordTask(
-      @CompileTimeConstant String taskName, Tag tag, CheckedRunnable<E> runnable) throws E {
-    impl.startTask(taskName, tag);
-    try {
-      runnable.run();
-    } finally {
-      impl.stopTask(taskName, tag);
-    }
-  }
-
-  /** This is an <strong>experimental</strong> function for use with Java 8 Lambdas. */
-  public static <E extends Exception> void recordTask(
-      @CompileTimeConstant String taskName, CheckedRunnable<E> runnable) throws E {
-    impl.startTask(taskName);
-    try {
-      runnable.run();
-    } finally {
-      impl.stopTask(taskName);
-    }
-  }
-
-  /** This is an <strong>experimental</strong> function for use with Java 8 Lambdas. */
-  public static <V, E extends Exception> V recordTaskResult(
-      @CompileTimeConstant String taskName, Tag tag, CheckedCallable<V, E> callable) throws E {
-    impl.startTask(taskName, tag);
-    try {
-      return callable.call();
-    } finally {
-      impl.stopTask(taskName, tag);
-    }
-  }
-
-  /** This is an <strong>experimental</strong> function for use with Java 8 Lambdas. */
-  public static <V, E extends Exception> V recordTaskResult(
-      @CompileTimeConstant String taskName, CheckedCallable<V, E> callable) throws E {
-    impl.startTask(taskName);
-    try {
-      return callable.call();
-    } finally {
-      impl.stopTask(taskName);
     }
   }
 
