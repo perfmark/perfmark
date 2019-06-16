@@ -23,6 +23,10 @@ import io.perfmark.impl.Generator;
 import io.perfmark.impl.Internal;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.Marker;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Assume;
@@ -226,5 +230,13 @@ public class VarHandleMarkHolderTest {
 
     List<Mark> marks = mh.read(true);
     assertEquals(events, marks.size());
+  }
+
+  @Test
+  public void bb() {
+    ByteBuffer buf = ByteBuffer.allocateDirect(4096).alignedSlice(4);
+    VarHandle q = MethodHandles.byteBufferViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
+    q.setVolatile(buf, 0, 1);
+    System.out.println((int) q.getVolatile(buf, 0));
   }
 }

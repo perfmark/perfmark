@@ -106,7 +106,7 @@ subprojects {
     }
 
     [publishMavenPublicationToMavenRepository, publishMavenPublicationToMavenLocal]*.onlyIf {
-        !name.contains("perfmark-agent")
+        !name.contains("perfmark-agent") && !name.contains("perfmark-util")
     }
 
 
