@@ -1,6 +1,5 @@
 package io.perfmark.impl;
 
-import java.util.Arrays;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
@@ -22,7 +21,7 @@ public final class Marker {
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(new Object[] {location});
+    return location == null ? 31 : location.hashCode();
   }
 
   @Override
@@ -31,6 +30,9 @@ public final class Marker {
       return false;
     }
     Marker other = (Marker) obj;
-    return Arrays.equals(new Object[] {location}, new Object[] {other.location});
+    if (this.location == null) {
+      return other.location == null;
+    }
+    return this.location.equals(other.location);
   }
 }
