@@ -1,5 +1,7 @@
 # PerfMark
 
+![PerfMark Hummingbird](perfmark_small.png "PerfMark")
+
 PerfMark is a low-overhead, manually-instrumented, tracing library for Java.  Users can add the
 tracing function calls to their code to see how long each part takes.
 
