@@ -55,8 +55,8 @@ final class VarHandleMarkHolder extends MarkHolder {
   @SuppressWarnings("unused") // Used Reflectively
   private volatile long idx;
 
-  private final Object[] taskNames;
-  private final Object[] markers;
+  private final String[] taskNames;
+  private final Marker[] markers;
   private final String[] tagNames;
   private final long[] tagIds;
   private final long[] nanoTimes;
