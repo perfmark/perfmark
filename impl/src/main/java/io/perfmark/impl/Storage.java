@@ -95,6 +95,12 @@ public final class Storage {
     // of the MarkHolders before they could get GC'd.
     markHolderRefs.addAll(allMarkHolders.keySet());
     List<MarkList> markLists = new ArrayList<MarkList>(markHolderRefs.size());
+    readInto(markLists, markHolderRefs);
+    return Collections.unmodifiableList(markLists);
+  }
+
+  private static void readInto(
+      List<? super MarkList> markLists, List<? extends MarkHolderRef> markHolderRefs) {
     for (MarkHolderRef ref : markHolderRefs) {
       final String threadName;
       @Nullable Thread writer = ref.get();
@@ -112,7 +118,6 @@ public final class Storage {
               .setMarkListId(ref.markHolderId)
               .build());
     }
-    return Collections.unmodifiableList(markLists);
   }
 
   static void startAnyways(long gen, String taskName, @Nullable String tagName, long tagId) {
@@ -184,6 +189,19 @@ public final class Storage {
 
   public static void resetForTest() {
     localMarkHolder.remove();
+  }
+
+  @Nullable
+  public static MarkList readForTest() {
+    MarkHolder mh = localMarkHolder.get();
+    for (MarkHolderRef ref : allMarkHolders.keySet()) {
+      if (ref.holder == mh) {
+        List<MarkList> markHolders = new ArrayList<MarkList>(1);
+        readInto(markHolders, Collections.singletonList(ref));
+        return markHolders.get(0);
+      }
+    }
+    return null;
   }
 
   private static final class MarkHolderThreadLocal extends ThreadLocal<MarkHolder> {

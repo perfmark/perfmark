@@ -12,7 +12,6 @@ import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
-import io.perfmark.impl.MarkList;
 import io.perfmark.impl.Marker;
 import io.perfmark.impl.Storage;
 import java.lang.reflect.Field;
@@ -90,7 +89,7 @@ public class PerfMarkTest {
     PerfMark.stopTask("task2", tag2);
     PerfMark.stopTask("task1", tag1);
 
-    List<Mark> marks = getMine(Storage.read());
+    List<Mark> marks = Storage.readForTest().getMarks();
 
     assertEquals(marks.size(), 10);
     List<Mark> expected =
@@ -177,17 +176,6 @@ public class PerfMarkTest {
     public long getGeneration() {
       return generation;
     }
-  }
-
-  @SuppressWarnings("deprecation") // We must be alive to find our own, so it's okay.
-  private static List<Mark> getMine(List<MarkList> markLists) {
-    for (MarkList markList : markLists) {
-      if (markList.getThreadId() == Thread.currentThread().getId()) {
-
-        return markList.getMarks();
-      }
-    }
-    return null;
   }
 
   private static long getGen() {

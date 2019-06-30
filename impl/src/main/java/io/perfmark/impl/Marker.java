@@ -8,7 +8,7 @@ public final class Marker {
 
   public static final Marker NONE = new Marker(null);
 
-  private final @Nullable StackTraceElement location;
+  @Nullable final StackTraceElement location;
 
   Marker(@Nullable StackTraceElement location) {
     this.location = location;

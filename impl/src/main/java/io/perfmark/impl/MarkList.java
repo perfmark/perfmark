@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.ListIterator;
 
 public final class MarkList {
-  static final long NO_THREAD_ID = -1;
-  static final String NO_THREAD_NAME = "(unknownThread)";
-
   public static Builder newBuilder() {
     return new Builder();
   }
