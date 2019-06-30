@@ -11,7 +11,8 @@ dependencies {
             project(":perfmark-api"),
             project(":perfmark-impl"),
             libraries.errorprone
-    testCompile project(":perfmark-java6")
+    testCompile project(":perfmark-java6"),
+            libraries.truth
 }
 
 compileTestJava {

@@ -1,9 +1,13 @@
 package io.perfmark.agent;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import io.perfmark.PerfMark;
-import io.perfmark.impl.MarkList;
+import io.perfmark.agent.PerfMarkTransformer.PerfMarkClassReader;
+import io.perfmark.impl.Internal;
+import io.perfmark.impl.Mark;
 import io.perfmark.impl.Storage;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -11,37 +15,22 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import io.perfmark.agent.PerfMarkTransformer.PerfMarkClassVisitor;
 
 @RunWith(JUnit4.class)
 public class PerfMarkTransformerTest {
 
   @Test
   public void deriveFileName() {
-    String file = PerfMarkClassVisitor.deriveFileName("io/perfmark/Foo");
+    String file = PerfMarkClassReader.deriveFileName("io/perfmark/Clz");
 
-    assertEquals("Foo.java", file);
+    assertEquals("Clz.java", file);
   }
 
   @Test
   public void deriveFileName_innerClass() {
-    String file = PerfMarkClassVisitor.deriveFileName("io/perfmark/Foo$Bar");
+    String file = PerfMarkClassReader.deriveFileName("io/perfmark/Clz$Inner");
 
-    assertEquals("Foo.java", file);
-  }
-
-  static final class FooClinit {
-    static {
-      PerfMark.startTask("hi");
-      PerfMark.stopTask("hi");
-    }
-  }
-
-  static final class Foo {
-    {
-      PerfMark.startTask("hi");
-      PerfMark.stopTask("hi");
-    }
+    assertEquals("Clz.java", file);
   }
 
   @Test
@@ -49,20 +38,104 @@ public class PerfMarkTransformerTest {
     PerfMark.setEnabled(true);
     Storage.resetForTest();
 
-    class FooLocal {
-      {
-        PerfMark.startTask("hi");
-        PerfMark.stopTask("hi");
+    final class ClzLocal {
+      public ClzLocal() {
+        PerfMark.startTask("task");
+        PerfMark.stopTask("task");
       }
     }
 
-    Class<?> clz = transformAndLoad(Foo.class);
+    Class<?> clz = transformAndLoad(ClzLocal.class);
+    Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
+    ctor.setAccessible(true);
+    ctor.newInstance(this);
+    List<Mark> marks = Storage.readForTest().getMarks();
+    assertThat(marks).hasSize(2);
+    for (Mark mark : marks) {
+      assertNotNull(mark.getMarker());
+      StackTraceElement element = Internal.getElement(mark.getMarker());
+      assertThat(element.getClassName()).isEqualTo(ClzLocal.class.getName());
+      assertThat(element.getMethodName()).isEqualTo("<init>");
+      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
+      assertThat(element.getLineNumber()).isGreaterThan(0);
+    }
+  }
+
+  @Test
+  public void transform_init() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    final class ClzLocal {
+      {
+        PerfMark.startTask("task");
+        PerfMark.stopTask("task");
+      }
+    }
+
+    Class<?> clz = transformAndLoad(ClzLocal.class);
+    Constructor<?> ctor = clz.getDeclaredConstructor(PerfMarkTransformerTest.class);
+    ctor.setAccessible(true);
+    ctor.newInstance(this);
+    List<Mark> marks = Storage.readForTest().getMarks();
+    assertThat(marks).hasSize(2);
+    for (Mark mark : marks) {
+      assertNotNull(mark.getMarker());
+      StackTraceElement element = Internal.getElement(mark.getMarker());
+      assertThat(element.getClassName()).isEqualTo(ClzLocal.class.getName());
+      assertThat(element.getMethodName()).isEqualTo("<init>");
+      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
+      assertThat(element.getLineNumber()).isGreaterThan(0);
+    }
+  }
+
+  static final class ClzWithClinit {
+    static {
+      PerfMark.startTask("task");
+      PerfMark.stopTask("task");
+    }
+  }
+
+  @Test
+  public void transform_clinit() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    Class<?> clz = transformAndLoad(ClzWithClinit.class);
     Constructor<?> ctor = clz.getDeclaredConstructor();
     ctor.setAccessible(true);
     ctor.newInstance();
-    List<MarkList> markLists = Storage.read();
-    System.out.println(markLists);
+    List<Mark> marks = Storage.readForTest().getMarks();
+    assertThat(marks).hasSize(2);
+    for (Mark mark : marks) {
+      assertNotNull(mark.getMarker());
+      StackTraceElement element = Internal.getElement(mark.getMarker());
+      assertThat(element.getClassName()).isEqualTo(ClzWithClinit.class.getName());
+      assertThat(element.getMethodName()).isEqualTo("<clinit>");
+      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
+      assertThat(element.getLineNumber()).isGreaterThan(0);
+    }
+  }
 
+  @Test
+  public void transform_toplevel() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    Class<?> clz = transformAndLoad(ClzFooter.class);
+    Constructor<?> ctor = clz.getDeclaredConstructor();
+    ctor.setAccessible(true);
+    ctor.newInstance();
+    List<Mark> marks = Storage.readForTest().getMarks();
+    assertThat(marks).hasSize(2);
+    for (Mark mark : marks) {
+      assertNotNull(mark.getMarker());
+      StackTraceElement element = Internal.getElement(mark.getMarker());
+      assertThat(element.getClassName()).isEqualTo(ClzFooter.class.getName());
+      assertThat(element.getMethodName()).isEqualTo("<init>");
+      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
+      assertThat(element.getLineNumber()).isGreaterThan(0);
+    }
   }
 
   private static byte[] getBytes(Class<?> clz) throws IOException {
@@ -85,8 +158,14 @@ public class PerfMarkTransformerTest {
     TestClassLoader cl = new TestClassLoader();
     byte[] bytes = getBytes(clz);
     byte[] newBytes =
-        new PerfMarkTransformer().transform(
-            cl, name, clz, /* protectionDomain= */ null, bytes);
+        new PerfMarkTransformer().transform(cl, name, clz, /* protectionDomain= */ null, bytes);
     return cl.defineClass(name, newBytes);
+  }
+}
+
+final class ClzFooter {
+  {
+    PerfMark.startTask("stop");
+    PerfMark.startTask("stop");
   }
 }
