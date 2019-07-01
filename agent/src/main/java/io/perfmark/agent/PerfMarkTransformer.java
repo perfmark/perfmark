@@ -1,11 +1,13 @@
 package io.perfmark.agent;
 
+import java.io.InputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import org.objectweb.asm.ClassReader;
@@ -58,6 +60,8 @@ final class PerfMarkTransformer implements ClassFileTransformer {
     return Collections.unmodifiableMap(map);
   }
 
+  private final Map<ClassLoader, Boolean> validatedClassLoaders = new IdentityHashMap<>();
+
   @Override
   public byte[] transform(
       ClassLoader loader,
@@ -65,6 +69,23 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       Class<?> classBeingRedefined,
       ProtectionDomain protectionDomain,
       byte[] classfileBuffer) {
+    if (!validatedClassLoaders.containsKey(loader)) {
+      InputStream stream = loader.getResourceAsStream(DST_OWNER + ".class");
+      if (stream != null) {
+        validatedClassLoaders.put(loader, true);
+        // TODO: validate dst methods
+      } else {
+        validatedClassLoaders.put(loader, false);
+      }
+    }
+    if (validatedClassLoaders.get(loader)) {
+      return transform(className, classfileBuffer);
+    } else {
+      return classfileBuffer;
+    }
+  }
+
+  public static byte[] transform(String className, byte[] classfileBuffer) {
     ClassReader cr = new ClassReader(classfileBuffer);
     PerfMarkClassReader perfMarkReader = new PerfMarkClassReader(Opcodes.ASM7, className);
     cr.accept(perfMarkReader, ClassReader.SKIP_FRAMES);

@@ -14,6 +14,8 @@ import io.perfmark.impl.Storage;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -33,6 +35,67 @@ public class PerfMarkTransformerTest {
     String file = PerfMarkClassReader.deriveFileName("io/perfmark/Clz$Inner");
 
     assertEquals("Clz.java", file);
+  }
+
+  @Test
+  public void transform_lambda() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    final class ClzLocal implements Executor {
+      public ClzLocal() {
+        execute(
+            () -> {
+              PerfMark.startTask("task");
+              PerfMark.stopTask("task");
+            });
+      }
+
+      @Override
+      public void execute(Runnable command) {
+        command.run();
+      }
+    }
+
+    Class<?> clz = transformAndLoad(ClzLocal.class);
+    Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
+    ctor.setAccessible(true);
+    ctor.newInstance(this);
+    List<Mark> marks = Storage.readForTest().getMarks();
+    assertThat(marks).hasSize(2);
+    for (Mark mark : marks) {
+      assertNotNull(mark.getMarker());
+      StackTraceElement element = Internal.getElement(mark.getMarker());
+      assertThat(element.getClassName()).isEqualTo(ClzLocal.class.getName());
+      assertThat(element.getMethodName()).isEqualTo("lambda$new$0");
+      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
+      assertThat(element.getLineNumber()).isGreaterThan(0);
+    }
+  }
+
+  @Test
+  public void transform_methodRef() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    final class ClzLocal {
+      public ClzLocal() {
+        @SuppressWarnings("unused")
+        Object o = execute(PerfMark::linkOut);
+      }
+
+      Link execute(Supplier<Link> supplier) {
+        return supplier.get();
+      }
+    }
+
+    Class<?> clz = transformAndLoad(ClzLocal.class);
+    Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
+    ctor.setAccessible(true);
+    ctor.newInstance(this);
+    List<Mark> marks = Storage.readForTest().getMarks();
+    assertThat(marks).hasSize(1);
+    // I'm not sure what to do with methodrefs, so just leave it alone for now.
   }
 
   @Test
@@ -127,7 +190,7 @@ public class PerfMarkTransformerTest {
     }
   }
 
-  static final class ClzWithClinit {
+  private static final class ClzWithClinit {
     static {
       Tag tag = PerfMark.createTag("tag", 1);
       PerfMark.startTask("task");
