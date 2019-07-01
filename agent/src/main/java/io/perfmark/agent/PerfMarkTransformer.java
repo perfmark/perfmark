@@ -1,5 +1,7 @@
 package io.perfmark.agent;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
@@ -72,8 +74,12 @@ final class PerfMarkTransformer implements ClassFileTransformer {
     if (!validatedClassLoaders.containsKey(loader)) {
       InputStream stream = loader.getResourceAsStream(DST_OWNER + ".class");
       if (stream != null) {
-        validatedClassLoaders.put(loader, true);
-        // TODO: validate dst methods
+        try (Closeable c = stream) {
+          validatedClassLoaders.put(loader, true);
+          // TODO: validate dst methods
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
       } else {
         validatedClassLoaders.put(loader, false);
       }
