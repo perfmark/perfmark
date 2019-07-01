@@ -41,8 +41,8 @@ public class EnabledBenchmark {
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void link() {
-    Link link = PerfMark.link();
-    link.link();
+    Link link = PerfMark.linkOut();
+    PerfMark.linkIn(link);
   }
 
   @Benchmark
