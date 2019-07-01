@@ -3,7 +3,6 @@ package io.perfmark;
 import javax.annotation.Nullable;
 
 public class Impl {
-
   protected static final String NO_TAG_NAME = "";
   protected static final long NO_TAG_ID = Long.MIN_VALUE;
   /**
@@ -12,20 +11,26 @@ public class Impl {
    */
   protected static final long NO_LINK_ID = Long.MIN_VALUE;
 
+  static final Tag NO_TAG = new Tag(Impl.NO_TAG_NAME, Impl.NO_TAG_ID);
+
   /** The Noop implementation */
-  protected Impl() {}
+  protected Impl(Tag key) {
+    if (key != NO_TAG) {
+      throw new AssertionError("nope");
+    }
+  }
 
   protected void setEnabled(boolean value) {}
 
-  protected void startTask(String taskName, @Nullable String tagName, long tagId) {}
+  protected void startTask(String taskName, Tag tag) {}
 
   protected void startTask(String taskName) {}
 
-  protected void event(String eventName, @Nullable String tagName, long tagId) {}
+  protected void event(String eventName, Tag tag) {}
 
   protected void event(String eventName) {}
 
-  protected void stopTask(String taskName, @Nullable String tagName, long tagId) {}
+  protected void stopTask(String taskName, Tag tag) {}
 
   protected void stopTask(String taskName) {}
 
@@ -35,6 +40,15 @@ public class Impl {
 
   protected long linkAndGetId() {
     return NO_LINK_ID;
+  }
+
+  @Nullable
+  protected static String unpackTagName(Tag tag) {
+    return tag.tagName;
+  }
+
+  protected static long unpackTagId(Tag tag) {
+    return tag.tagId;
   }
 
   protected void link(long linkId) {}

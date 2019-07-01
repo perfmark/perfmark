@@ -9,7 +9,6 @@ import java.util.logging.Logger;
  * io.perfmark.PerfMark.startEnabled} to true.
  */
 public final class PerfMark {
-  private static final Tag NO_TAG = new Tag(Impl.NO_TAG_NAME, Impl.NO_TAG_ID);
   private static final Link NO_LINK = new Link(Impl.NO_LINK_ID);
   private static final Impl impl;
 
@@ -28,7 +27,7 @@ public final class PerfMark {
     }
     if (clz != null) {
       try {
-        instance = clz.asSubclass(Impl.class).getConstructor().newInstance();
+        instance = clz.asSubclass(Impl.class).getConstructor(Tag.class).newInstance(Impl.NO_TAG);
       } catch (Throwable t) {
         err = t;
       }
@@ -36,7 +35,7 @@ public final class PerfMark {
     if (instance != null) {
       impl = instance;
     } else {
-      impl = new Impl();
+      impl = new Impl(Impl.NO_TAG);
     }
     if (err != null) {
       Logger.getLogger(PerfMark.class.getName()).log(level, "Error during PerfMark.<clinit>", err);
@@ -66,7 +65,7 @@ public final class PerfMark {
    * @param tag a user provided tag for the task.
    */
   public static void startTask(@CompileTimeConstant String taskName, Tag tag) {
-    impl.startTask(taskName, tag.tagName, tag.tagId);
+    impl.startTask(taskName, tag);
   }
 
   /**
@@ -93,7 +92,7 @@ public final class PerfMark {
    * @param tag a user provided tag for the event.
    */
   public static void event(@CompileTimeConstant String eventName, Tag tag) {
-    impl.event(eventName, tag.tagName, tag.tagId);
+    impl.event(eventName, tag);
   }
 
   /**
@@ -121,7 +120,7 @@ public final class PerfMark {
    * @param tag the tag of the task being ended.
    */
   public static void stopTask(@CompileTimeConstant String taskName, Tag tag) {
-    impl.stopTask(taskName, tag.tagName, tag.tagId);
+    impl.stopTask(taskName, tag);
   }
 
   /**
@@ -151,7 +150,7 @@ public final class PerfMark {
    * @return a Tag that has no name or id.
    */
   public static Tag createTag() {
-    return NO_TAG;
+    return Impl.NO_TAG;
   }
 
   /**
@@ -164,7 +163,7 @@ public final class PerfMark {
    */
   public static Tag createTag(long id) {
     if (!impl.shouldCreateTag()) {
-      return NO_TAG;
+      return Impl.NO_TAG;
     } else {
       return new Tag(Impl.NO_TAG_NAME, id);
     }
@@ -180,7 +179,7 @@ public final class PerfMark {
    */
   public static Tag createTag(String name) {
     if (!impl.shouldCreateTag()) {
-      return NO_TAG;
+      return Impl.NO_TAG;
     } else {
       return new Tag(name, Impl.NO_TAG_ID);
     }
@@ -197,7 +196,7 @@ public final class PerfMark {
    */
   public static Tag createTag(String name, long id) {
     if (!impl.shouldCreateTag()) {
-      return NO_TAG;
+      return Impl.NO_TAG;
     } else {
       return new Tag(name, id);
     }

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import io.perfmark.PerfMark;
+import io.perfmark.Tag;
 import io.perfmark.agent.PerfMarkTransformer.PerfMarkClassReader;
 import io.perfmark.impl.Internal;
 import io.perfmark.impl.Mark;
@@ -40,8 +41,11 @@ public class PerfMarkTransformerTest {
 
     final class ClzLocal {
       public ClzLocal() {
+        Tag tag = PerfMark.createTag("tag", 1);
         PerfMark.startTask("task");
         PerfMark.stopTask("task");
+        PerfMark.startTask("task", tag);
+        PerfMark.stopTask("task", tag);
       }
     }
 
@@ -50,7 +54,7 @@ public class PerfMarkTransformerTest {
     ctor.setAccessible(true);
     ctor.newInstance(this);
     List<Mark> marks = Storage.readForTest().getMarks();
-    assertThat(marks).hasSize(2);
+    assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
       StackTraceElement element = Internal.getElement(mark.getMarker());
@@ -68,8 +72,11 @@ public class PerfMarkTransformerTest {
 
     final class ClzLocal {
       {
+        Tag tag = PerfMark.createTag("tag", 1);
         PerfMark.startTask("task");
         PerfMark.stopTask("task");
+        PerfMark.startTask("task", tag);
+        PerfMark.stopTask("task", tag);
       }
     }
 
@@ -78,7 +85,7 @@ public class PerfMarkTransformerTest {
     ctor.setAccessible(true);
     ctor.newInstance(this);
     List<Mark> marks = Storage.readForTest().getMarks();
-    assertThat(marks).hasSize(2);
+    assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
       StackTraceElement element = Internal.getElement(mark.getMarker());
@@ -91,8 +98,11 @@ public class PerfMarkTransformerTest {
 
   static final class ClzWithClinit {
     static {
+      Tag tag = PerfMark.createTag("tag", 1);
       PerfMark.startTask("task");
       PerfMark.stopTask("task");
+      PerfMark.startTask("task", tag);
+      PerfMark.stopTask("task", tag);
     }
   }
 
@@ -106,7 +116,7 @@ public class PerfMarkTransformerTest {
     ctor.setAccessible(true);
     ctor.newInstance();
     List<Mark> marks = Storage.readForTest().getMarks();
-    assertThat(marks).hasSize(2);
+    assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
       StackTraceElement element = Internal.getElement(mark.getMarker());
@@ -127,7 +137,7 @@ public class PerfMarkTransformerTest {
     ctor.setAccessible(true);
     ctor.newInstance();
     List<Mark> marks = Storage.readForTest().getMarks();
-    assertThat(marks).hasSize(2);
+    assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
       StackTraceElement element = Internal.getElement(mark.getMarker());
@@ -165,7 +175,10 @@ public class PerfMarkTransformerTest {
 
 final class ClzFooter {
   {
-    PerfMark.startTask("stop");
-    PerfMark.startTask("stop");
+    Tag tag = PerfMark.createTag("tag", 1);
+    PerfMark.startTask("task");
+    PerfMark.stopTask("task");
+    PerfMark.startTask("task", tag);
+    PerfMark.stopTask("task", tag);
   }
 }
