@@ -1,6 +1,6 @@
 # PerfMark
 
-![PerfMark Hummingbird](perfmark_small.png "PerfMark")
+![PerfMark Hummingbird](perfmark.svg "PerfMark")
 
 PerfMark is a low-overhead, manually-instrumented, tracing library for Java.  Users can add the
 tracing function calls to their code to see how long each part takes.
@@ -57,11 +57,11 @@ PerfMark can also be used to record asynchronous work:
 ```java
 Future<Response> buildResponse() {
   PerfMark.startTask("Build Response");
-  final Link link = PerfMark.link();
+  final Link link = PerfMark.linkOut();
   try {
     return executor.submit(() -> {
       PerfMark.startTask("Async Response");
-      link.link();
+      PerfMark.linkIn(link);
       try {
         return new Response(/* ... */);
       } finally {
