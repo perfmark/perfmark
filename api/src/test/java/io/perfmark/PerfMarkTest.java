@@ -82,8 +82,8 @@ public class PerfMarkTest {
     PerfMark.startTask("task2", tag2);
     PerfMark.startTask("task3", tag3);
     PerfMark.startTask("task4");
-    Link link = PerfMark.link();
-    link.link();
+    Link link = PerfMark.linkOut();
+    PerfMark.linkIn(link);
     PerfMark.stopTask("task4");
     PerfMark.stopTask("task3", tag3);
     PerfMark.stopTask("task2", tag2);

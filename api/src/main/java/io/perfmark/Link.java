@@ -6,8 +6,8 @@ package io.perfmark;
  * associate them with the original task.
  *
  * <p>A source task may have multiple outbound links pointing to other tasks. However, calling
- * {@link Link#link()} only work if it is the first such call. Subsequent calls to {@code link()}
- * have no effect.
+ * {@code PerfMark.linkIn(Link)} only work if it is the first such call. Subsequent calls have no
+ * effect.
  */
 public final class Link {
 
@@ -17,11 +17,7 @@ public final class Link {
     this.linkId = linkId;
   }
 
-  /**
-   * Associate this link with the most recently started task. There may be at most one inbound
-   * linkage per task: the first call to {@code link()} decides which outbound task is the origin.
-   */
-  public void link() {
-    PerfMark.link(linkId);
-  }
+  /** DO NOT CALL, no longer implemented. Use {@link PerfMark#linkIn} instead. */
+  @Deprecated
+  public void link() {}
 }

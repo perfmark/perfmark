@@ -12,6 +12,7 @@ public class Impl {
   protected static final long NO_LINK_ID = Long.MIN_VALUE;
 
   static final Tag NO_TAG = new Tag(Impl.NO_TAG_NAME, Impl.NO_TAG_ID);
+  static final Link NO_LINK = new Link(Impl.NO_LINK_ID);
 
   /** The Noop implementation */
   protected Impl(Tag key) {
@@ -34,12 +35,14 @@ public class Impl {
 
   protected void stopTask(String taskName) {}
 
-  protected boolean shouldCreateTag() {
-    return false;
+  protected Link linkOut() {
+    return NO_LINK;
   }
 
-  protected long linkAndGetId() {
-    return NO_LINK_ID;
+  protected void linkIn(Link link) {}
+
+  protected boolean shouldCreateTag() {
+    return false;
   }
 
   @Nullable
@@ -51,5 +54,11 @@ public class Impl {
     return tag.tagId;
   }
 
-  protected void link(long linkId) {}
+  protected static long unpackLinkId(Link link) {
+    return link.linkId;
+  }
+
+  protected static Link packLink(long linkId) {
+    return new Link(linkId);
+  }
 }

@@ -1,13 +1,13 @@
 package io.perfmark.impl;
 
 import io.perfmark.Impl;
+import io.perfmark.Link;
 import io.perfmark.Tag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 
 final class SecretPerfMarkImpl {
 
@@ -15,6 +15,8 @@ final class SecretPerfMarkImpl {
     static final String NO_TAG_NAME = Impl.NO_TAG_NAME;
     static final Long NO_TAG_ID = Impl.NO_TAG_ID;
     static final Long NO_LINK_ID = Impl.NO_LINK_ID;
+
+    private static final Link NO_LINK = packLink(NO_LINK_ID);
     private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
 
     private static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";
@@ -217,13 +219,12 @@ final class SecretPerfMarkImpl {
       Storage.eventAnyways(gen, eventName);
     }
 
-    public static void event(
-        String eventName, @Nullable String tagName, long tagId, Marker marker) {
+    public static void event(String eventName, Tag tag, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.eventAnyways(gen, eventName, marker, tagName, tagId);
+      Storage.eventAnyways(gen, eventName, marker, unpackTagName(tag), unpackTagId(tag));
     }
 
     public static void event(String eventName, Marker marker) {
@@ -240,41 +241,41 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected long linkAndGetId() {
+    protected Link linkOut() {
       final long gen = getGen();
       if (!isEnabled(gen)) {
-        return NO_LINK_ID;
+        return NO_LINK;
       }
       long linkId = linkIdAlloc.getAndIncrement();
       Storage.linkAnyways(gen, linkId);
-      return linkId;
+      return packLink(linkId);
     }
 
-    public static long linkAndGetId(Marker marker) {
+    public static Link linkOut(Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
-        return NO_LINK_ID;
+        return NO_LINK;
       }
       long linkId = linkIdAlloc.getAndIncrement();
       Storage.linkAnyways(gen, linkId, marker);
-      return linkId;
+      return packLink(linkId);
     }
 
     @Override
-    protected void link(long linkId) {
+    protected void linkIn(Link link) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.linkAnyways(gen, -linkId);
+      Storage.linkAnyways(gen, -unpackLinkId(link));
     }
 
-    public static void link(long linkId, Marker marker) {
+    public static void linkIn(Link link, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.linkAnyways(gen, -linkId, marker);
+      Storage.linkAnyways(gen, -unpackLinkId(link), marker);
     }
 
     private static long getGen() {

@@ -9,7 +9,6 @@ import java.util.logging.Logger;
  * io.perfmark.PerfMark.startEnabled} to true.
  */
 public final class PerfMark {
-  private static final Link NO_LINK = new Link(Impl.NO_LINK_ID);
   private static final Impl impl;
 
   static {
@@ -202,25 +201,33 @@ public final class PerfMark {
     }
   }
 
+  /** DO NOT CALL, no longer implemented. Use {@link #linkOut} instead. */
+  @Deprecated
+  public static Link link() {
+    return Impl.NO_LINK;
+  }
+
   /**
-   * A link connects between two tasks that start asynchronously. When {@link #link()} is called, an
-   * association between the most recently started task and a yet-to-be named task on another
+   * A link connects between two tasks that start asynchronously. When {@link #linkOut()} is called,
+   * an association between the most recently started task and a yet-to-be named task on another
    * thread, is created. Links are a one-to-many relationship. A single started task can have
    * multiple associated tasks on other threads.
    *
+   * @since 0.17.0
    * @return A Link to be used in other tasks.
    */
-  public static Link link() {
-    long linkId = impl.linkAndGetId();
-    if (linkId == Impl.NO_LINK_ID) {
-      return NO_LINK;
-    } else {
-      return new Link(linkId);
-    }
+  public static Link linkOut() {
+    return impl.linkOut();
   }
 
-  static void link(long linkId) {
-    impl.link(linkId);
+  /**
+   * Associate this link with the most recently started task. There may be at most one inbound
+   * linkage per task: the first call to {@link #linkIn} decides which outbound task is the origin.
+   *
+   * @since 0.17.0
+   */
+  public static void linkIn(Link link) {
+    impl.linkIn(link);
   }
 
   private PerfMark() {}
