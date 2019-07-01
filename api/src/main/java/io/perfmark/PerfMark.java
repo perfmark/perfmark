@@ -162,11 +162,7 @@ public final class PerfMark {
    * @return a Tag that has no name.
    */
   public static Tag createTag(long id) {
-    if (!impl.shouldCreateTag()) {
-      return Impl.NO_TAG;
-    } else {
-      return new Tag(Impl.NO_TAG_NAME, id);
-    }
+    return impl.createTag(Impl.NO_TAG_NAME, id);
   }
 
   /**
@@ -178,11 +174,7 @@ public final class PerfMark {
    * @return a Tag that has no numeric identifier.
    */
   public static Tag createTag(String name) {
-    if (!impl.shouldCreateTag()) {
-      return Impl.NO_TAG;
-    } else {
-      return new Tag(name, Impl.NO_TAG_ID);
-    }
+    return impl.createTag(name, Impl.NO_TAG_ID);
   }
 
   /**
@@ -195,11 +187,7 @@ public final class PerfMark {
    * @return a Tag that has both a name and id.
    */
   public static Tag createTag(String name, long id) {
-    if (!impl.shouldCreateTag()) {
-      return Impl.NO_TAG;
-    } else {
-      return new Tag(name, id);
-    }
+    return impl.createTag(name, id);
   }
 
   /** DO NOT CALL, no longer implemented. Use {@link #linkOut} instead. */

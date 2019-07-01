@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 
 final class SecretPerfMarkImpl {
 
@@ -16,6 +17,7 @@ final class SecretPerfMarkImpl {
     static final Long NO_TAG_ID = Impl.NO_TAG_ID;
     static final Long NO_LINK_ID = Impl.NO_LINK_ID;
 
+    private static final Tag NO_TAG = packTag(NO_TAG_NAME, NO_TAG_ID);
     private static final Link NO_LINK = packLink(NO_LINK_ID);
     private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
 
@@ -236,8 +238,11 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected boolean shouldCreateTag() {
-      return isEnabled(getGen());
+    protected Tag createTag(@Nullable String tagName, long tagId) {
+      if (!isEnabled(getGen())) {
+        return NO_TAG;
+      }
+      return packTag(tagName, tagId);
     }
 
     @Override

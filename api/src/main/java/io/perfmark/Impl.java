@@ -41,8 +41,8 @@ public class Impl {
 
   protected void linkIn(Link link) {}
 
-  protected boolean shouldCreateTag() {
-    return false;
+  protected Tag createTag(@Nullable String tagName, long tagId) {
+    return NO_TAG;
   }
 
   @Nullable
@@ -56,6 +56,10 @@ public class Impl {
 
   protected static long unpackLinkId(Link link) {
     return link.linkId;
+  }
+
+  protected static Tag packTag(@Nullable String tagName, long tagId) {
+    return new Tag(tagName, tagId);
   }
 
   protected static Link packLink(long linkId) {
