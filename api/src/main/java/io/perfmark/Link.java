@@ -1,5 +1,7 @@
 package io.perfmark;
 
+import com.google.errorprone.annotations.DoNotCall;
+
 /**
  * A link represents a linkage between asynchronous tasks. A link is created inside of a started
  * task. The resulting {@link Link} object can then be passed to other asynchronous tasks to
@@ -19,5 +21,6 @@ public final class Link {
 
   /** DO NOT CALL, no longer implemented. Use {@link PerfMark#linkIn} instead. */
   @Deprecated
+  @DoNotCall
   public void link() {}
 }

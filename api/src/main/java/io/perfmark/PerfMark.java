@@ -1,6 +1,7 @@
 package io.perfmark;
 
 import com.google.errorprone.annotations.CompileTimeConstant;
+import com.google.errorprone.annotations.DoNotCall;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -203,6 +204,7 @@ public final class PerfMark {
 
   /** DO NOT CALL, no longer implemented. Use {@link #linkOut} instead. */
   @Deprecated
+  @DoNotCall
   public static Link link() {
     return Impl.NO_LINK;
   }
