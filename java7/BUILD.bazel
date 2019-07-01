@@ -1,0 +1,9 @@
+java_library(
+    name = "generator",
+    srcs = [
+        "src/main/java/io/perfmark/java7/SecretMethodHandleGenerator.java",
+    ],
+    deps = [
+        "//impl:generator",
+    ],
+)

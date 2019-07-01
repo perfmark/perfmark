@@ -1,0 +1,88 @@
+java_library(
+    name = "impl",
+    srcs = [
+        "src/main/java/io/perfmark/impl/NoopGenerator.java",
+        "src/main/java/io/perfmark/impl/SecretPerfMarkImpl.java",
+    ],
+    deps = [
+        ":generator",
+        ":marker",
+        ":storage",
+        "//api:impl",
+        "//api:link",
+        "//api:tag",
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+java_library(
+    name = "generator",
+    srcs = ["src/main/java/io/perfmark/impl/Generator.java"],
+    deps = [
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+java_library(
+    name = "marker",
+    srcs = ["src/main/java/io/perfmark/impl/Marker.java"],
+    deps = [
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+java_library(
+    name = "storage",
+    srcs = [
+        "src/main/java/io/perfmark/impl/NoopMarkHolderProvider.java",
+        "src/main/java/io/perfmark/impl/Storage.java",
+    ],
+    deps = [
+        ":mark",
+        ":mark-holder",
+        ":mark-holder-provider",
+        ":mark-list",
+        ":marker",
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+java_library(
+    name = "mark-holder",
+    srcs = ["src/main/java/io/perfmark/impl/MarkHolder.java"],
+    deps = [
+        ":mark",
+        ":marker",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+java_library(
+    name = "mark-holder-provider",
+    srcs = ["src/main/java/io/perfmark/impl/MarkHolderProvider.java"],
+    deps = [
+        ":mark-holder",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+java_library(
+    name = "mark",
+    srcs = ["src/main/java/io/perfmark/impl/Mark.java"],
+    deps = [
+        ":generator",
+        ":marker",
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+java_library(
+    name = "mark-list",
+    srcs = ["src/main/java/io/perfmark/impl/MarkList.java"],
+    deps = [
+        ":mark",
+    ],
+)

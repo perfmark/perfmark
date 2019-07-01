@@ -1,0 +1,33 @@
+java_library(
+    name = "generator",
+    srcs = [
+        "src/main/java/io/perfmark/java6/SecretVolatileGenerator.java",
+    ],
+    deps = [
+        "//impl:generator",
+    ],
+)
+
+java_library(
+    name = "mark-holder",
+    srcs = [
+        "src/main/java/io/perfmark/java6/SynchronizedMarkHolder.java",
+    ],
+    deps = [
+        "//impl:mark",
+        "//impl:mark-holder",
+        "//impl:marker",
+    ],
+)
+
+java_library(
+    name = "mark-holder-provider",
+    srcs = [
+        "src/main/java/io/perfmark/java6/SecretSynchronizedMarkHolderProvider.java",
+    ],
+    deps = [
+        ":mark-holder",
+        "//impl:mark-holder",
+        "//impl:mark-holder-provider",
+    ],
+)

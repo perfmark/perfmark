@@ -1,0 +1,34 @@
+java_library(
+    name = "generator",
+    srcs = [
+        "src/main/java/io/perfmark/java9/SecretVarHandleGenerator.java",
+    ],
+    deps = [
+        "//impl:generator",
+    ],
+)
+
+java_library(
+    name = "mark-holder",
+    srcs = [
+        "src/main/java/io/perfmark/java9/VarHandleMarkHolder.java",
+    ],
+    deps = [
+        "//impl:generator",
+        "//impl:mark",
+        "//impl:mark-holder",
+        "//impl:marker",
+    ],
+)
+
+java_library(
+    name = "mark-holder-provider",
+    srcs = [
+        "src/main/java/io/perfmark/java9/SecretVarHandleMarkHolderProvider.java",
+    ],
+    deps = [
+        ":mark-holder",
+        "//impl:mark-holder",
+        "//impl:mark-holder-provider",
+    ],
+)
