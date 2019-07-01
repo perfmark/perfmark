@@ -13,12 +13,8 @@ import javax.annotation.Nullable;
 final class SecretPerfMarkImpl {
 
   public static final class PerfMarkImpl extends Impl {
-    static final String NO_TAG_NAME = Impl.NO_TAG_NAME;
-    static final Long NO_TAG_ID = Impl.NO_TAG_ID;
-    static final Long NO_LINK_ID = Impl.NO_LINK_ID;
-
-    private static final Tag NO_TAG = packTag(NO_TAG_NAME, NO_TAG_ID);
-    private static final Link NO_LINK = packLink(NO_LINK_ID);
+    private static final Tag NO_TAG = packTag(Mark.NO_TAG_NAME, Mark.NO_TAG_ID);
+    private static final Link NO_LINK = packLink(Mark.NO_LINK_ID);
     private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
 
     private static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";

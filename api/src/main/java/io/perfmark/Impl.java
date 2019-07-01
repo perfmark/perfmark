@@ -3,13 +3,13 @@ package io.perfmark;
 import javax.annotation.Nullable;
 
 public class Impl {
-  protected static final String NO_TAG_NAME = "";
-  protected static final long NO_TAG_ID = Long.MIN_VALUE;
+  static final String NO_TAG_NAME = "";
+  static final long NO_TAG_ID = Long.MIN_VALUE;
   /**
    * This value is current {@link Long#MIN_VALUE}, but it could also be {@code 0}. The invariant
    * {@code NO_LINK_ID == -NO_LINK_ID} must be maintained to work when PerfMark is disabled.
    */
-  protected static final long NO_LINK_ID = Long.MIN_VALUE;
+  private static final long NO_LINK_ID = Long.MIN_VALUE;
 
   static final Tag NO_TAG = new Tag(Impl.NO_TAG_NAME, Impl.NO_TAG_ID);
   static final Link NO_LINK = new Link(Impl.NO_LINK_ID);

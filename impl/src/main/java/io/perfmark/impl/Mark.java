@@ -5,9 +5,9 @@ import javax.annotation.Nullable;
 
 public final class Mark {
   // TODO: make sure these match the values in Impl
-  static final String NO_TAG_NAME = "";
-  static final long NO_TAG_ID = Long.MIN_VALUE;
-  static final long NO_LINK_ID = Long.MIN_VALUE;
+  public static final String NO_TAG_NAME = "";
+  public static final long NO_TAG_ID = Long.MIN_VALUE;
+  public static final long NO_LINK_ID = Long.MIN_VALUE;
 
   public static final long NO_NANOTIME = 0;
 
