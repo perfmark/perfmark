@@ -270,6 +270,7 @@ final class SecretPerfMarkImpl {
       Storage.linkAnyways(gen, -unpackLinkId(link));
     }
 
+    @SuppressWarnings("unused") // Used Reflectively.
     public static void linkIn(Link link, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {

@@ -49,6 +49,12 @@ final class PerfMarkTransformer implements ClassFileTransformer {
         Arrays.asList(SRC_OWNER, "event", "(Ljava/lang/String;Lio/perfmark/Tag;)V"),
         Arrays.asList(
             DST_OWNER, "event", "(Ljava/lang/String;Lio/perfmark/Tag;Lio/perfmark/impl/Marker;)V"));
+    map.put(
+        Arrays.asList(SRC_OWNER, "linkOut", "()Lio/perfmark/Link;"),
+        Arrays.asList(DST_OWNER, "linkOut", "(Lio/perfmark/impl/Marker;)Lio/perfmark/Link;"));
+    map.put(
+        Arrays.asList(SRC_OWNER, "linkIn", "(Lio/perfmark/Link;)V"),
+        Arrays.asList(DST_OWNER, "linkIn", "(Lio/perfmark/Link;Lio/perfmark/impl/Marker;)V"));
     return Collections.unmodifiableMap(map);
   }
 

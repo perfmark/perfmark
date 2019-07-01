@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import io.perfmark.Link;
 import io.perfmark.PerfMark;
 import io.perfmark.Tag;
 import io.perfmark.agent.PerfMarkTransformer.PerfMarkClassReader;
@@ -32,6 +33,36 @@ public class PerfMarkTransformerTest {
     String file = PerfMarkClassReader.deriveFileName("io/perfmark/Clz$Inner");
 
     assertEquals("Clz.java", file);
+  }
+
+  @Test
+  public void transform_link() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    final class ClzLocal {
+      public ClzLocal() {
+        PerfMark.startTask("task");
+        Link link = PerfMark.linkOut();
+        PerfMark.linkIn(link);
+        PerfMark.stopTask("task");
+      }
+    }
+
+    Class<?> clz = transformAndLoad(ClzLocal.class);
+    Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
+    ctor.setAccessible(true);
+    ctor.newInstance(this);
+    List<Mark> marks = Storage.readForTest().getMarks();
+    assertThat(marks).hasSize(4);
+    for (Mark mark : marks) {
+      assertNotNull(mark.getMarker());
+      StackTraceElement element = Internal.getElement(mark.getMarker());
+      assertThat(element.getClassName()).isEqualTo(ClzLocal.class.getName());
+      assertThat(element.getMethodName()).isEqualTo("<init>");
+      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
+      assertThat(element.getLineNumber()).isGreaterThan(0);
+    }
   }
 
   @Test
