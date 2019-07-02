@@ -85,34 +85,40 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       }
     }
     if (validatedClassLoaders.get(loader)) {
-      return transform(className, classfileBuffer);
+      List<String> meth1 =
+          Arrays.asList("io.perfmark.agent.PerfMarkTransformerTest$ClzAutoRecord", "recordMe");
+      return transform(className, Collections.singletonList(meth1), classfileBuffer);
     } else {
       return classfileBuffer;
     }
   }
 
-  public static byte[] transform(String className, byte[] classfileBuffer) {
+  public static byte[] transform(
+      String className, List<List<String>> methodsToAnnotate, byte[] classfileBuffer) {
     ClassReader cr = new ClassReader(classfileBuffer);
-    PerfMarkClassReader perfMarkReader = new PerfMarkClassReader(Opcodes.ASM7, className);
+    PerfMarkClassReader perfMarkReader =
+        new PerfMarkClassReader(Opcodes.ASM7, className, methodsToAnnotate);
     cr.accept(perfMarkReader, ClassReader.SKIP_FRAMES);
     ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
     cr.accept(
-        new PerfMarkMethodRewriter(perfMarkReader, className, cw),
+        new PerfMarkMethodRewriter(perfMarkReader, className, methodsToAnnotate, cw),
         ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
     return cw.toByteArray();
   }
 
   static final class PerfMarkClassReader extends ClassVisitor {
     final String className;
+    private final List<List<String>> methodsToAnnotate;
 
     String fileName;
     boolean clinitSeen;
     List<StackTraceElement> matches = new ArrayList<>();
 
-    PerfMarkClassReader(int api, String className) {
+    PerfMarkClassReader(int api, String className, List<List<String>> methodsToAnnotate) {
       super(api);
       this.className = className;
       this.fileName = deriveFileName(className);
+      this.methodsToAnnotate = methodsToAnnotate;
     }
 
     int api() {
@@ -135,18 +141,47 @@ final class PerfMarkTransformer implements ClassFileTransformer {
 
     private final class PerfMarkMethodVisitor extends MethodVisitor {
       private final String methodName;
+      private final boolean autoMatch;
 
       private int lineNumber = -1;
 
       PerfMarkMethodVisitor(MethodVisitor methodVisitor, String methodName) {
         super(PerfMarkClassReader.this.api, methodVisitor);
         this.methodName = methodName;
+        boolean match = false;
+        for (List<String> meth : methodsToAnnotate) {
+          if (meth.get(0).equals(className)) {
+            if (meth.get(1).equals(methodName)) {
+              match = true;
+              break;
+            }
+          }
+        }
+        autoMatch = match;
       }
 
       @Override
       public void visitLineNumber(int line, Label start) {
         this.lineNumber = line;
         super.visitLineNumber(line, start);
+      }
+
+      @Override
+      public void visitCode() {
+        if (autoMatch) {
+          matches.add(new StackTraceElement(className, methodName, fileName, lineNumber));
+        }
+        super.visitCode();
+      }
+
+      @Override
+      public void visitInsn(int opcode) {
+        if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) || opcode == Opcodes.ATHROW) {
+          if (autoMatch) {
+            matches.add(new StackTraceElement(className, methodName, fileName, lineNumber));
+          }
+        }
+        super.visitInsn(opcode);
       }
 
       @Override
@@ -190,12 +225,17 @@ final class PerfMarkTransformer implements ClassFileTransformer {
     int fieldId;
     final PerfMarkClassReader perfmarkClassReader;
     final String className;
+    final List<List<String>> methodsToAnnotate;
 
     PerfMarkMethodRewriter(
-        PerfMarkClassReader perfmarkClassReader, String className, ClassWriter cw) {
+        PerfMarkClassReader perfmarkClassReader,
+        String className,
+        List<List<String>> methodsToAnnotate,
+        ClassWriter cw) {
       super(perfmarkClassReader.api(), cw);
       this.perfmarkClassReader = perfmarkClassReader;
       this.className = className;
+      this.methodsToAnnotate = methodsToAnnotate;
     }
 
     @Override
@@ -204,7 +244,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       return new PerfMarkMethodVisitor(
           perfmarkClassReader.api(),
           super.visitMethod(access, name, descriptor, signature, exceptions),
-          name.equals("<clinit>"));
+          name);
     }
 
     @Override
@@ -225,10 +265,23 @@ final class PerfMarkTransformer implements ClassFileTransformer {
     private final class PerfMarkMethodVisitor extends MethodVisitor {
       private static final String FIELD_PREFIX = "IO_PERFMARK_MARKER->";
       private final boolean isClinit;
+      private final String methodName;
+      private final boolean autoMatch;
 
-      PerfMarkMethodVisitor(int api, MethodVisitor methodVisitor, boolean isClinit) {
+      PerfMarkMethodVisitor(int api, MethodVisitor methodVisitor, String methodName) {
         super(api, methodVisitor);
-        this.isClinit = isClinit;
+        this.isClinit = methodName.equals("<clinit>");
+        this.methodName = methodName;
+        boolean match = false;
+        for (List<String> meth : methodsToAnnotate) {
+          if (meth.get(0).equals(className)) {
+            if (meth.get(1).equals(methodName)) {
+              match = true;
+              break;
+            }
+          }
+        }
+        autoMatch = match;
       }
 
       @Override
@@ -256,7 +309,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
                 false);
             String fieldName = FIELD_PREFIX + i;
             visitField(
-                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
                 fieldName,
                 "Lio/perfmark/impl/Marker;",
                 null,
@@ -268,7 +321,35 @@ final class PerfMarkTransformer implements ClassFileTransformer {
                 "Lio/perfmark/impl/Marker;");
           }
         }
+
+        if (autoMatch) {
+          emitAutoMatchEvent();
+        }
         super.visitCode();
+      }
+
+      void emitAutoMatchEvent() {
+        visitLdcInsn(className + "#" + methodName);
+        int id = fieldId++;
+        String fieldName = FIELD_PREFIX + id;
+        visitFieldInsn(
+            Opcodes.GETSTATIC, className.replace('.', '/'), fieldName, "Lio/perfmark/impl/Marker;");
+        super.visitMethodInsn(
+            Opcodes.INVOKESTATIC,
+            DST_OWNER,
+            "event",
+            "(Ljava/lang/String;Lio/perfmark/impl/Marker;)V",
+            false);
+      }
+
+      @Override
+      public void visitInsn(int opcode) {
+        if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) || opcode == Opcodes.ATHROW) {
+          if (autoMatch) {
+            emitAutoMatchEvent();
+          }
+        }
+        super.visitInsn(opcode);
       }
 
       @Override

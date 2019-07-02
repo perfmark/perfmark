@@ -37,6 +37,38 @@ public class PerfMarkTransformerTest {
     assertEquals("Clz.java", file);
   }
 
+  public static final class ClzAutoRecord {
+    public ClzAutoRecord() {
+      recordMe();
+    }
+
+    void recordMe() {
+      // seemingly nothing here.
+    }
+  }
+
+  @Test
+  public void transform_auto() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    Class<?> clz = transformAndLoad(ClzAutoRecord.class);
+    Constructor<?> ctor = clz.getConstructor();
+    ctor.setAccessible(true);
+    ctor.newInstance();
+    List<Mark> marks = Storage.readForTest().getMarks();
+    assertThat(marks).hasSize(2);
+    for (Mark mark : marks) {
+      assertNotNull(mark.getMarker());
+      StackTraceElement element = Internal.getElement(mark.getMarker());
+      assertThat(element.getClassName()).isEqualTo(ClzAutoRecord.class.getName());
+      assertThat(element.getMethodName()).isEqualTo("recordMe");
+      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
+      // TODO: reenable.
+      // assertThat(element.getLineNumber()).isGreaterThan(0);
+    }
+  }
+
   @Test
   public void transform_lambda() throws Exception {
     PerfMark.setEnabled(true);
@@ -96,6 +128,41 @@ public class PerfMarkTransformerTest {
     List<Mark> marks = Storage.readForTest().getMarks();
     assertThat(marks).hasSize(1);
     // I'm not sure what to do with methodrefs, so just leave it alone for now.
+  }
+
+  public interface InterfaceWithDefaults {
+    default void record() {
+      PerfMark.startTask("task");
+      PerfMark.stopTask("task");
+    }
+  }
+
+  @Test
+  public void transform_interface() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    final class Bar implements InterfaceWithDefaults {
+      public Bar() {
+        record();
+      }
+    }
+
+    Class<?> clz = transformAndLoad(Bar.class);
+    Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
+    ctor.setAccessible(true);
+    ctor.newInstance(this);
+
+    List<Mark> marks = Storage.readForTest().getMarks();
+    assertThat(marks).hasSize(2);
+    for (Mark mark : marks) {
+      assertNotNull(mark.getMarker());
+      StackTraceElement element = Internal.getElement(mark.getMarker());
+      assertThat(element.getClassName()).isEqualTo(InterfaceWithDefaults.class.getName());
+      assertThat(element.getMethodName()).isEqualTo("record");
+      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
+      assertThat(element.getLineNumber()).isGreaterThan(0);
+    }
   }
 
   @Test
@@ -255,11 +322,30 @@ public class PerfMarkTransformerTest {
     Class<?> defineClass(String name, byte[] data) {
       return defineClass(name, data, 0, data.length);
     }
+
+    Class<?> findLoadedClz(String name) {
+      return findLoadedClass(name);
+    }
   }
 
   private static Class<?> transformAndLoad(Class<?> clz) throws IOException {
+    return transformAndLoad(clz, new TestClassLoader());
+  }
+
+  private static Class<?> transformAndLoad(Class<?> clz, TestClassLoader cl) throws IOException {
+    if (clz.getClassLoader() == null) {
+      return clz;
+    }
+    if (clz.getSuperclass() != Object.class && clz.getSuperclass() != null) {
+      transformAndLoad(clz.getSuperclass(), cl);
+    }
+    for (Class<?> iface : clz.getInterfaces()) {
+      transformAndLoad(iface, cl);
+    }
     String name = clz.getName();
-    TestClassLoader cl = new TestClassLoader();
+    if (cl.findLoadedClz(name) != null) {
+      return cl.findLoadedClz(name);
+    }
     byte[] bytes = getBytes(clz);
     byte[] newBytes =
         new PerfMarkTransformer().transform(cl, name, clz, /* protectionDomain= */ null, bytes);
