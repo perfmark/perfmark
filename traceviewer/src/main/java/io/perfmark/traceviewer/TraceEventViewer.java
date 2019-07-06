@@ -32,6 +32,18 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Base64;
 
+/**
+ * This class converts from the Trace Event json data into a full HTML page. It includes the trace
+ * viewer from Catapult, the Chromium trace UI.
+ *
+ * <p>This class is separate from {@link TraceEventWriter}, because it includes a fairly large HTML
+ * chunk, and brings in a differently licenced piece of code.
+ *
+ * <p>This code is <strong>NOT</strong> API stable, and may be removed in the future, or changed
+ * without notice.
+ *
+ * @since 0.17.0
+ */
 public final class TraceEventViewer {
 
   public static void main(String[] args) throws Exception {

@@ -51,6 +51,11 @@ import javax.annotation.Nullable;
  * Writes the PerfMark results to a "Trace Event" JSON file usable by the Chromium Profiler
  * "Catapult". The format is defined at
  * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
+ *
+ * <p>This code is <strong>NOT</strong> API stable, and may be removed in the future, or changed
+ * without notice.
+ *
+ * @since 0.16.0
  */
 public final class TraceEventWriter {
 
