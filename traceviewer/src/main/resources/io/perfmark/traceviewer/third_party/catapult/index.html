@@ -16,7 +16,8 @@ function onTraceViewerImportFail() {
   });
 }
 </script>
-<link rel="import" href="trace_viewer_full.html" <!-- IO_PERFMARK_TRACE_IMPORT -->
+<!-- IO_PERFMARK_TRACE_IMPORT -->
+<link rel="import" href="trace_viewer_full.html"
       onerror="onTraceViewerImportFail(event)">
 
 <style>
@@ -104,7 +105,8 @@ function onTraceViewerImportFail() {
     viewer.globalMode = true;
     Polymer.dom(document.body).appendChild(viewer);
 
-    url = './trace.json'; // IO_PERFMARK_TRACE_URL
+    // IO_PERFMARK_TRACE_URL
+    url = './trace.json';
     load();
   });
 }());
