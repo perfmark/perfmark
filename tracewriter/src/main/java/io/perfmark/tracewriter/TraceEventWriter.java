@@ -18,6 +18,7 @@ package io.perfmark.tracewriter;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -67,20 +68,24 @@ public final class TraceEventWriter {
    * $HOME/.local/share/perfmark}.
    *
    * <p>Authors note: if you are on Windows, or the above defaults aren't right, I'm not really sure
-   * where else is a good place to put this data. Please file an issue at https://perfmark.io/ if
-   * you have a preference.
+   * where else is a good place to put this data. Please file an issue at https://www.perfmark.io/
+   * if you have a preference.
+   *
+   * <p>Updated in 0.17.0 to return the created path.
    *
    * @throws IOException if there is an error writing to the file.
+   * @return the path used to create the trace file.
    */
-  public static void writeTraceEvents() throws IOException {
+  @CanIgnoreReturnValue
+  public static Path writeTraceEvents() throws IOException {
     Path p = pickNextDest(guessDirectory());
-    try (OutputStream os = Files.newOutputStream(p)) {
-      logger.info("Writing trace to " + p);
-      try (OutputStream gzos = new GZIPOutputStream(os);
-          Writer osw = new OutputStreamWriter(gzos, UTF_8)) {
-        writeTraceEvents(osw);
-      }
+    try (OutputStream os = Files.newOutputStream(p);
+        OutputStream gzos = new GZIPOutputStream(os);
+        Writer osw = new OutputStreamWriter(gzos, UTF_8)) {
+      writeTraceEvents(osw);
     }
+    logger.info("Wrote trace to " + p);
+    return p;
   }
 
   /**
@@ -100,8 +105,8 @@ public final class TraceEventWriter {
    *
    * @param destination the destination for the JSON data.
    * @param markLists the data to use to build the trace event JSON
-   * @param initNanoTime the time PerfMark classes were first loaded as specified by
-   *        {@link System#nanoTime()}
+   * @param initNanoTime the time PerfMark classes were first loaded as specified by {@link
+   *     System#nanoTime()}
    * @param nowNanoTime the current time as specified by {@link System#nanoTime()}.
    * @param pid the PID of the current process.
    * @throws IOException if there are errors build the JSON, or can't write to the destination.

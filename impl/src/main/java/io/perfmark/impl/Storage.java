@@ -32,9 +32,9 @@ import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
 /**
- * Storage is responsible for storing and returning recorded marks.  This is a low level class and
- * not intended for use by users.  Instead, the {@code TraceEventWriter} and
- * {@code TraceEventViewer} classes provide easier to use APIs for accessing PerfMark data.
+ * Storage is responsible for storing and returning recorded marks. This is a low level class and
+ * not intended for use by users. Instead, the {@code TraceEventWriter} and {@code TraceEventViewer}
+ * classes provide easier to use APIs for accessing PerfMark data.
  *
  * <p>This code is <strong>NOT</strong> API stable, and may be removed in the future, or changed
  * without notice.
