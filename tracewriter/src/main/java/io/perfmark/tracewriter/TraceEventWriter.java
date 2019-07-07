@@ -83,6 +83,12 @@ public final class TraceEventWriter {
     }
   }
 
+  /**
+   * Writes all trace events in in JSON format to the given destination.
+   *
+   * @param destination the destination for the JSON data.
+   * @throws IOException if there are errors build the JSON, or can't write to the destination.
+   */
   public static void writeTraceEvents(Writer destination) throws IOException {
     writeTraceEvents(
         destination, Storage.read(), Storage.getInitNanoTime(), System.nanoTime(), getPid());
@@ -91,6 +97,14 @@ public final class TraceEventWriter {
   /**
    * Writes the trace events gathered from {@link Storage#read()}. This method is not API stable. It
    * will be eventually.
+   *
+   * @param destination the destination for the JSON data.
+   * @param markLists the data to use to build the trace event JSON
+   * @param initNanoTime the time PerfMark classes were first loaded as specified by
+   *        {@link System#nanoTime()}
+   * @param nowNanoTime the current time as specified by {@link System#nanoTime()}.
+   * @param pid the PID of the current process.
+   * @throws IOException if there are errors build the JSON, or can't write to the destination.
    */
   public static void writeTraceEvents(
       Writer destination,

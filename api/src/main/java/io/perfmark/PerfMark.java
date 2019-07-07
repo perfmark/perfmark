@@ -206,7 +206,11 @@ public final class PerfMark {
     return impl.createTag(name, id);
   }
 
-  /** DO NOT CALL, no longer implemented. Use {@link #linkOut} instead. */
+  /**
+   * DO NOT CALL, no longer implemented. Use {@link #linkOut} instead.
+   *
+   * @return a no-op link that
+   */
   @Deprecated
   @DoNotCall
   public static Link link() {
@@ -230,6 +234,7 @@ public final class PerfMark {
    * Associate this link with the most recently started task. There may be at most one inbound
    * linkage per task: the first call to {@link #linkIn} decides which outbound task is the origin.
    *
+   * @param link a link created inside of another task.
    * @since 0.17.0
    */
   public static void linkIn(Link link) {

@@ -31,6 +31,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
+/**
+ * Storage is responsible for storing and returning recorded marks.  This is a low level class and
+ * not intended for use by users.  Instead, the {@code TraceEventWriter} and
+ * {@code TraceEventViewer} classes provide easier to use APIs for accessing PerfMark data.
+ *
+ * <p>This code is <strong>NOT</strong> API stable, and may be removed in the future, or changed
+ * without notice.
+ */
 public final class Storage {
   private static final long INIT_NANO_TIME = System.nanoTime();
 
@@ -102,7 +110,11 @@ public final class Storage {
     return INIT_NANO_TIME;
   }
 
-  /** Returns a list of {@link MarkList}s across all reachable threads. */
+  /**
+   * Returns a list of {@link MarkList}s across all reachable threads.
+   *
+   * @return all reachable MarkLists.
+   */
   public static List<MarkList> read() {
     List<MarkHolderRef> markHolderRefs = new ArrayList<MarkHolderRef>();
     MarkHolderRef.cleanQueue(markHolderRefs, allMarkHolders);

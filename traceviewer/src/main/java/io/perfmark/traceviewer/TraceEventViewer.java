@@ -72,6 +72,9 @@ public final class TraceEventViewer {
   /**
    * A convenience function around {@link #writeTraceHtml(Writer)}. This writes the trace data to a
    * temporary file and logs the output location.
+   *
+   * @return the Path of the written file.
+   * @throws IOException if it can't write to the destination.
    */
   @CanIgnoreReturnValue
   public static Path writeTraceHtml() throws IOException {
@@ -84,7 +87,12 @@ public final class TraceEventViewer {
     return path;
   }
 
-  /** Writes all available trace data as a single HTML file into the given writer. */
+  /**
+   * Writes all available trace data as a single HTML file into the given writer.
+   *
+   * @param writer The destination to write all HTML to.
+   * @throws IOException if it can't write to the writer.
+   */
   public static void writeTraceHtml(Writer writer) throws IOException {
     InputStream indexStream =
         TraceEventViewer.class.getResourceAsStream("third_party/catapult/index.html");
