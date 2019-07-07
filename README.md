@@ -1,6 +1,6 @@
 # PerfMark
 
-![PerfMark Hummingbird](perfmark.svg "PerfMark")
+![PerfMark Hummingbird](doc/perfmark.png "PerfMark")
 
 PerfMark is a low-overhead, manually-instrumented, tracing library for Java.  Users can add the
 tracing function calls to their code to see how long each part takes.
@@ -14,7 +14,7 @@ tracing function calls to their code to see how long each part takes.
 *   **Dynamically Enabled**: PerfMark can be enabled or disabled at runtime.  When disabled, 
     PerfMark has *zero overhead*, taking advantage of the JIT compiler to remove the tracing.
     
-*   **Inter-thread Communication**: Existing profilers have difficultly expressing which thread 
+*   **Inter-thread Communication**: Existing profilers have difficulty expressing which thread 
     wakes up and executes work on another thread.  PerfMark allows users to express this 
     relationship explicitly, making for a clear picture of how code flows.
 
@@ -73,6 +73,24 @@ Future<Response> buildResponse() {
   }
 }
 ```
+
+To view the traces in your browser, generate the HTML:
+
+```java
+  PerfMark.setEnabled(true);
+  PerfMark.startTask("My Task");
+  } finally {
+    PerfMark.stopTask("My Task");
+  }
+  TraceEventViewer.writeTraceHtml();
+}
+```
+
+The output looks like:
+
+![PerfMark Hummingbird](doc/screenshot.png "PerfMark")
+
+
 
 ## Versioning and API Stability
 
