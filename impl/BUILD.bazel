@@ -40,6 +40,7 @@ java_library(
         "src/main/java/io/perfmark/impl/NoopMarkHolderProvider.java",
         "src/main/java/io/perfmark/impl/Storage.java",
     ],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":mark",
         ":mark-holder",
@@ -83,6 +84,7 @@ java_library(
 java_library(
     name = "mark-list",
     srcs = ["src/main/java/io/perfmark/impl/MarkList.java"],
+    visibility = ["//:__subpackages__"],
     deps = [
         ":mark",
     ],

@@ -1,0 +1,15 @@
+java_library(
+    name = "tracewriter",
+    srcs = glob([
+        "src/main/java/io/perfmark/tracewriter/*.java",
+    ]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//impl:mark",
+        "//impl:mark-list",
+        "//impl:marker",
+        "//impl:storage",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_code_gson_gson",
+    ],
+)
