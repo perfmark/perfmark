@@ -16,21 +16,24 @@
 
 package io.perfmark.traceviewer;
 
-import io.perfmark.PerfMark;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.perfmark.tracewriter.TraceEventWriter;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.Nullable;
 
 /**
  * This class converts from the Trace Event json data into a full HTML page. It includes the trace
@@ -45,18 +48,43 @@ import java.util.Base64;
  * @since 0.17.0
  */
 public final class TraceEventViewer {
+  private static final Logger logger = Logger.getLogger(TraceEventViewer.class.getName());
 
-  public static void main(String[] args) throws Exception {
-    PerfMark.setEnabled(true);
-    PerfMark.startTask("hi");
-    Path path = new File("/tmp/blah.html").toPath();
-    PerfMark.stopTask("hi");
-    try (OutputStream os = Files.newOutputStream(path, StandardOpenOption.CREATE);
-        Writer w = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
+  // Copied from trace2html.html in the Catapult tracing code.
+  private static final String INLINE_TRACE_DATA =
+      ""
+          + "    const traces = [];\n"
+          + "    const viewerDataScripts = Polymer.dom(document).querySelectorAll(\n"
+          + "        '#viewer-data');\n"
+          + "    for (let i = 0; i < viewerDataScripts.length; i++) {\n"
+          + "      let text = Polymer.dom(viewerDataScripts[i]).textContent;\n"
+          + "      // Trim leading newlines off the text. They happen during writing.\n"
+          + "      while (text[0] === '\\n') {\n"
+          + "        text = text.substring(1);\n"
+          + "      }\n"
+          + "      onResult(tr.b.Base64.atob(text));\n"
+          + "      viewer.updateDocumentFavicon();\n"
+          + "      viewer.globalMode = true;\n"
+          + "      viewer.viewTitle = document.title;\n"
+          + "      break;\n"
+          + "    }\n";
+
+  /**
+   * A convenience function around {@link #writeTraceHtml(Writer)}. This writes the trace data to a
+   * temporary file and logs the output location.
+   */
+  @CanIgnoreReturnValue
+  public static Path writeTraceHtml() throws IOException {
+    Path path = Files.createTempFile("perfmark-trace-", ".html");
+    try (OutputStream os = Files.newOutputStream(path, TRUNCATE_EXISTING);
+        Writer w = new OutputStreamWriter(os, UTF_8)) {
       writeTraceHtml(w);
     }
+    logger.log(Level.INFO, "Wrote PerfMark Trace file://{0}", new Object[] {path.toAbsolutePath()});
+    return path;
   }
 
+  /** Writes all available trace data as a single HTML file into the given writer. */
   public static void writeTraceHtml(Writer writer) throws IOException {
     InputStream indexStream =
         TraceEventViewer.class.getResourceAsStream("third_party/catapult/index.html");
@@ -73,22 +101,25 @@ public final class TraceEventViewer {
     String traceViewer = trimTraceViewer(readAll(traceViewerStream));
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (OutputStreamWriter w = new OutputStreamWriter(baos, StandardCharsets.UTF_8)) {
+    try (OutputStreamWriter w = new OutputStreamWriter(baos, UTF_8)) {
       TraceEventWriter.writeTraceEvents(w);
     }
-    String indexWithTraceViewer = replaceIndexTraceImport(index, traceViewer);
     byte[] traceData64 = Base64.getUrlEncoder().encode(baos.toByteArray());
-    String fullIndex =
-        replaceIndexTraceData(
-            indexWithTraceViewer, new String(traceData64, StandardCharsets.UTF_8));
+
+    String indexWithTraceViewer =
+        replaceIndexTraceImport(index, traceViewer, new String(traceData64, UTF_8));
+
+    String fullIndex = replaceIndexTraceData(indexWithTraceViewer, INLINE_TRACE_DATA);
     writer.write(fullIndex);
   }
 
-  private TraceEventViewer() {
-    throw new AssertionError("nope");
-  }
-
-  private static String replaceIndexTraceImport(String index, String replacement) {
+  /**
+   * Replaces the normal {@code <link>} tag in index.html with a custom replacement, and optionally
+   * the inlined Trace data as a base64 script. This is because the trace2html.html file imports the
+   * data as a top level text/plain script.
+   */
+  private static String replaceIndexTraceImport(
+      String index, String replacement, @Nullable String inlineTraceData64) {
     int start = index.indexOf("IO_PERFMARK_TRACE_IMPORT");
     if (start == -1) {
       throw new IllegalArgumentException("index doesn't contain IO_PERFMARK_TRACE_IMPORT");
@@ -101,7 +132,15 @@ public final class TraceEventViewer {
     assert line2pos != -1;
     int line3pos = index.indexOf('\n', line2pos + 1);
     assert line3pos != -1;
-    return index.substring(0, line0pos + 1) + replacement + index.substring(line3pos);
+    String inlineTraceData = "";
+    if (inlineTraceData64 != null) {
+      inlineTraceData =
+          "\n<script id=\"viewer-data\" type=\"text/plain\">" + inlineTraceData64 + "</script>";
+    }
+    return index.substring(0, line0pos + 1)
+        + replacement
+        + inlineTraceData
+        + index.substring(line3pos);
   }
 
   private static String replaceIndexTraceData(String index, String replacement) {
@@ -115,12 +154,9 @@ public final class TraceEventViewer {
     assert line1pos != -1;
     int line2pos = index.indexOf('\n', line1pos + 1);
     assert line2pos != -1;
-
-    return index.substring(0, line0pos + 1)
-        + "    url = 'data:application/json;base64,"
-        + replacement
-        + "';"
-        + index.substring(line2pos);
+    int line3pos = index.indexOf('\n', line2pos + 1);
+    assert line3pos != -1;
+    return index.substring(0, line0pos + 1) + replacement + index.substring(line3pos);
   }
 
   private static String trimTraceViewer(String traceViewer) {
@@ -154,6 +190,10 @@ public final class TraceEventViewer {
         data = Arrays.copyOf(data, data.length + (data.length >> 2));
       }
     }
-    return new String(data, 0, pos, StandardCharsets.UTF_8);
+    return new String(data, 0, pos, UTF_8);
+  }
+
+  private TraceEventViewer() {
+    throw new AssertionError("nope");
   }
 }

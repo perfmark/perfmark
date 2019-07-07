@@ -5,6 +5,7 @@ targetCompatibility = 1.8
 
 dependencies {
     compile project(':perfmark-tracewriter'),
-            libraries.jsr305
+            libraries.jsr305,
+            libraries.errorprone
 }
 

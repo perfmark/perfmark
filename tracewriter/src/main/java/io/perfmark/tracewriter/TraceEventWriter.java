@@ -76,10 +76,9 @@ public final class TraceEventWriter {
     Path p = pickNextDest(guessDirectory());
     try (OutputStream os = Files.newOutputStream(p)) {
       logger.info("Writing trace to " + p);
-      try (OutputStream gzos = new GZIPOutputStream(os)) {
-        try (Writer osw = new OutputStreamWriter(gzos, UTF_8)) {
-          writeTraceEvents(osw);
-        }
+      try (OutputStream gzos = new GZIPOutputStream(os);
+          Writer osw = new OutputStreamWriter(gzos, UTF_8)) {
+        writeTraceEvents(osw);
       }
     }
   }
