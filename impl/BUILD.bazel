@@ -89,3 +89,13 @@ java_library(
         ":mark",
     ],
 )
+
+java_library(
+    name = "internal-accessor",
+    testonly = 1,
+    srcs = ["src/main/java/io/perfmark/impl/Internal.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":marker",
+    ],
+)

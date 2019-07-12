@@ -8,6 +8,7 @@ dependencies {
             project(':perfmark-impl'),
             project(':perfmark-java6'),
             libraries.jsr305,
+            libraries.errorprone,
             libraries.gson
 }
 
