@@ -250,6 +250,15 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
+    protected void attachTag(Tag tag) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      Storage.attachTagAnyways(gen, unpackTagName(tag), unpackTagId(tag));
+    }
+
+    @Override
     protected Tag createTag(@Nullable String tagName, long tagId) {
       if (!isEnabled(getGen())) {
         return NO_TAG;

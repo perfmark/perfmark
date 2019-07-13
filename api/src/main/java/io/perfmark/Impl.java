@@ -57,6 +57,8 @@ public class Impl {
 
   protected void linkIn(Link link) {}
 
+  protected void attachTag(Tag tag) {}
+
   protected Tag createTag(@Nullable String tagName, long tagId) {
     return NO_TAG;
   }

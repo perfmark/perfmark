@@ -241,5 +241,44 @@ public final class PerfMark {
     impl.linkIn(link);
   }
 
+  /**
+   * Attaches an additional tag to the current active task. The tag provided is independent of the
+   * tag used with {@link #startTask(String, Tag)} and {@link #stopTask(String, Tag)}. Unlike the
+   * two previous two task overloads, the tag provided to {@link #attachTag(Tag)} does not have to
+   * match any other tags in use. This method is useful for when you have the tag information after
+   * the task is started.
+   *
+   * <p>Here are some example usages:
+   *
+   * <p>Recording the amount of work done in a task:
+   *
+   * <pre>
+   *   PerfMark.startTask("read");
+   *   byte[] data = file.read();
+   *   PerfMark.attachTag(PerfMark.createTag("bytes read", data.length));
+   *   PerfMark.stopTask("read");
+   * </pre>
+   *
+   * <p>Recording a tag which may be absent on an exception:
+   *
+   * <pre>
+   *   Socket s;
+   *   Tag remoteTag = PerfMark.createTag(remoteAddress.toString());
+   *   PerfMark.startTask("connect", remoteTag);
+   *   try {
+   *     s = connect(remoteAddress);
+   *     PerfMark.attachTag(PerfMark.createTag(s.getLocalAddress().toString());
+   *   } finally {
+   *     PerfMark.stopTask("connect", remoteTag);
+   *   }
+   * </pre>
+   *
+   * @since 0.18.0
+   * @param tag the Tag to attach.
+   */
+  public static void attachTag(Tag tag) {
+    impl.attachTag(tag);
+  }
+
   private PerfMark() {}
 }

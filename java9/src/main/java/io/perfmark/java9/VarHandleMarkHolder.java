@@ -47,6 +47,7 @@ final class VarHandleMarkHolder extends MarkHolder {
   private static final long EVENT_TM_OP = Mark.Operation.EVENT_TM.ordinal();
   private static final long LINK_OP = Mark.Operation.LINK.ordinal();
   private static final long LINK_M_OP = Mark.Operation.LINK_M.ordinal();
+  private static final long ATTACH_T_OP = Mark.Operation.ATTACH_TAG.ordinal();
 
   private static final VarHandle IDX;
   private static final VarHandle MARKERS;
@@ -282,6 +283,17 @@ final class VarHandleMarkHolder extends MarkHolder {
     LONGS.setOpaque(nanoTimes, i, nanoTime);
     LONGS.setOpaque(durationNanoTimes, i, durationNanos);
     LONGS.setOpaque(genOps, i, gen + EVENT_M_OP);
+    IDX.setRelease(this, localIdx + 1);
+    VarHandle.storeStoreFence();
+  }
+
+  @Override
+  public void attachTag(long gen, String tagName, long tagId) {
+    long localIdx = (long) IDX.get(this);
+    int i = (int) (localIdx & maxEventsMax);
+    STRINGS.setOpaque(tagNames, i, tagName);
+    LONGS.setOpaque(tagIds, i, tagId);
+    LONGS.setOpaque(genOps, i, gen + ATTACH_T_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }

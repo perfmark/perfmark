@@ -215,6 +215,10 @@ public final class Storage {
     localMarkHolder.get().link(gen, linkId, marker);
   }
 
+  static void attachTagAnyways(long gen, @Nullable String tagName, long tagId) {
+    localMarkHolder.get().attachTag(gen, tagName, tagId);
+  }
+
   public static void resetForTest() {
     localMarkHolder.remove();
   }

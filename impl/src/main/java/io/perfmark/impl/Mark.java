@@ -78,6 +78,7 @@ public final class Mark {
         case EVENT: // fall-through
         case EVENT_T: // fall-through
         case LINK: // fall-through
+        case ATTACH_TAG:
           this.marker = Marker.NONE;
           break markerCheck;
         case NONE:
@@ -95,6 +96,7 @@ public final class Mark {
         case TASK_END_TM: // fall-through
         case EVENT_T:
         case EVENT_TM:
+        case ATTACH_TAG:
           this.tagName = tagName;
           this.tagId = tagId;
           break tagCheck;
@@ -118,6 +120,10 @@ public final class Mark {
       this.taskName = null;
       this.nanoTime = NO_NANOTIME;
       this.linkId = tagId;
+    } else if (operation == Operation.ATTACH_TAG) {
+      this.taskName = null;
+      this.nanoTime = NO_NANOTIME;
+      this.linkId = NO_LINK_ID;
     } else {
       this.taskName = taskName;
       this.nanoTime = nanoTime;
@@ -142,6 +148,7 @@ public final class Mark {
     EVENT_TM,
     LINK,
     LINK_M,
+    ATTACH_TAG,
     ;
 
     private static final Operation[] values = Operation.values();

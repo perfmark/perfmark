@@ -81,6 +81,9 @@ class MarkListWalker {
       case TASK_END_TM:
         onTaskEnd(mark, unmatchedPairMarks.contains(mark), false);
         return;
+      case ATTACH_TAG:
+        onAttachTag(mark);
+        return;
       case EVENT:
       case EVENT_T:
       case EVENT_M:
@@ -104,6 +107,8 @@ class MarkListWalker {
   protected void onLink(Mark mark) {}
 
   protected void onEvent(Mark mark) {}
+
+  protected void onAttachTag(Mark mark) {}
 
   private static Map<Long, List<MarkList>> groupMarkListsByGeneration(
       List<? extends MarkList> markLists) {
@@ -173,6 +178,7 @@ class MarkListWalker {
         case EVENT_TM:
         case LINK:
         case LINK_M:
+        case ATTACH_TAG:
           continue loop;
         case NONE:
           break;
@@ -209,6 +215,7 @@ class MarkListWalker {
         return;
       case LINK:
       case LINK_M:
+      case ATTACH_TAG:
         return;
       case NONE:
         break;

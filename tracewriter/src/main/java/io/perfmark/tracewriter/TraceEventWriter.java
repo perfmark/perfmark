@@ -381,6 +381,11 @@ public final class TraceEventWriter {
     }
 
     @Override
+    protected void onAttachTag(Mark mark) {
+      super.onAttachTag(mark);
+    }
+
+    @Override
     protected void onEvent(Mark mark) {
       traceEvents.add(
           TraceEvent.EVENT

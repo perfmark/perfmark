@@ -90,6 +90,9 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
         long gen, String taskName, Marker marker, long nanoTime, long durationNanos) {}
 
     @Override
+    public void attachTag(long gen, String tagName, long tagId) {}
+
+    @Override
     public void resetForTest() {}
 
     @Override

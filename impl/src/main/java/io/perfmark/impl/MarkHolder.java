@@ -61,6 +61,8 @@ public abstract class MarkHolder {
   public abstract void event(
       long gen, String taskName, Marker marker, long nanoTime, long durationNanos);
 
+  public abstract void attachTag(long gen, String tagName, long tagId);
+
   public abstract void resetForTest();
 
   public abstract List<Mark> read(boolean concurrentWrites);

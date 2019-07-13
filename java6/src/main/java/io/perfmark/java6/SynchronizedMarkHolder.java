@@ -41,6 +41,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
   private static final long EVENT_TM_OP = Mark.Operation.EVENT_TM.ordinal();
   private static final long LINK_OP = Mark.Operation.LINK.ordinal();
   private static final long LINK_M_OP = Mark.Operation.LINK_M.ordinal();
+  private static final long ATTACH_T_OP = Mark.Operation.ATTACH_TAG.ordinal();
 
   private final int maxEvents;
 
@@ -246,6 +247,16 @@ final class SynchronizedMarkHolder extends MarkHolder {
     nanoTimes[idx] = nanoTime;
     durationNanoTimes[idx] = durationNanos;
     genOps[idx] = gen + EVENT_M_OP;
+    if (++idx == maxEvents) {
+      idx = 0;
+    }
+  }
+
+  @Override
+  public synchronized void attachTag(long gen, String tagName, long tagId) {
+    tagNames[idx] = tagName;
+    tagIds[idx] = tagId;
+    genOps[idx] = gen + ATTACH_T_OP;
     if (++idx == maxEvents) {
       idx = 0;
     }
