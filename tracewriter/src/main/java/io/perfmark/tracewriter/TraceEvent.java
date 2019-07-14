@@ -76,6 +76,8 @@ final class TraceEvent implements Cloneable {
   @SuppressWarnings("unused")
   private String colorName = null;
 
+  private transient int argCalls;
+
   TraceEvent name(String name) {
     if (name == null) {
       throw new NullPointerException("name");
@@ -148,6 +150,13 @@ final class TraceEvent implements Cloneable {
     return other;
   }
 
+  /**
+   * Note This should only be used for tags, as the map size is used to determine the arg names in
+   * TraceEventWriter. This will overwrite any existing args.
+   *
+   * @param args the args to use.
+   * @return this
+   */
   TraceEvent args(Map<String, ?> args) {
     if (args == null) {
       throw new NullPointerException("args");
@@ -171,6 +180,14 @@ final class TraceEvent implements Cloneable {
     return other;
   }
 
+  /**
+   * Note This should only be used for tags, as the map size is used to determine the arg names in
+   * TraceEventWriter.
+   *
+   * @param argKey the arg key
+   * @param argValue the arg value
+   * @return this
+   */
   TraceEvent arg(String argKey, Object argValue) {
     if (argKey == null) {
       throw new NullPointerException("argKey");
@@ -187,6 +204,14 @@ final class TraceEvent implements Cloneable {
       other.args = Collections.unmodifiableMap(newArgs);
     }
     return other;
+  }
+
+  int getArgsSize() {
+    return argCalls;
+  }
+
+  void incrementArgsSize() {
+    argCalls++;
   }
 
   @Override

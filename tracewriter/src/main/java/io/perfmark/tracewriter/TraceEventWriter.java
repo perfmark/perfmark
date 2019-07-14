@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.annotations.SerializedName;
+import io.perfmark.PerfMark;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.Storage;
@@ -59,6 +60,16 @@ import javax.annotation.Nullable;
  * @since 0.16.0
  */
 public final class TraceEventWriter {
+
+  public static void main(String[] args) throws Exception {
+    PerfMark.setEnabled(true);
+    PerfMark.startTask("hi");
+    PerfMark.attachTag(PerfMark.createTag("but", 27));
+    PerfMark.attachTag(PerfMark.createTag("nut"));
+    PerfMark.attachTag(PerfMark.createTag("gut"));
+    PerfMark.stopTask("hi");
+    writeTraceEvents();
+  }
 
   private static final Logger logger = Logger.getLogger(TraceEventWriter.class.getName());
 
@@ -256,18 +267,28 @@ public final class TraceEventWriter {
 
   private static final class TraceEventWalker extends MarkListWalker {
 
+    private static final class TaskStart {
+      final Mark mark;
+      final int traceEventIdx;
+
+      TaskStart(Mark mark, int traceEventIdx) {
+        this.mark = mark;
+        this.traceEventIdx = traceEventIdx;
+      }
+    }
+
     private long uniqueLinkPairId = 1;
     private long currentThreadId = -1;
     private long currentMarkListId = -1;
-    private final Deque<Mark> taskStack = new ArrayDeque<>();
+    private final Deque<TaskStart> taskStack = new ArrayDeque<>();
     private final Map<Long, LinkTuple> linkIdToLinkOut = new LinkedHashMap<>();
     private final List<LinkTuple> linkIdToLinkIn = new ArrayList<>();
 
     private final long pid;
     private final long initNanoTime;
-    private final List<? super TraceEvent> traceEvents;
+    private final List<TraceEvent> traceEvents;
 
-    TraceEventWalker(List<? super TraceEvent> traceEvents, long pid, long initNanoTime) {
+    TraceEventWalker(List<TraceEvent> traceEvents, long pid, long initNanoTime) {
       this.pid = pid;
       this.initNanoTime = initNanoTime;
       this.traceEvents = traceEvents;
@@ -346,16 +367,21 @@ public final class TraceEventWriter {
       } else if (unmatchedEnd) {
         categories = Collections.singletonList("unfinished");
       }
-      taskStack.add(mark);
-      traceEvents.add(
+      Map<String, ?> args = tagArgs(mark.getTagName(), mark.getTagId());
+      TraceEvent traceEvent =
           TraceEvent.EVENT
               .name(mark.getTaskName())
               .phase("B")
               .pid(pid)
-              .args(tagArgs(mark.getTagName(), mark.getTagId()))
+              .args(args)
               .categories(categories)
               .tid(currentThreadId)
-              .traceClockNanos(mark.getNanoTime() - initNanoTime));
+              .traceClockNanos(mark.getNanoTime() - initNanoTime);
+      if (!args.isEmpty()) {
+        traceEvent.incrementArgsSize();
+      }
+      traceEvents.add(traceEvent);
+      taskStack.add(new TaskStart(mark, traceEvents.size() - 1));
     }
 
     @Override
@@ -369,32 +395,60 @@ public final class TraceEventWriter {
       }
       taskStack.pollLast();
       // TODO: maybe complain about task name mismatch?
-      traceEvents.add(
+      Map<String, ?> args = tagArgs(mark.getTagName(), mark.getTagId());
+      TraceEvent traceEvent =
           TraceEvent.EVENT
               .name(mark.getTaskName())
               .phase("E")
               .pid(pid)
-              .args(tagArgs(mark.getTagName(), mark.getTagId()))
+              .args(args)
               .categories(categories)
               .tid(currentThreadId)
-              .traceClockNanos(mark.getNanoTime() - initNanoTime));
+              .traceClockNanos(mark.getNanoTime() - initNanoTime);
+      if (!args.isEmpty()) {
+        traceEvent.incrementArgsSize();
+      }
+      traceEvents.add(traceEvent);
     }
 
     @Override
     protected void onAttachTag(Mark mark) {
-      super.onAttachTag(mark);
+      TaskStart taskStart = taskStack.peekLast();
+      TraceEvent taskEvent = traceEvents.get(taskStart.traceEventIdx);
+      int size = taskEvent.getArgsSize();
+      boolean updated = false;
+      if (!(mark.getTagName() == null || mark.getTagName().equals(Mark.NO_TAG_NAME))) {
+        taskEvent =
+            taskEvent.arg("tag" + (size == 0 ? "" : String.valueOf(size)), mark.getTagName());
+        updated = true;
+      }
+      if (mark.getTagId() != Mark.NO_TAG_ID) {
+        taskEvent = taskEvent.arg("id" + (size == 0 ? "" : String.valueOf(size)), mark.getTagId());
+        updated = true;
+      }
+      if (updated) {
+        taskEvent.incrementArgsSize();
+      }
+
+      traceEvents.set(taskStart.traceEventIdx, taskEvent);
     }
 
     @Override
     protected void onEvent(Mark mark) {
-      traceEvents.add(
+      Map<String, ?> args = tagArgs(mark.getTagName(), mark.getTagId());
+      TraceEvent traceEvent =
           TraceEvent.EVENT
               .name(mark.getTaskName())
               .phase("i")
               .pid(pid)
-              .args(tagArgs(mark.getTagName(), mark.getTagId()))
+              .args(args)
               .tid(currentThreadId)
-              .traceClockNanos(mark.getNanoTime() - initNanoTime));
+              .traceClockNanos(mark.getNanoTime() - initNanoTime);
+      if (!args.isEmpty()) {
+        traceEvent.incrementArgsSize();
+      }
+
+      traceEvents.add(traceEvent);
     }
 
     static final class LinkTuple {
@@ -420,7 +474,7 @@ public final class TraceEventWriter {
         return;
       }
       LinkTuple linkTuple =
-          new LinkTuple(taskStack.peekLast(), mark, currentThreadId, currentMarkListId);
+          new LinkTuple(taskStack.peekLast().mark, mark, currentThreadId, currentMarkListId);
       if (mark.getLinkId() > 0) {
         LinkTuple old = linkIdToLinkOut.put(mark.getLinkId(), linkTuple);
         assert old == null;
