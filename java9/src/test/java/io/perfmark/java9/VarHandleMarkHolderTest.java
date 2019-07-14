@@ -19,6 +19,7 @@ package io.perfmark.java9;
 import static io.perfmark.impl.Mark.NO_NANOTIME;
 import static io.perfmark.impl.Mark.NO_TAG_ID;
 import static io.perfmark.impl.Mark.NO_TAG_NAME;
+import static io.perfmark.impl.Mark.Operation.ATTACH_TAG;
 import static io.perfmark.impl.Mark.Operation.EVENT;
 import static io.perfmark.impl.Mark.Operation.EVENT_M;
 import static io.perfmark.impl.Mark.Operation.EVENT_T;
@@ -131,6 +132,22 @@ public class VarHandleMarkHolderTest {
             Mark.create("task2", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_START),
             Mark.create("task2", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 5, gen, TASK_END),
             Mark.create("task1", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 6, gen, TASK_END));
+    assertEquals(expected, marks);
+  }
+
+  @Test
+  public void attachTag() {
+    mh.start(gen, "task", 3);
+    mh.attachTag(gen, "tag", 8);
+    mh.stop(gen, "task", 4);
+
+    List<Mark> marks = mh.read(false);
+    assertEquals(3, marks.size());
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.create("task", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_START),
+            Mark.create(null, Marker.NONE, "tag", 8, NO_NANOTIME, gen, ATTACH_TAG),
+            Mark.create("task", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_END));
     assertEquals(expected, marks);
   }
 

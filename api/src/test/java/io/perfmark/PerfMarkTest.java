@@ -19,6 +19,7 @@ package io.perfmark;
 import static io.perfmark.impl.Mark.NO_NANOTIME;
 import static io.perfmark.impl.Mark.NO_TAG_ID;
 import static io.perfmark.impl.Mark.NO_TAG_NAME;
+import static io.perfmark.impl.Mark.Operation.ATTACH_TAG;
 import static io.perfmark.impl.Mark.Operation.LINK;
 import static io.perfmark.impl.Mark.Operation.TASK_END;
 import static io.perfmark.impl.Mark.Operation.TASK_END_T;
@@ -26,6 +27,7 @@ import static io.perfmark.impl.Mark.Operation.TASK_START;
 import static io.perfmark.impl.Mark.Operation.TASK_START_T;
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.truth.Truth;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.Marker;
@@ -98,6 +100,7 @@ public class PerfMarkTest {
     PerfMark.startTask("task2", tag2);
     PerfMark.startTask("task3", tag3);
     PerfMark.startTask("task4");
+    PerfMark.attachTag(PerfMark.createTag("extra"));
     Link link = PerfMark.linkOut();
     PerfMark.linkIn(link);
     PerfMark.stopTask("task4");
@@ -107,7 +110,7 @@ public class PerfMarkTest {
 
     List<Mark> marks = Storage.readForTest().getMarks();
 
-    assertEquals(marks.size(), 10);
+    Truth.assertThat(marks).hasSize(11);
     List<Mark> expected =
         Arrays.asList(
             Mark.create(
@@ -142,6 +145,7 @@ public class PerfMarkTest {
                 marks.get(3).getNanoTime(),
                 gen,
                 TASK_START),
+            Mark.create(null, Marker.NONE, "extra", NO_TAG_ID, NO_NANOTIME, gen, ATTACH_TAG),
             Mark.create(null, Marker.NONE, NO_TAG_NAME, link.linkId, NO_NANOTIME, gen, LINK),
             Mark.create(null, Marker.NONE, NO_TAG_NAME, -link.linkId, NO_NANOTIME, gen, LINK),
             Mark.create(
@@ -149,7 +153,7 @@ public class PerfMarkTest {
                 Marker.NONE,
                 NO_TAG_NAME,
                 NO_TAG_ID,
-                marks.get(6).getNanoTime(),
+                marks.get(7).getNanoTime(),
                 gen,
                 TASK_END),
             Mark.create(
@@ -157,7 +161,7 @@ public class PerfMarkTest {
                 Marker.NONE,
                 tag3.tagName,
                 tag3.tagId,
-                marks.get(7).getNanoTime(),
+                marks.get(8).getNanoTime(),
                 gen,
                 TASK_END_T),
             Mark.create(
@@ -165,7 +169,7 @@ public class PerfMarkTest {
                 Marker.NONE,
                 tag2.tagName,
                 tag2.tagId,
-                marks.get(8).getNanoTime(),
+                marks.get(9).getNanoTime(),
                 gen,
                 TASK_END_T),
             Mark.create(
@@ -173,7 +177,7 @@ public class PerfMarkTest {
                 Marker.NONE,
                 tag1.tagName,
                 tag1.tagId,
-                marks.get(9).getNanoTime(),
+                marks.get(10).getNanoTime(),
                 gen,
                 TASK_END_T));
     assertEquals(expected, marks);
