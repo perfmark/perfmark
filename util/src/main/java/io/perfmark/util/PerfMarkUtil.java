@@ -16,7 +16,6 @@
 
 package io.perfmark.util;
 
-import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.MustBeClosed;
 import io.perfmark.PerfMark;
 import io.perfmark.Tag;
@@ -28,8 +27,7 @@ public final class PerfMarkUtil {
     void run() throws E;
   }
 
-  public static <T> T recordTaskResult(
-      @CompileTimeConstant String taskName, Tag tag, Supplier<T> cmd) {
+  public static <T> T recordTaskResult(String taskName, Tag tag, Supplier<T> cmd) {
     PerfMark.startTask(taskName, tag);
     try {
       return cmd.get();
@@ -39,7 +37,7 @@ public final class PerfMarkUtil {
   }
 
   public static <E extends Exception> void recordTask(
-      @CompileTimeConstant String taskName, Tag tag, CheckedRunnable<E> cmd) throws E {
+      String taskName, Tag tag, CheckedRunnable<E> cmd) throws E {
     PerfMark.startTask(taskName, tag);
     try {
       cmd.run();
@@ -49,13 +47,13 @@ public final class PerfMarkUtil {
   }
 
   @MustBeClosed
-  public static TaskRecorder recordTask(@CompileTimeConstant String taskName) {
+  public static TaskRecorder recordTask(String taskName) {
     PerfMark.startTask(taskName);
     return () -> PerfMark.stopTask(taskName);
   }
 
   @MustBeClosed
-  public static TaskRecorder recordTask(@CompileTimeConstant String taskName, Tag tag) {
+  public static TaskRecorder recordTask(String taskName, Tag tag) {
     PerfMark.startTask(taskName, tag);
     return () -> PerfMark.stopTask(taskName, tag);
   }
