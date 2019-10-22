@@ -29,6 +29,15 @@ import javax.annotation.concurrent.NotThreadSafe;
 @NotThreadSafe
 public abstract class Generator {
   /**
+   * This field is here as a hack. This class is a shared dependency of both {@link
+   * SecretPerfMarkImpl} and {@link Storage}. The impl needs to record the first time an event
+   * occurs, but doesn't call Storage#clinit until PerfMark is enabled. This leads to the timings
+   * being off in the trace event viewer, since the "start" time is since it was enabled, rather
+   * than when the first PerfMark call happens.
+   */
+  static final long INIT_NANO_TIME = System.nanoTime();
+
+  /**
    * The number of reserved bits at the bottom of the generation. All generations should be
    * left-shifted by this amount.
    */

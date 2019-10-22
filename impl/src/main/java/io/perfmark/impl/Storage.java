@@ -40,8 +40,6 @@ import javax.annotation.Nullable;
  * without notice.
  */
 public final class Storage {
-  private static final long INIT_NANO_TIME = System.nanoTime();
-
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
   // and need to use these static variables.
   static final ConcurrentMap<MarkHolderRef, Boolean> allMarkHolders =
@@ -107,7 +105,7 @@ public final class Storage {
   }
 
   public static long getInitNanoTime() {
-    return INIT_NANO_TIME;
+    return Generator.INIT_NANO_TIME;
   }
 
   /**
