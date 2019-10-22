@@ -119,6 +119,7 @@ public final class TraceEventViewer {
 
     String fullIndex = replaceIndexTraceData(indexWithTraceViewer, INLINE_TRACE_DATA);
     writer.write(fullIndex);
+    writer.flush();
   }
 
   /**
