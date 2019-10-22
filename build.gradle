@@ -7,7 +7,7 @@ buildscript {
 
     dependencies {
         classpath 'com.github.erizo.gradle:jcstress-gradle-plugin:0.8.3'
-        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.8.1'
+        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:1.1.0'
         classpath "me.champeau.gradle:jmh-gradle-plugin:0.4.8"
         classpath "gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.8"
     }
@@ -146,7 +146,7 @@ subprojects {
         libraries = [
                 errorprone: 'com.google.errorprone:error_prone_annotations:2.3.3',
                 jsr305: 'com.google.code.findbugs:jsr305:3.0.2',
-                gson: 'com.google.code.gson:gson:2.8.5',
+                gson: 'com.google.code.gson:gson:2.8.6',
                 truth: 'com.google.truth:truth:1.0'
         ]
     }
