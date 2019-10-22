@@ -16,7 +16,6 @@
 
 package io.perfmark;
 
-import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.DoNotCall;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,7 +69,7 @@ public final class PerfMark {
 
   /**
    * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
-   * task should be a compile-time constant, usually a string literal. Tasks with the same name can
+   * task should be a runtime-time constant, usually a string literal. Tasks with the same name can
    * be grouped together for analysis later, so avoid using too many unique task names.
    *
    * <p>The tag is a run-time identifier for the task. It represents the dynamic part of the task,
@@ -80,18 +79,18 @@ public final class PerfMark {
    * @param taskName the name of the task.
    * @param tag a user provided tag for the task.
    */
-  public static void startTask(@CompileTimeConstant String taskName, Tag tag) {
+  public static void startTask(String taskName, Tag tag) {
     impl.startTask(taskName, tag);
   }
 
   /**
    * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
-   * task should be a compile-time constant, usually a string literal. Tasks with the same name can
+   * task should be a runtime-time constant, usually a string literal. Tasks with the same name can
    * be grouped together for analysis later, so avoid using too many unique task names.
    *
    * @param taskName the name of the task.
    */
-  public static void startTask(@CompileTimeConstant String taskName) {
+  public static void startTask(String taskName) {
     impl.startTask(taskName);
   }
 
@@ -107,7 +106,7 @@ public final class PerfMark {
    * @param eventName the name of the event.
    * @param tag a user provided tag for the event.
    */
-  public static void event(@CompileTimeConstant String eventName, Tag tag) {
+  public static void event(String eventName, Tag tag) {
     impl.event(eventName, tag);
   }
 
@@ -118,7 +117,7 @@ public final class PerfMark {
    *
    * @param eventName the name of the event.
    */
-  public static void event(@CompileTimeConstant String eventName) {
+  public static void event(String eventName) {
     impl.event(eventName);
   }
 
@@ -126,7 +125,7 @@ public final class PerfMark {
    * Marks the end of a task. If PerfMark is disabled, this method is a no-op. The task name and tag
    * should match the ones provided to the corresponding {@link #startTask(String, Tag)}. If the
    * task name or tag do not match, the implementation may not be able to associate the starting and
-   * stopping of a single task. The name of the task should be a compile-time constant, usually a
+   * stopping of a single task. The name of the task should be a runtime-time constant, usually a
    * string literal.
    *
    * <p>It is important that {@link #stopTask} always be called after starting a task, even in case
@@ -135,7 +134,7 @@ public final class PerfMark {
    * @param taskName the name of the task being ended.
    * @param tag the tag of the task being ended.
    */
-  public static void stopTask(@CompileTimeConstant String taskName, Tag tag) {
+  public static void stopTask(String taskName, Tag tag) {
     impl.stopTask(taskName, tag);
   }
 
@@ -143,7 +142,7 @@ public final class PerfMark {
    * Marks the end of a task. If PerfMark is disabled, this method is a no-op. The task name should
    * match the ones provided to the corresponding {@link #startTask(String)}. If the task name or
    * tag do not match, the implementation may not be able to associate the starting and stopping of
-   * a single task. The name of the task should be a compile-time constant, usually a string
+   * a single task. The name of the task should be a runtime-time constant, usually a string
    * literal.
    *
    * <p>It is important that {@link #stopTask} always be called after starting a task, even in case
@@ -151,7 +150,7 @@ public final class PerfMark {
    *
    * @param taskName the name of the task being ended.
    */
-  public static void stopTask(@CompileTimeConstant String taskName) {
+  public static void stopTask(String taskName) {
     impl.stopTask(taskName);
   }
 
