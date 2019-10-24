@@ -37,8 +37,8 @@ public class EnabledUtilBenchmark {
 
   @Setup
   public void setup() {
-    PerfMark.setEnabled(enabled);
-    tag = PerfMark.createTag("tag", 2);
+    PerfMark.tracer().setEnabled(enabled);
+    tag = PerfMark.tracer().createTag("tag", 2);
   }
 
   @Benchmark

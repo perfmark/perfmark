@@ -16,8 +16,8 @@
 
 package io.perfmark.impl;
 
-import io.perfmark.Impl;
 import io.perfmark.Link;
+import io.perfmark.PerfMark;
 import io.perfmark.Tag;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +28,12 @@ import javax.annotation.Nullable;
 
 final class SecretPerfMarkImpl {
 
-  public static final class PerfMarkImpl extends Impl {
-    private static final Tag NO_TAG = packTag(Mark.NO_TAG_NAME, Mark.NO_TAG_ID);
-    private static final Link NO_LINK = packLink(Mark.NO_LINK_ID);
-    private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
+  // to avoid class init in tests
+  static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";
 
-    private static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";
+  public static final class PerfMarkImpl extends PerfMark {
+
+    private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
 
     private static final AtomicLong linkIdAlloc = new AtomicLong(1);
     private static final Generator generator;
@@ -116,12 +116,15 @@ final class SecretPerfMarkImpl {
       logEnabledChange(startEnabled, success);
     }
 
-    public PerfMarkImpl(Tag key) {
-      super(key);
+    private final Tag NO_TAG = packTag(Mark.NO_TAG_NAME, Mark.NO_TAG_ID);
+    private final Link NO_LINK = packLink(Mark.NO_LINK_ID);
+
+    public PerfMarkImpl() {
+      super();
     }
 
     @Override
-    protected synchronized void setEnabled(boolean value) {
+    public synchronized void setEnabled(boolean value) {
       logEnabledChange(value, setEnabledQuiet(value));
     }
 
@@ -144,7 +147,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void startTask(String taskName, Tag tag) {
+    public void startTask(String taskName, Tag tag) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -153,7 +156,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void startTask(String taskName) {
+    public void startTask(String taskName) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -162,7 +165,7 @@ final class SecretPerfMarkImpl {
     }
 
     @SuppressWarnings("unused") // used reflectively
-    public static void startTask(String taskName, Tag tag, Marker marker) {
+    public void startTask(String taskName, Tag tag, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -171,7 +174,7 @@ final class SecretPerfMarkImpl {
     }
 
     @SuppressWarnings("unused") // used reflectively
-    public static void startTask(String taskName, Marker marker) {
+    public void startTask(String taskName, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -180,7 +183,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void stopTask(String taskName, Tag tag) {
+    public void stopTask(String taskName, Tag tag) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -189,7 +192,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void stopTask(String taskName) {
+    public void stopTask(String taskName) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -198,7 +201,7 @@ final class SecretPerfMarkImpl {
     }
 
     @SuppressWarnings("unused") // used reflectively
-    public static void stopTask(String taskName, Tag tag, Marker marker) {
+    public void stopTask(String taskName, Tag tag, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -207,7 +210,7 @@ final class SecretPerfMarkImpl {
     }
 
     @SuppressWarnings("unused") // used reflectively
-    public static void stopTask(String taskName, Marker marker) {
+    public void stopTask(String taskName, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -216,7 +219,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void event(String eventName, Tag tag) {
+    public void event(String eventName, Tag tag) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -225,7 +228,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void event(String eventName) {
+    public void event(String eventName) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -233,7 +236,7 @@ final class SecretPerfMarkImpl {
       Storage.eventAnyways(gen, eventName);
     }
 
-    public static void event(String eventName, Tag tag, Marker marker) {
+    public void event(String eventName, Tag tag, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -241,7 +244,7 @@ final class SecretPerfMarkImpl {
       Storage.eventAnyways(gen, eventName, marker, unpackTagName(tag), unpackTagId(tag));
     }
 
-    public static void event(String eventName, Marker marker) {
+    public void event(String eventName, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -250,7 +253,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void attachTag(Tag tag) {
+    public void attachTag(Tag tag) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -259,7 +262,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected Tag createTag(@Nullable String tagName, long tagId) {
+    public Tag createTag(@Nullable String tagName, long tagId) {
       if (!isEnabled(getGen())) {
         return NO_TAG;
       }
@@ -267,7 +270,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected Link linkOut() {
+    public Link linkOut() {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return NO_LINK;
@@ -277,7 +280,7 @@ final class SecretPerfMarkImpl {
       return packLink(linkId);
     }
 
-    public static Link linkOut(Marker marker) {
+    public Link linkOut(Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return NO_LINK;
@@ -288,7 +291,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected void linkIn(Link link) {
+    public void linkIn(Link link) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -297,7 +300,7 @@ final class SecretPerfMarkImpl {
     }
 
     @SuppressWarnings("unused") // Used Reflectively.
-    public static void linkIn(Link link, Marker marker) {
+    public void linkIn(Link link, Marker marker) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;

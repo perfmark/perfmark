@@ -26,6 +26,7 @@ import static io.perfmark.impl.Mark.Operation.TASK_END_T;
 import static io.perfmark.impl.Mark.Operation.TASK_START;
 import static io.perfmark.impl.Mark.Operation.TASK_START_T;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import com.google.common.truth.Truth;
 import io.perfmark.impl.Generator;
@@ -49,7 +50,7 @@ public class PerfMarkTest {
 
   @BeforeClass
   public static void beforeClass() throws Exception {
-    Class<?> implClz = Class.forName("io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
+    Class<?> implClz = Class.forName("io.perfmark.impl.SecretPerfMarkImpl");
     Field propertyField = implClz.getDeclaredField("START_ENABLED_PROPERTY");
     propertyField.setAccessible(true);
     String startEnabledProperty = (String) propertyField.get(null);
@@ -61,11 +62,11 @@ public class PerfMarkTest {
         new Filter() {
           @Override
           public boolean isLoggable(LogRecord record) {
-            PerfMark.startTask("isLoggable");
+            PerfMark.tracer().startTask("isLoggable");
             try {
               return false;
             } finally {
-              PerfMark.stopTask("isLoggable");
+              PerfMark.tracer().stopTask("isLoggable");
             }
           }
         });
@@ -87,26 +88,36 @@ public class PerfMarkTest {
   }
 
   @Test
+  public void cantExtend() {
+    try {
+      new PerfMark();
+      fail();
+    } catch (UnsupportedOperationException e) {
+      // ok.
+    }
+  }
+
+  @Test
   public void allMethodForward_taskName() {
     Storage.resetForTest();
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
 
     long gen = getGen();
 
-    Tag tag1 = PerfMark.createTag(1);
-    Tag tag2 = PerfMark.createTag("two");
-    Tag tag3 = PerfMark.createTag("three", 3);
-    PerfMark.startTask("task1", tag1);
-    PerfMark.startTask("task2", tag2);
-    PerfMark.startTask("task3", tag3);
-    PerfMark.startTask("task4");
-    PerfMark.attachTag(PerfMark.createTag("extra"));
-    Link link = PerfMark.linkOut();
-    PerfMark.linkIn(link);
-    PerfMark.stopTask("task4");
-    PerfMark.stopTask("task3", tag3);
-    PerfMark.stopTask("task2", tag2);
-    PerfMark.stopTask("task1", tag1);
+    Tag tag1 = PerfMark.tracer().createTag(1);
+    Tag tag2 = PerfMark.tracer().createTag("two");
+    Tag tag3 = PerfMark.tracer().createTag("three", 3);
+    PerfMark.tracer().startTask("task1", tag1);
+    PerfMark.tracer().startTask("task2", tag2);
+    PerfMark.tracer().startTask("task3", tag3);
+    PerfMark.tracer().startTask("task4");
+    PerfMark.tracer().attachTag(PerfMark.tracer().createTag("extra"));
+    Link link = PerfMark.tracer().linkOut();
+    PerfMark.tracer().linkIn(link);
+    PerfMark.tracer().stopTask("task4");
+    PerfMark.tracer().stopTask("task3", tag3);
+    PerfMark.tracer().stopTask("task2", tag2);
+    PerfMark.tracer().stopTask("task1", tag1);
 
     List<Mark> marks = Storage.readForTest().getMarks();
 

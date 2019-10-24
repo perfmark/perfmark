@@ -19,16 +19,17 @@ package io.perfmark;
 import com.google.errorprone.annotations.DoNotCall;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 
 /**
  * PerfMark can be automatically enabled by setting the System property {@code
  * io.perfmark.PerfMark.startEnabled} to true.
  */
-public final class PerfMark {
-  private static final Impl impl;
+public class PerfMark {
+  private static final PerfMark self;
 
   static {
-    Impl instance = null;
+    PerfMark instance = null;
     Level level = Level.WARNING;
     Throwable err = null;
     Class<?> clz = null;
@@ -42,19 +43,34 @@ public final class PerfMark {
     }
     if (clz != null) {
       try {
-        instance = clz.asSubclass(Impl.class).getConstructor(Tag.class).newInstance(Impl.NO_TAG);
+        instance = clz.asSubclass(PerfMark.class).getConstructor().newInstance();
       } catch (Throwable t) {
         err = t;
       }
     }
     if (instance != null) {
-      impl = instance;
+      self = instance;
     } else {
-      impl = new Impl(Impl.NO_TAG);
+      self = new PerfMark();
     }
     if (err != null) {
       Logger.getLogger(PerfMark.class.getName()).log(level, "Error during PerfMark.<clinit>", err);
     }
+  }
+
+  private static final String NO_TAG_NAME = "";
+  private static final long NO_TAG_ID = Long.MIN_VALUE;
+  /**
+   * This value is current {@link Long#MIN_VALUE}, but it could also be {@code 0}. The invariant
+   * {@code NO_LINK_ID == -NO_LINK_ID} must be maintained to work when PerfMark is disabled.
+   */
+  private static final long NO_LINK_ID = Long.MIN_VALUE;
+
+  private static final Tag NO_TAG = new Tag(NO_TAG_NAME, NO_TAG_ID);
+  private static final Link NO_LINK = new Link(NO_LINK_ID);
+
+  public static PerfMark tracer() {
+    return self;
   }
 
   /**
@@ -63,9 +79,7 @@ public final class PerfMark {
    *
    * @param value {@code true} to enable PerfMark recording, or {@code false} to disable it.
    */
-  public static void setEnabled(boolean value) {
-    impl.setEnabled(value);
-  }
+  public void setEnabled(boolean value) {}
 
   /**
    * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
@@ -79,9 +93,7 @@ public final class PerfMark {
    * @param taskName the name of the task.
    * @param tag a user provided tag for the task.
    */
-  public static void startTask(String taskName, Tag tag) {
-    impl.startTask(taskName, tag);
-  }
+  public void startTask(String taskName, Tag tag) {}
 
   /**
    * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
@@ -90,9 +102,7 @@ public final class PerfMark {
    *
    * @param taskName the name of the task.
    */
-  public static void startTask(String taskName) {
-    impl.startTask(taskName);
-  }
+  public void startTask(String taskName) {}
 
   /**
    * Marks an event. Events are logically both a task start and a task end. Events have no duration
@@ -106,9 +116,7 @@ public final class PerfMark {
    * @param eventName the name of the event.
    * @param tag a user provided tag for the event.
    */
-  public static void event(String eventName, Tag tag) {
-    impl.event(eventName, tag);
-  }
+  public void event(String eventName, Tag tag) {}
 
   /**
    * Marks an event. Events are logically both a task start and a task end. Events have no duration
@@ -117,9 +125,7 @@ public final class PerfMark {
    *
    * @param eventName the name of the event.
    */
-  public static void event(String eventName) {
-    impl.event(eventName);
-  }
+  public void event(String eventName) {}
 
   /**
    * Marks the end of a task. If PerfMark is disabled, this method is a no-op. The task name and tag
@@ -134,9 +140,7 @@ public final class PerfMark {
    * @param taskName the name of the task being ended.
    * @param tag the tag of the task being ended.
    */
-  public static void stopTask(String taskName, Tag tag) {
-    impl.stopTask(taskName, tag);
-  }
+  public void stopTask(String taskName, Tag tag) {}
 
   /**
    * Marks the end of a task. If PerfMark is disabled, this method is a no-op. The task name should
@@ -150,9 +154,7 @@ public final class PerfMark {
    *
    * @param taskName the name of the task being ended.
    */
-  public static void stopTask(String taskName) {
-    impl.stopTask(taskName);
-  }
+  public void stopTask(String taskName) {}
 
   /**
    * Creates a tag with no name or numeric identifier. The returned instance is different based on
@@ -164,8 +166,8 @@ public final class PerfMark {
    *
    * @return a Tag that has no name or id.
    */
-  public static Tag createTag() {
-    return Impl.NO_TAG;
+  public Tag createTag() {
+    return NO_TAG;
   }
 
   /**
@@ -176,8 +178,8 @@ public final class PerfMark {
    * @param id a user provided identifier for this Tag.
    * @return a Tag that has no name.
    */
-  public static Tag createTag(long id) {
-    return impl.createTag(Impl.NO_TAG_NAME, id);
+  public Tag createTag(long id) {
+    return createTag(NO_TAG_NAME, id);
   }
 
   /**
@@ -188,8 +190,8 @@ public final class PerfMark {
    * @param name a user provided name for this Tag.
    * @return a Tag that has no numeric identifier.
    */
-  public static Tag createTag(String name) {
-    return impl.createTag(name, Impl.NO_TAG_ID);
+  public Tag createTag(String name) {
+    return createTag(name, NO_TAG_ID);
   }
 
   /**
@@ -201,8 +203,8 @@ public final class PerfMark {
    * @param name a user provided name for this Tag.
    * @return a Tag that has both a name and id.
    */
-  public static Tag createTag(String name, long id) {
-    return impl.createTag(name, id);
+  public Tag createTag(String name, long id) {
+    return NO_TAG;
   }
 
   /**
@@ -212,8 +214,8 @@ public final class PerfMark {
    */
   @Deprecated
   @DoNotCall
-  public static Link link() {
-    return Impl.NO_LINK;
+  public final Link link() {
+    return NO_LINK;
   }
 
   /**
@@ -225,8 +227,8 @@ public final class PerfMark {
    * @since 0.17.0
    * @return A Link to be used in other tasks.
    */
-  public static Link linkOut() {
-    return impl.linkOut();
+  public Link linkOut() {
+    return NO_LINK;
   }
 
   /**
@@ -236,9 +238,7 @@ public final class PerfMark {
    * @param link a link created inside of another task.
    * @since 0.17.0
    */
-  public static void linkIn(Link link) {
-    impl.linkIn(link);
-  }
+  public void linkIn(Link link) {}
 
   /**
    * Attaches an additional tag to the current active task. The tag provided is independent of the
@@ -275,9 +275,32 @@ public final class PerfMark {
    * @since 0.18.0
    * @param tag the Tag to attach.
    */
-  public static void attachTag(Tag tag) {
-    impl.attachTag(tag);
+  public void attachTag(Tag tag) {}
+
+  protected PerfMark() {
+    if (self != null) {
+      throw new UnsupportedOperationException("nope");
+    }
   }
 
-  private PerfMark() {}
+  @Nullable
+  protected final String unpackTagName(Tag tag) {
+    return tag.tagName;
+  }
+
+  protected final long unpackTagId(Tag tag) {
+    return tag.tagId;
+  }
+
+  protected final long unpackLinkId(Link link) {
+    return link.linkId;
+  }
+
+  protected final Tag packTag(@Nullable String tagName, long tagId) {
+    return new Tag(tagName, tagId);
+  }
+
+  protected final Link packLink(long linkId) {
+    return new Link(linkId);
+  }
 }

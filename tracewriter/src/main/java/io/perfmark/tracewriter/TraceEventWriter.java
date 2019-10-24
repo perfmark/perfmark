@@ -23,7 +23,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.annotations.SerializedName;
-import io.perfmark.PerfMark;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.Storage;
@@ -60,16 +59,6 @@ import javax.annotation.Nullable;
  * @since 0.16.0
  */
 public final class TraceEventWriter {
-
-  public static void main(String[] args) throws Exception {
-    PerfMark.setEnabled(true);
-    PerfMark.startTask("hi");
-    PerfMark.attachTag(PerfMark.createTag("but", 27));
-    PerfMark.attachTag(PerfMark.createTag("nut"));
-    PerfMark.attachTag(PerfMark.createTag("gut"));
-    PerfMark.stopTask("hi");
-    writeTraceEvents();
-  }
 
   private static final Logger logger = Logger.getLogger(TraceEventWriter.class.getName());
 

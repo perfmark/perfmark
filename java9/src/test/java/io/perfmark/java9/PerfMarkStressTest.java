@@ -44,12 +44,12 @@ public class PerfMarkStressTest {
 
       @Override
       protected Long compute() {
-        Tag tag = PerfMark.createTag(input);
-        PerfMark.startTask("compute", tag);
-        PerfMark.linkIn(link);
+        Tag tag = PerfMark.tracer().createTag(input);
+        PerfMark.tracer().startTask("compute", tag);
+        PerfMark.tracer().linkIn(link);
         try {
           if (input >= 20) {
-            Link link2 = PerfMark.linkOut();
+            Link link2 = PerfMark.tracer().linkOut();
             ForkJoinTask<Long> task1 = new Fibonacci(input - 1, link2).fork();
             Fibonacci task2 = new Fibonacci(input - 2, link2);
             return task2.compute() + task1.join();
@@ -57,7 +57,7 @@ public class PerfMarkStressTest {
             return computeUnboxed(input);
           }
         } finally {
-          PerfMark.stopTask("compute", tag);
+          PerfMark.tracer().stopTask("compute", tag);
         }
       }
 
@@ -68,12 +68,12 @@ public class PerfMarkStressTest {
         return computeUnboxed(n - 1) + computeUnboxed(n - 2);
       }
     }
-    PerfMark.setEnabled(true);
-    PerfMark.startTask("calc");
-    Link link = PerfMark.linkOut();
+    PerfMark.tracer().setEnabled(true);
+    PerfMark.tracer().startTask("calc");
+    Link link = PerfMark.tracer().linkOut();
     ForkJoinTask<Long> task = new Fibonacci(30, link);
     fjp.execute(task);
-    PerfMark.stopTask("calc");
+    PerfMark.tracer().stopTask("calc");
     Long res;
     try {
       res = task.get();

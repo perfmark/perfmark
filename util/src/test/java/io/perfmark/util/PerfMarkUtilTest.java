@@ -30,9 +30,9 @@ public class PerfMarkUtilTest {
 
   @Test
   public void record() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     PerfMarkUtil.recordTask(
-        "hi", PerfMark.createTag("hello"), () -> LockSupport.parkNanos(this, 100));
+        "hi", PerfMark.tracer().createTag("hello"), () -> LockSupport.parkNanos(this, 100));
 
     try (PerfMarkUtil.TaskRecorder tr = PerfMarkUtil.recordTask("yes")) {}
 

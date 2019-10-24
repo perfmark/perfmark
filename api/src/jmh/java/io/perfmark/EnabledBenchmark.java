@@ -35,36 +35,36 @@ public class EnabledBenchmark {
 
   @Setup
   public void setup() {
-    PerfMark.setEnabled(enabled);
+    PerfMark.tracer().setEnabled(enabled);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void startStop() {
-    PerfMark.startTask("hi", TAG);
-    PerfMark.stopTask("hi", TAG);
+    PerfMark.tracer().startTask("hi", TAG);
+    PerfMark.tracer().stopTask("hi", TAG);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public Tag createTag() {
-    return PerfMark.createTag("tag", 2);
+    return PerfMark.tracer().createTag("tag", 2);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void link() {
-    Link link = PerfMark.linkOut();
-    PerfMark.linkIn(link);
+    Link link = PerfMark.tracer().linkOut();
+    PerfMark.tracer().linkIn(link);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void event() {
-    PerfMark.event("hi", TAG);
+    PerfMark.tracer().event("hi", TAG);
   }
 }

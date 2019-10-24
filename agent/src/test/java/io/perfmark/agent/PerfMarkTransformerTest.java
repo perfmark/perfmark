@@ -65,7 +65,7 @@ public class PerfMarkTransformerTest {
 
   @Test
   public void transform_auto() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     Storage.resetForTest();
 
     Class<?> clz = transformAndLoad(ClzAutoRecord.class);
@@ -87,15 +87,15 @@ public class PerfMarkTransformerTest {
 
   @Test
   public void transform_lambda() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     Storage.resetForTest();
 
     final class ClzLocal implements Executor {
       public ClzLocal() {
         execute(
             () -> {
-              PerfMark.startTask("task");
-              PerfMark.stopTask("task");
+              PerfMark.tracer().startTask("task");
+              PerfMark.tracer().stopTask("task");
             });
       }
 
@@ -123,13 +123,13 @@ public class PerfMarkTransformerTest {
 
   @Test
   public void transform_methodRef() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     Storage.resetForTest();
 
     final class ClzLocal {
       public ClzLocal() {
         @SuppressWarnings("unused")
-        Object o = execute(PerfMark::linkOut);
+        Object o = execute(PerfMark.tracer()::linkOut);
       }
 
       Link execute(Supplier<Link> supplier) {
@@ -148,14 +148,14 @@ public class PerfMarkTransformerTest {
 
   public interface InterfaceWithDefaults {
     default void record() {
-      PerfMark.startTask("task");
-      PerfMark.stopTask("task");
+      PerfMark.tracer().startTask("task");
+      PerfMark.tracer().stopTask("task");
     }
   }
 
   @Test
   public void transform_interface() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     Storage.resetForTest();
 
     final class Bar implements InterfaceWithDefaults {
@@ -183,15 +183,15 @@ public class PerfMarkTransformerTest {
 
   @Test
   public void transform_link() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     Storage.resetForTest();
 
     final class ClzLocal {
       public ClzLocal() {
-        PerfMark.startTask("task");
-        Link link = PerfMark.linkOut();
-        PerfMark.linkIn(link);
-        PerfMark.stopTask("task");
+        PerfMark.tracer().startTask("task");
+        Link link = PerfMark.tracer().linkOut();
+        PerfMark.tracer().linkIn(link);
+        PerfMark.tracer().stopTask("task");
       }
     }
 
@@ -213,16 +213,16 @@ public class PerfMarkTransformerTest {
 
   @Test
   public void transform_ctor() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     Storage.resetForTest();
 
     final class ClzLocal {
       public ClzLocal() {
-        Tag tag = PerfMark.createTag("tag", 1);
-        PerfMark.startTask("task");
-        PerfMark.stopTask("task");
-        PerfMark.startTask("task", tag);
-        PerfMark.stopTask("task", tag);
+        Tag tag = PerfMark.tracer().createTag("tag", 1);
+        PerfMark.tracer().startTask("task");
+        PerfMark.tracer().stopTask("task");
+        PerfMark.tracer().startTask("task", tag);
+        PerfMark.tracer().stopTask("task", tag);
       }
     }
 
@@ -244,16 +244,16 @@ public class PerfMarkTransformerTest {
 
   @Test
   public void transform_init() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     Storage.resetForTest();
 
     final class ClzLocal {
       {
-        Tag tag = PerfMark.createTag("tag", 1);
-        PerfMark.startTask("task");
-        PerfMark.stopTask("task");
-        PerfMark.startTask("task", tag);
-        PerfMark.stopTask("task", tag);
+        Tag tag = PerfMark.tracer().createTag("tag", 1);
+        PerfMark.tracer().startTask("task");
+        PerfMark.tracer().stopTask("task");
+        PerfMark.tracer().startTask("task", tag);
+        PerfMark.tracer().stopTask("task", tag);
       }
     }
 
@@ -275,17 +275,17 @@ public class PerfMarkTransformerTest {
 
   private static final class ClzWithClinit {
     static {
-      Tag tag = PerfMark.createTag("tag", 1);
-      PerfMark.startTask("task");
-      PerfMark.stopTask("task");
-      PerfMark.startTask("task", tag);
-      PerfMark.stopTask("task", tag);
+      Tag tag = PerfMark.tracer().createTag("tag", 1);
+      PerfMark.tracer().startTask("task");
+      PerfMark.tracer().stopTask("task");
+      PerfMark.tracer().startTask("task", tag);
+      PerfMark.tracer().stopTask("task", tag);
     }
   }
 
   @Test
   public void transform_clinit() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     Storage.resetForTest();
 
     Class<?> clz = transformAndLoad(ClzWithClinit.class);
@@ -306,7 +306,7 @@ public class PerfMarkTransformerTest {
 
   @Test
   public void transform_toplevel() throws Exception {
-    PerfMark.setEnabled(true);
+    PerfMark.tracer().setEnabled(true);
     Storage.resetForTest();
 
     Class<?> clz = transformAndLoad(ClzFooter.class);
@@ -371,10 +371,10 @@ public class PerfMarkTransformerTest {
 
 final class ClzFooter {
   {
-    Tag tag = PerfMark.createTag("tag", 1);
-    PerfMark.startTask("task");
-    PerfMark.stopTask("task");
-    PerfMark.startTask("task", tag);
-    PerfMark.stopTask("task", tag);
+    Tag tag = PerfMark.tracer().createTag("tag", 1);
+    PerfMark.tracer().startTask("task");
+    PerfMark.tracer().stopTask("task");
+    PerfMark.tracer().startTask("task", tag);
+    PerfMark.tracer().stopTask("task", tag);
   }
 }

@@ -28,34 +28,34 @@ public final class PerfMarkUtil {
   }
 
   public static <T> T recordTaskResult(String taskName, Tag tag, Supplier<T> cmd) {
-    PerfMark.startTask(taskName, tag);
+    PerfMark.tracer().startTask(taskName, tag);
     try {
       return cmd.get();
     } finally {
-      PerfMark.stopTask(taskName, tag);
+      PerfMark.tracer().stopTask(taskName, tag);
     }
   }
 
   public static <E extends Exception> void recordTask(
       String taskName, Tag tag, CheckedRunnable<E> cmd) throws E {
-    PerfMark.startTask(taskName, tag);
+    PerfMark.tracer().startTask(taskName, tag);
     try {
       cmd.run();
     } finally {
-      PerfMark.stopTask(taskName, tag);
+      PerfMark.tracer().stopTask(taskName, tag);
     }
   }
 
   @MustBeClosed
   public static TaskRecorder recordTask(String taskName) {
-    PerfMark.startTask(taskName);
-    return () -> PerfMark.stopTask(taskName);
+    PerfMark.tracer().startTask(taskName);
+    return () -> PerfMark.tracer().stopTask(taskName);
   }
 
   @MustBeClosed
   public static TaskRecorder recordTask(String taskName, Tag tag) {
-    PerfMark.startTask(taskName, tag);
-    return () -> PerfMark.stopTask(taskName, tag);
+    PerfMark.tracer().startTask(taskName, tag);
+    return () -> PerfMark.tracer().stopTask(taskName, tag);
   }
 
   public interface TaskRecorder extends AutoCloseable {

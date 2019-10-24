@@ -203,7 +203,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       @Override
       public void visitMethodInsn(
           int opcode, String owner, String name, String descriptor, boolean isInterface) {
-        if (opcode == Opcodes.INVOKESTATIC && owner.equals(SRC_OWNER)) {
+        if (opcode == Opcodes.INVOKEVIRTUAL && owner.equals(SRC_OWNER)) {
           if (REWRITE_MAP.containsKey(Arrays.asList(owner, name, descriptor))) {
             matches.add(new StackTraceElement(className, methodName, fileName, lineNumber));
           }
@@ -345,13 +345,16 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       }
 
       void emitAutoMatchEvent() {
+        super.visitMethodInsn(
+            Opcodes.INVOKESTATIC, SRC_OWNER, "tracer", "()Lio/perfmark/PerfMark;", false);
+        visitTypeInsn(Opcodes.CHECKCAST, DST_OWNER);
         visitLdcInsn(className + "#" + methodName);
         int id = fieldId++;
         String fieldName = FIELD_PREFIX + id;
         visitFieldInsn(
             Opcodes.GETSTATIC, className.replace('.', '/'), fieldName, "Lio/perfmark/impl/Marker;");
         super.visitMethodInsn(
-            Opcodes.INVOKESTATIC,
+            Opcodes.INVOKEVIRTUAL,
             DST_OWNER,
             "event",
             "(Ljava/lang/String;Lio/perfmark/impl/Marker;)V",
@@ -371,13 +374,22 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       @Override
       public void visitMethodInsn(
           int opcode, String owner, String name, String descriptor, boolean isInterface) {
-        if (opcode == Opcodes.INVOKESTATIC && owner.equals(SRC_OWNER)) {
+        if (opcode == Opcodes.INVOKEVIRTUAL && owner.equals(SRC_OWNER)) {
           List<String> dest = REWRITE_MAP.get(Arrays.asList(owner, name, descriptor));
           if (dest != null) {
             assert dest.size() == 3;
             owner = dest.get(0);
             name = dest.get(1);
             descriptor = dest.get(2);
+
+            int args = descriptor.substring(0, descriptor.lastIndexOf(')')).split(";").length - 1;
+            for (int i = 0; i < args; i++) {
+              visitVarInsn(Opcodes.ASTORE, 10 + i);
+            }
+            visitTypeInsn(Opcodes.CHECKCAST, owner);
+            for (int i = args - 1; i >= 0; i--) {
+              visitVarInsn(Opcodes.ALOAD, 10 + i);
+            }
             int id = fieldId++;
             String fieldName = FIELD_PREFIX + id;
             visitFieldInsn(
