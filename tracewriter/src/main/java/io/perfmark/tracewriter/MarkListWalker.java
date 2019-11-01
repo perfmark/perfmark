@@ -43,11 +43,11 @@ class MarkListWalker {
         Deque<Mark> fakeEnds = new ArrayDeque<>();
         Set<Mark> unmatchedPairMarks =
             Collections.newSetFromMap(new IdentityHashMap<Mark, Boolean>());
-        createFakes(fakeStarts, fakeEnds, unmatchedPairMarks, markList.getMarks(), nowNanoTime);
+        createFakes(fakeStarts, fakeEnds, unmatchedPairMarks, markList, nowNanoTime);
         for (Mark mark : fakeStarts) {
           onTaskStart(mark, true, false);
         }
-        for (Mark mark : markList.getMarks()) {
+        for (Mark mark : markList) {
           onRealMark(mark, unmatchedPairMarks);
         }
         for (Mark mark : fakeEnds) {
@@ -114,7 +114,7 @@ class MarkListWalker {
       List<? extends MarkList> markLists) {
     Map<Long, List<MarkList>> generationToMarkLists = new TreeMap<>();
     for (MarkList markList : markLists) {
-      List<Mark> marks = markList.getMarks();
+      List<Mark> marks = markList;
       if (marks.isEmpty()) {
         continue;
       }
