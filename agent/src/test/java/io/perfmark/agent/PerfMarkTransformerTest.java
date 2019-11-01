@@ -72,7 +72,7 @@ public class PerfMarkTransformerTest {
     Constructor<?> ctor = clz.getConstructor();
     ctor.setAccessible(true);
     ctor.newInstance();
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(2);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
@@ -109,7 +109,7 @@ public class PerfMarkTransformerTest {
     Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
     ctor.setAccessible(true);
     ctor.newInstance(this);
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(2);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
@@ -141,7 +141,7 @@ public class PerfMarkTransformerTest {
     Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
     ctor.setAccessible(true);
     ctor.newInstance(this);
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(1);
     // I'm not sure what to do with methodrefs, so just leave it alone for now.
   }
@@ -169,7 +169,7 @@ public class PerfMarkTransformerTest {
     ctor.setAccessible(true);
     ctor.newInstance(this);
 
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(2);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
@@ -199,7 +199,7 @@ public class PerfMarkTransformerTest {
     Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
     ctor.setAccessible(true);
     ctor.newInstance(this);
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
@@ -230,7 +230,7 @@ public class PerfMarkTransformerTest {
     Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
     ctor.setAccessible(true);
     ctor.newInstance(this);
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
@@ -261,7 +261,7 @@ public class PerfMarkTransformerTest {
     Constructor<?> ctor = clz.getDeclaredConstructor(PerfMarkTransformerTest.class);
     ctor.setAccessible(true);
     ctor.newInstance(this);
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
@@ -292,7 +292,7 @@ public class PerfMarkTransformerTest {
     Constructor<?> ctor = clz.getDeclaredConstructor();
     ctor.setAccessible(true);
     ctor.newInstance();
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());
@@ -313,7 +313,7 @@ public class PerfMarkTransformerTest {
     Constructor<?> ctor = clz.getDeclaredConstructor();
     ctor.setAccessible(true);
     ctor.newInstance();
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
       assertNotNull(mark.getMarker());

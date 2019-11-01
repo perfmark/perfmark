@@ -108,7 +108,7 @@ public class PerfMarkTest {
     PerfMark.stopTask("task2", tag2);
     PerfMark.stopTask("task1", tag1);
 
-    List<Mark> marks = Storage.readForTest().getMarks();
+    List<Mark> marks = Storage.readForTest();
 
     Truth.assertThat(marks).hasSize(11);
     List<Mark> expected =

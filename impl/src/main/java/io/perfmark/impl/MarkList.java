@@ -16,13 +16,15 @@
 
 package io.perfmark.impl;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
-public final class MarkList {
+/** MarkList is collection of Marks, in the order they were recorded. */
+public final class MarkList extends AbstractList<Mark> {
   public static Builder newBuilder() {
     return new Builder();
   }
@@ -43,15 +45,6 @@ public final class MarkList {
     this.threadName = builder.threadName;
     this.threadId = builder.threadId;
     this.markListId = builder.markListId;
-  }
-
-  /**
-   * Returns the Marks associated with a given list.
-   *
-   * @return the marks, in the order they were recorded.
-   */
-  public List<Mark> getMarks() {
-    return marks;
   }
 
   /**
@@ -83,6 +76,11 @@ public final class MarkList {
   }
 
   @Override
+  public Mark get(int index) {
+    return marks.get(index);
+  }
+
+  @Override
   public boolean equals(Object obj) {
     if (!(obj instanceof MarkList)) {
       return false;
@@ -97,6 +95,11 @@ public final class MarkList {
   @Override
   public int hashCode() {
     return Arrays.hashCode(new Object[] {marks, threadId, markListId, threadName});
+  }
+
+  @Override
+  public int size() {
+    return marks.size();
   }
 
   @Override
