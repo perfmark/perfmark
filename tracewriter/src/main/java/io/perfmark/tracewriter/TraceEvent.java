@@ -17,12 +17,14 @@
 package io.perfmark.tracewriter;
 
 import com.google.gson.annotations.SerializedName;
+import io.perfmark.impl.Mark;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
+import java.util.Set;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 
@@ -69,14 +71,12 @@ final class TraceEvent implements Cloneable {
   @Nullable
   @SerializedName("args")
   @SuppressWarnings("unused")
-  private Map<String, ?> args = null;
+  private TagMap args = null;
 
   @Nullable
   @SerializedName("cname")
   @SuppressWarnings("unused")
   private String colorName = null;
-
-  private transient int argCalls;
 
   TraceEvent name(String name) {
     if (name == null) {
@@ -154,64 +154,24 @@ final class TraceEvent implements Cloneable {
    * Note This should only be used for tags, as the map size is used to determine the arg names in
    * TraceEventWriter. This will overwrite any existing args.
    *
-   * @param args the args to use.
+   * @param tagMap the args to use.
    * @return this
    */
-  TraceEvent args(Map<String, ?> args) {
-    if (args == null) {
-      throw new NullPointerException("args");
-    }
-    Map<String, Object> newArgs = new LinkedHashMap<>(args.size());
-    for (Map.Entry<String, ?> arg : args.entrySet()) {
-      if (arg.getKey() == null) {
-        throw new NullPointerException("key");
-      }
-      if (arg.getValue() == null) {
-        throw new NullPointerException("value");
-      }
-      newArgs.put(arg.getKey(), arg.getValue());
+  TraceEvent args(TagMap tagMap) {
+    if (tagMap == null) {
+      throw new NullPointerException("tagMap");
     }
     TraceEvent other = clone();
-    if (!newArgs.isEmpty()) {
-      other.args = Collections.unmodifiableMap(newArgs);
-    } else {
-      other.args = null;
-    }
+    other.args = tagMap;
     return other;
   }
 
-  /**
-   * Note This should only be used for tags, as the map size is used to determine the arg names in
-   * TraceEventWriter.
-   *
-   * @param argKey the arg key
-   * @param argValue the arg value
-   * @return this
-   */
-  TraceEvent arg(String argKey, Object argValue) {
-    if (argKey == null) {
-      throw new NullPointerException("argKey");
-    }
-    if (argValue == null) {
-      throw new NullPointerException("argValue");
-    }
-    TraceEvent other = clone();
+  TagMap args() {
     if (args == null) {
-      other.args = Collections.singletonMap(argKey, argValue);
+      return TagMap.EMPTY;
     } else {
-      Map<String, Object> newArgs = new LinkedHashMap<>(args);
-      newArgs.put(argKey, argValue);
-      other.args = Collections.unmodifiableMap(newArgs);
+      return args;
     }
-    return other;
-  }
-
-  int getArgsSize() {
-    return argCalls;
-  }
-
-  void incrementArgsSize() {
-    argCalls++;
   }
 
   @Override
@@ -220,6 +180,48 @@ final class TraceEvent implements Cloneable {
       return (TraceEvent) super.clone();
     } catch (CloneNotSupportedException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  static final class TagMap extends AbstractMap<String, Object> {
+
+    static final TagMap EMPTY =
+        new TagMap(Collections.<Entry<String, ?>>emptyList(), Collections.emptyList());
+
+    private final List<Entry<String, ?>> keyedValues;
+    private final List<?> unkeyedValues;
+
+    private TagMap(List<Entry<String, ?>> keyedValues, List<?> unkeyedValues) {
+      this.keyedValues = keyedValues;
+      this.unkeyedValues = unkeyedValues;
+    }
+
+    TagMap withUnkeyed(@Nullable String tagName, long tagId) {
+      List<Object> unkeyedValues = null;
+      if (tagName != null && !Mark.NO_TAG_NAME.equals(tagName)) {
+        unkeyedValues = new ArrayList<>(this.unkeyedValues);
+        unkeyedValues.add(tagName);
+      }
+      if (tagId != Mark.NO_TAG_ID) {
+        unkeyedValues = unkeyedValues != null ? unkeyedValues : new ArrayList<>(this.unkeyedValues);
+        unkeyedValues.add(tagId);
+      }
+      if (unkeyedValues != null) {
+        return new TagMap(keyedValues, Collections.unmodifiableList(unkeyedValues));
+      } else {
+        return new TagMap(keyedValues, this.unkeyedValues);
+      }
+    }
+
+    TagMap withKeyed(@Nullable String tagName, Object tagValue) {
+      List<Entry<String, ?>> keyedValues = new ArrayList<>(this.keyedValues);
+      keyedValues.add(new SimpleImmutableEntry<>(String.valueOf(tagName), tagValue));
+      return new TagMap(Collections.unmodifiableList(keyedValues), unkeyedValues);
+    }
+
+    @Override
+    public Set<Entry<String, Object>> entrySet() {
+      return null;
     }
   }
 }

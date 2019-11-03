@@ -84,6 +84,9 @@ class MarkListWalker {
       case LINK:
         onLink(mark);
         return;
+      case MARK:
+        onMarker(mark);
+        return;
       case NONE:
         break;
     }
@@ -99,6 +102,8 @@ class MarkListWalker {
   protected void onEvent(Mark mark) {}
 
   protected void onAttachTag(Mark mark) {}
+
+  protected void onMarker(Mark mark) {}
 
   private static Map<Long, List<MarkList>> groupMarkListsByGeneration(
       List<? extends MarkList> markLists) {
@@ -159,6 +164,7 @@ class MarkListWalker {
         case EVENT:
         case LINK:
         case TAG:
+        case MARK:
           continue loop;
         case NONE:
           break;
@@ -186,6 +192,7 @@ class MarkListWalker {
         return;
       case LINK:
       case TAG:
+      case MARK:
         return;
       case NONE:
         break;
@@ -209,7 +216,7 @@ class MarkListWalker {
       case MARK:
       case LINK:
       case TAG_N0S1:
-      case TAG_N0S2:
+      case TAG_KEYED_N0S2:
       case TAG_N1S0:
       case TAG_N1S1:
       case NONE:
@@ -235,7 +242,7 @@ class MarkListWalker {
       case MARK:
       case LINK:
       case TAG_N0S1:
-      case TAG_N0S2:
+      case TAG_KEYED_N0S2:
       case TAG_N1S0:
       case TAG_N1S1:
         break;

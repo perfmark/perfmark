@@ -105,10 +105,6 @@ public final class PerfMark {
     impl.startTask(taskName + subTaskName);
   }
 
-  public static void startTask(DelayedString taskName) {
-    impl.startTask(taskName.get());
-  }
-
   /**
    * Marks an event. Events are logically both a task start and a task end. Events have no duration
    * associated. Events still represent the instant something occurs. If PerfMark is disabled, this
