@@ -316,9 +316,9 @@ public final class TraceEventWriter {
         // The name must be the same to match links together.
         String name =
             "link("
-                + linkOut.lastTaskStart.getTaskName()
+                + taskName(linkOut.lastTaskStart)
                 + " -> "
-                + linkIn.lastTaskStart.getTaskName()
+                + taskName(linkIn.lastTaskStart)
                 + ")";
         long localUniqueLinkPairId = uniqueLinkPairId++;
         traceEvents.add(
@@ -367,19 +367,14 @@ public final class TraceEventWriter {
       } else if (unmatchedEnd) {
         categories = Collections.singletonList("unfinished");
       }
-      Map<String, ?> args = tagArgs(mark.getTagName(), mark.getTagId());
       TraceEvent traceEvent =
           TraceEvent.EVENT
-              .name(mark.getTaskName())
+              .name(taskName(mark))
               .phase("B")
               .pid(pid)
-              .args(args)
               .categories(categories)
               .tid(currentThreadId)
               .traceClockNanos(mark.getNanoTime() - initNanoTime);
-      if (!args.isEmpty()) {
-        traceEvent.incrementArgsSize();
-      }
       traceEvents.add(traceEvent);
       taskStack.add(new TaskStart(mark, traceEvents.size() - 1));
     }
@@ -393,21 +388,16 @@ public final class TraceEventWriter {
       } else if (unmatchedEnd) {
         categories = Collections.singletonList("unfinished");
       }
+      // TODO: maybe copy the args from the start task
       taskStack.pollLast();
-      // TODO: maybe complain about task name mismatch?
-      Map<String, ?> args = tagArgs(mark.getTagName(), mark.getTagId());
       TraceEvent traceEvent =
           TraceEvent.EVENT
-              .name(mark.getTaskName())
+              .name(taskName(mark))
               .phase("E")
               .pid(pid)
-              .args(args)
               .categories(categories)
               .tid(currentThreadId)
               .traceClockNanos(mark.getNanoTime() - initNanoTime);
-      if (!args.isEmpty()) {
-        traceEvent.incrementArgsSize();
-      }
       traceEvents.add(traceEvent);
     }
 
@@ -438,7 +428,7 @@ public final class TraceEventWriter {
       Map<String, ?> args = tagArgs(mark.getTagName(), mark.getTagId());
       TraceEvent traceEvent =
           TraceEvent.EVENT
-              .name(mark.getTaskName())
+              .name(taskName(mark))
               .phase("i")
               .pid(pid)
               .args(args)
@@ -482,5 +472,27 @@ public final class TraceEventWriter {
         linkIdToLinkIn.add(linkTuple);
       }
     }
+  }
+
+  private static String taskName(Mark mark) {
+    switch (mark.getOperation()) {
+      case TASK_START_N1S1:
+      case TASK_END_N1S1:
+      case EVENT_N1S1:
+        return mark.getTaskName();
+      case TASK_START_N1S2:
+      case TASK_END_N1S2:
+      case EVENT_N1S2:
+        return mark.getTaskName() + '.' + mark.getSubTaskName();
+      case MARK:
+      case LINK:
+      case TAG_N0S1:
+      case TAG_N0S2:
+      case TAG_N1S0:
+      case TAG_N1S1:
+      case NONE:
+        throw new UnsupportedOperationException(mark.toString());
+    }
+    throw new AssertionError(mark.getOperation());
   }
 }

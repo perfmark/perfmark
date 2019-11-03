@@ -27,21 +27,18 @@ import java.util.Deque;
 import java.util.List;
 
 final class SynchronizedMarkHolder extends MarkHolder {
-  private static final long START_OP = Mark.Operation.TASK_START.ordinal();
-  private static final long START_T_OP = Mark.Operation.TASK_START_T.ordinal();
-  private static final long START_M_OP = Mark.Operation.TASK_START_M.ordinal();
-  private static final long START_TM_OP = Mark.Operation.TASK_START_TM.ordinal();
-  private static final long STOP_OP = Mark.Operation.TASK_END.ordinal();
-  private static final long STOP_T_OP = Mark.Operation.TASK_END_T.ordinal();
-  private static final long STOP_M_OP = Mark.Operation.TASK_END_M.ordinal();
-  private static final long STOP_TM_OP = Mark.Operation.TASK_END_TM.ordinal();
-  private static final long EVENT_OP = Mark.Operation.EVENT.ordinal();
-  private static final long EVENT_T_OP = Mark.Operation.EVENT_T.ordinal();
-  private static final long EVENT_M_OP = Mark.Operation.EVENT_M.ordinal();
-  private static final long EVENT_TM_OP = Mark.Operation.EVENT_TM.ordinal();
+  private static final long START_N1S1_OP = Mark.Operation.TASK_START_N1S1.ordinal();
+  private static final long START_N1S2_OP = Mark.Operation.TASK_START_N1S2.ordinal();
+  private static final long STOP_N1S1_OP = Mark.Operation.TASK_END_N1S1.ordinal();
+  private static final long STOP_N1S2_OP = Mark.Operation.TASK_END_N1S2.ordinal();
+  private static final long EVENT_N1S1_OP = Mark.Operation.EVENT_N1S1.ordinal();
+  private static final long EVENT_N1S2_OP = Mark.Operation.EVENT_N1S2.ordinal();
   private static final long LINK_OP = Mark.Operation.LINK.ordinal();
-  private static final long LINK_M_OP = Mark.Operation.LINK_M.ordinal();
-  private static final long ATTACH_T_OP = Mark.Operation.ATTACH_TAG.ordinal();
+  private static final long MARK_OP = Mark.Operation.MARK.ordinal();
+  private static final long TAG_N0S1_OP = Mark.Operation.TAG_N0S1.ordinal();
+  private static final long TAG_N0S2_OP = Mark.Operation.TAG_N0S2.ordinal();
+  private static final long TAG_N1S0_OP = Mark.Operation.TAG_N1S0.ordinal();
+  private static final long TAG_N1S1_OP = Mark.Operation.TAG_N1S1.ordinal();
 
   private final int maxEvents;
 

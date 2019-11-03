@@ -95,6 +95,21 @@ public final class PerfMark {
   }
 
   /**
+   * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
+   * task should be a runtime-time constant, usually a string literal. Tasks with the same name can
+   * be grouped together for analysis later, so avoid using too many unique task names.
+   *
+   * @param taskName the name of the task.
+   */
+  public static void startTask(String taskName, String subTaskName) {
+    impl.startTask(taskName + subTaskName);
+  }
+
+  public static void startTask(DelayedString taskName) {
+    impl.startTask(taskName.get());
+  }
+
+  /**
    * Marks an event. Events are logically both a task start and a task end. Events have no duration
    * associated. Events still represent the instant something occurs. If PerfMark is disabled, this
    * method is a no-op.
