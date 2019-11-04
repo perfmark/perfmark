@@ -16,21 +16,12 @@
 
 package io.perfmark;
 
-import static io.perfmark.impl.Mark.NO_NANOTIME;
 import static io.perfmark.impl.Mark.NO_TAG_ID;
-import static io.perfmark.impl.Mark.NO_TAG_NAME;
-import static io.perfmark.impl.Mark.Operation.ATTACH_TAG;
-import static io.perfmark.impl.Mark.Operation.LINK;
-import static io.perfmark.impl.Mark.Operation.TASK_END;
-import static io.perfmark.impl.Mark.Operation.TASK_END_T;
-import static io.perfmark.impl.Mark.Operation.TASK_START;
-import static io.perfmark.impl.Mark.Operation.TASK_START_T;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.truth.Truth;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
-import io.perfmark.impl.Marker;
 import io.perfmark.impl.Storage;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -110,76 +101,26 @@ public class PerfMarkTest {
 
     List<Mark> marks = Storage.readForTest();
 
-    Truth.assertThat(marks).hasSize(11);
+    Truth.assertThat(marks).hasSize(17);
     List<Mark> expected =
         Arrays.asList(
-            Mark.create(
-                "task1",
-                Marker.NONE,
-                tag1.tagName,
-                tag1.tagId,
-                marks.get(0).getNanoTime(),
-                gen,
-                TASK_START_T),
-            Mark.create(
-                "task2",
-                Marker.NONE,
-                tag2.tagName,
-                tag2.tagId,
-                marks.get(1).getNanoTime(),
-                gen,
-                TASK_START_T),
-            Mark.create(
-                "task3",
-                Marker.NONE,
-                tag3.tagName,
-                tag3.tagId,
-                marks.get(2).getNanoTime(),
-                gen,
-                TASK_START_T),
-            Mark.create(
-                "task4",
-                Marker.NONE,
-                NO_TAG_NAME,
-                NO_TAG_ID,
-                marks.get(3).getNanoTime(),
-                gen,
-                TASK_START),
-            Mark.create(null, Marker.NONE, "extra", NO_TAG_ID, NO_NANOTIME, gen, ATTACH_TAG),
-            Mark.create(null, Marker.NONE, NO_TAG_NAME, link.linkId, NO_NANOTIME, gen, LINK),
-            Mark.create(null, Marker.NONE, NO_TAG_NAME, -link.linkId, NO_NANOTIME, gen, LINK),
-            Mark.create(
-                "task4",
-                Marker.NONE,
-                NO_TAG_NAME,
-                NO_TAG_ID,
-                marks.get(7).getNanoTime(),
-                gen,
-                TASK_END),
-            Mark.create(
-                "task3",
-                Marker.NONE,
-                tag3.tagName,
-                tag3.tagId,
-                marks.get(8).getNanoTime(),
-                gen,
-                TASK_END_T),
-            Mark.create(
-                "task2",
-                Marker.NONE,
-                tag2.tagName,
-                tag2.tagId,
-                marks.get(9).getNanoTime(),
-                gen,
-                TASK_END_T),
-            Mark.create(
-                "task1",
-                Marker.NONE,
-                tag1.tagName,
-                tag1.tagId,
-                marks.get(10).getNanoTime(),
-                gen,
-                TASK_END_T));
+            Mark.taskStart(gen, marks.get(0).getNanoTime(), "task1"),
+            Mark.tag(gen, tag1.tagName, tag1.tagId),
+            Mark.taskStart(gen, marks.get(2).getNanoTime(), "task2"),
+            Mark.tag(gen, tag2.tagName, tag2.tagId),
+            Mark.taskStart(gen, marks.get(4).getNanoTime(), "task3"),
+            Mark.tag(gen, tag3.tagName, tag3.tagId),
+            Mark.taskStart(gen, marks.get(6).getNanoTime(), "task4"),
+            Mark.tag(gen, "extra", NO_TAG_ID),
+            Mark.link(gen, link.linkId),
+            Mark.link(gen, -link.linkId),
+            Mark.taskEnd(gen, marks.get(10).getNanoTime(), "task4"),
+            Mark.tag(gen, tag3.tagName, tag3.tagId),
+            Mark.taskEnd(gen, marks.get(12).getNanoTime(), "task3"),
+            Mark.tag(gen, tag2.tagName, tag2.tagId),
+            Mark.taskEnd(gen, marks.get(14).getNanoTime(), "task2"),
+            Mark.tag(gen, tag1.tagName, tag1.tagId),
+            Mark.taskEnd(gen, marks.get(16).getNanoTime(), "task1"));
     assertEquals(expected, marks);
   }
 

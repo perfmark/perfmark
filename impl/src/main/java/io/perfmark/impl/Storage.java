@@ -150,17 +150,8 @@ public final class Storage {
     localMarkHolder.get().start(gen, taskName, tagName, tagId, System.nanoTime());
   }
 
-  static void startAnyways(
-      long gen, String taskName, Marker marker, @Nullable String tagName, long tagId) {
-    localMarkHolder.get().start(gen, taskName, marker, tagName, tagId, System.nanoTime());
-  }
-
   static void startAnyways(long gen, String taskName) {
     localMarkHolder.get().start(gen, taskName, System.nanoTime());
-  }
-
-  static void startAnyways(long gen, String taskName, Marker marker) {
-    localMarkHolder.get().start(gen, taskName, marker, System.nanoTime());
   }
 
   static void stopAnyways(long gen, String taskName, @Nullable String tagName, long tagId) {
@@ -168,49 +159,23 @@ public final class Storage {
     localMarkHolder.get().stop(gen, taskName, tagName, tagId, nanoTime);
   }
 
-  static void stopAnyways(
-      long gen, String taskName, Marker marker, @Nullable String tagName, long tagId) {
-    long nanoTime = System.nanoTime();
-    localMarkHolder.get().stop(gen, taskName, marker, tagName, tagId, nanoTime);
-  }
-
   static void stopAnyways(long gen, String taskName) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().stop(gen, taskName, nanoTime);
   }
 
-  static void stopAnyways(long gen, String taskName, Marker marker) {
-    long nanoTime = System.nanoTime();
-    localMarkHolder.get().stop(gen, taskName, marker, nanoTime);
-  }
-
   static void eventAnyways(long gen, String eventName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().event(gen, eventName, tagName, tagId, nanoTime, 0);
-  }
-
-  static void eventAnyways(
-      long gen, String taskName, Marker marker, @Nullable String tagName, long tagId) {
-    long nanoTime = System.nanoTime();
-    localMarkHolder.get().event(gen, taskName, marker, tagName, tagId, nanoTime, 0);
+    localMarkHolder.get().event(gen, eventName, tagName, tagId, nanoTime);
   }
 
   static void eventAnyways(long gen, String eventName) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().event(gen, eventName, nanoTime, 0);
-  }
-
-  static void eventAnyways(long gen, String taskName, Marker marker) {
-    long nanoTime = System.nanoTime();
-    localMarkHolder.get().event(gen, taskName, marker, nanoTime, 0);
+    localMarkHolder.get().event(gen, eventName, nanoTime);
   }
 
   static void linkAnyways(long gen, long linkId) {
     localMarkHolder.get().link(gen, linkId);
-  }
-
-  static void linkAnyways(long gen, long linkId, Marker marker) {
-    localMarkHolder.get().link(gen, linkId, marker);
   }
 
   static void attachTagAnyways(long gen, @Nullable String tagName, long tagId) {

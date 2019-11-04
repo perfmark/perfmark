@@ -86,6 +86,22 @@ public final class Mark {
         nanoTime, tagId, N0, taskName, subTaskName, tagName, M0, generation, Operation.EVENT_N2S3);
   }
 
+  public static Mark tag(long generation, String tagName, long tagId) {
+    return new Mark(tagId, N0, N0, tagName, S0, S0, M0, generation, Operation.TAG_N1S1);
+  }
+
+  public static Mark tag(long generation, long tagId) {
+    return new Mark(tagId, N0, N0, S0, S0, S0, M0, generation, Operation.TAG_N1S0);
+  }
+
+  public static Mark tag(long generation, String tagName) {
+    return new Mark(N0, N0, N0, tagName, S0, S0, M0, generation, Operation.TAG_N0S1);
+  }
+
+  public static Mark link(long generation, long linkId) {
+    return new Mark(linkId, N0, N0, S0, S0, S0, M0, generation, Operation.LINK);
+  }
+
   private Mark(
       long n1,
       long n2,
@@ -168,6 +184,8 @@ public final class Mark {
       this.opType = opType;
       this.longs = longs;
       this.strings = strings;
+      assert longs <= maxNumbers();
+      assert strings <= maxStrings();
     }
 
     private static final Operation[] values = Operation.values();
@@ -180,12 +198,28 @@ public final class Mark {
       return opType;
     }
 
-    public int getLongs() {
+    public int getNumbers() {
       return longs;
     }
 
     public int getStrings() {
       return strings;
+    }
+
+    public int getMarkers() {
+      return this == MARK ? 1 : 0;
+    }
+
+    public static int maxNumbers() {
+      return 2;
+    }
+
+    public static int maxStrings() {
+      return 3;
+    }
+
+    public static int maxMarkers() {
+      return 1;
     }
 
     public static Operation valueOf(int code) {
