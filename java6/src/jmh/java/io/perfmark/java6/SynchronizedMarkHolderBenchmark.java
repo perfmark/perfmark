@@ -68,13 +68,13 @@ public class SynchronizedMarkHolderBenchmark {
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void event_name_tag() {
-    markHolder.event(1, "hi", "tag", 2, 8, 1234);
+    markHolder.event(1, "hi", "tag", 2, 8);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void event_name_noTag() {
-    markHolder.event(1, "hi", 8, 1234);
+    markHolder.event(1, "hi", 2);
   }
 }
