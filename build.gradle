@@ -8,7 +8,7 @@ buildscript {
     dependencies {
         classpath 'com.github.erizo.gradle:jcstress-gradle-plugin:0.8.3'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:1.1.0'
-        classpath "me.champeau.gradle:jmh-gradle-plugin:0.4.8"
+        classpath "me.champeau.gradle:jmh-gradle-plugin:0.5.0"
         classpath "gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.8"
     }
 }
