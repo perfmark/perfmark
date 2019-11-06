@@ -17,8 +17,7 @@
 package io.perfmark.java9;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.Mark;
-import io.perfmark.impl.Marker;
+import io.perfmark.impl.Mark;PerfMarkTransformerTest
 import java.util.List;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Description;
@@ -82,7 +81,7 @@ public class PerfMarkStorageStress {
   @Actor
   public void writer() {
     for (long i = 0; i < SIZE * 4; i++) {
-      holder.link(i << OFFSET, i, Marker.NONE);
+      holder.link(i << OFFSET, i);
     }
   }
 
@@ -95,9 +94,6 @@ public class PerfMarkStorageStress {
       Mark mark = marks.get(i);
       if (mark.getOperation() != Mark.Operation.LINK) {
         ret = -1;
-        break;
-      } else if (mark.getMarker() != Marker.NONE) {
-        ret = -2;
         break;
       } else if (mark.getGeneration() >>> OFFSET != mark.getLinkId()) {
         ret = -3;

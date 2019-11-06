@@ -53,7 +53,7 @@ final class SecretVarHandleGenerator {
 
     @Override
     public long getGeneration() {
-      return (long) GEN.getOpaque(this);
+      return (long) GEN.getAcquire(this);
     }
 
     @Override
