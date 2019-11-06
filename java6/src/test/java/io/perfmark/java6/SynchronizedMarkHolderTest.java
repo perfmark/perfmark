@@ -23,7 +23,6 @@ import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Assume;
 import org.junit.Test;
 
 public class SynchronizedMarkHolderTest {
@@ -145,29 +144,5 @@ public class SynchronizedMarkHolderTest {
     List<Mark> marks = mh.read(false);
 
     assertEquals(marks.size(), 1);
-  }
-
-  @Test
-  public void read_getsAllButLastIfNotWriter() {
-    Assume.assumeTrue("holder " + mh + " is not fixed size", mh instanceof SynchronizedMarkHolder);
-    int events = mh.maxMarks() - 1;
-    for (int i = 0; i < events; i++) {
-      mh.start(gen, "task", 3);
-    }
-
-    List<Mark> marks = mh.read(true);
-    assertEquals(events, marks.size());
-  }
-
-  @Test
-  public void read_getsAllIfNotWriterButNoWrap() {
-    Assume.assumeTrue("holder " + mh + " is not fixed size", mh instanceof SynchronizedMarkHolder);
-    int events = mh.maxMarks() - 2;
-    for (int i = 0; i < events; i++) {
-      mh.start(gen, "task", 3);
-    }
-
-    List<Mark> marks = mh.read(true);
-    assertEquals(events, marks.size());
   }
 }

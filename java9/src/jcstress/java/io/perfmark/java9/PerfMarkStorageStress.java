@@ -17,7 +17,7 @@
 package io.perfmark.java9;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.Mark;PerfMarkTransformerTest
+import io.perfmark.impl.Mark;
 import java.util.List;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Description;
@@ -63,13 +63,12 @@ import org.openjdk.jcstress.infra.results.L_Result;
 @Outcome(id = "31", expect = Expect.ACCEPTABLE, desc = "31 Writes")
 @Outcome(id = "32", expect = Expect.ACCEPTABLE, desc = "32 Writes")
 @Outcome(id = "-1", expect = Expect.FORBIDDEN, desc = "Wrong Type")
-@Outcome(id = "-2", expect = Expect.FORBIDDEN, desc = "Wrong Marker")
 @Outcome(id = "-3", expect = Expect.FORBIDDEN, desc = "Wrong ID")
 @State
 @Description("Simulates the PerfMarkStorage reader.")
 public class PerfMarkStorageStress {
   private static final int OFFSET;
-  private static final int SIZE = 8;
+  private static final int SIZE = 32;
 
   static {
     OFFSET = 31;
@@ -96,7 +95,7 @@ public class PerfMarkStorageStress {
         ret = -1;
         break;
       } else if (mark.getGeneration() >>> OFFSET != mark.getLinkId()) {
-        ret = -3;
+        ret = -2;
         break;
       } else {
         // keep going
