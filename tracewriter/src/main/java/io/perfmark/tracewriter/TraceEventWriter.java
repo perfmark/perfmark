@@ -47,7 +47,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
-import javax.annotation.Nullable;
 
 /**
  * Writes the PerfMark results to a "Trace Event" JSON file usable by the Chromium Profiler
@@ -223,17 +222,6 @@ public final class TraceEventWriter {
     }
   }
 
-  private static Map<String, ?> tagArgs(@Nullable String tagName, long tagId) {
-    Map<String, Object> tagMap = new LinkedHashMap<>(2);
-    if (!(tagName == null || tagName.equals(Mark.NO_TAG_NAME))) {
-      tagMap.put("tag", tagName);
-    }
-    if (tagId != Mark.NO_TAG_ID) {
-      tagMap.put("id", tagId);
-    }
-    return Collections.unmodifiableMap(tagMap);
-  }
-
   private static long getPid() {
     List<Throwable> errors = new ArrayList<>(0);
     Level level = Level.FINE;
@@ -316,9 +304,9 @@ public final class TraceEventWriter {
         // The name must be the same to match links together.
         String name =
             "link("
-                + linkOut.lastTaskStart.getTaskName()
+                + taskName(linkOut.lastTaskStart)
                 + " -> "
-                + linkIn.lastTaskStart.getTaskName()
+                + taskName(linkIn.lastTaskStart)
                 + ")";
         long localUniqueLinkPairId = uniqueLinkPairId++;
         traceEvents.add(
@@ -328,7 +316,7 @@ public final class TraceEventWriter {
                 .pid(pid)
                 .phase("s")
                 .id(localUniqueLinkPairId)
-                .arg("linkid", linkOut.link.getLinkId())
+                .args(TraceEvent.TagMap.EMPTY.withKeyed("linkid", linkOut.link.getLinkId()))
                 .traceClockNanos(linkOut.lastTaskStart.getNanoTime() - initNanoTime));
 
         traceEvents.add(
@@ -338,7 +326,7 @@ public final class TraceEventWriter {
                 .pid(pid)
                 .phase("t")
                 .id(localUniqueLinkPairId)
-                .arg("linkid", linkOut.link.getLinkId())
+                .args(TraceEvent.TagMap.EMPTY.withKeyed("linkid", linkOut.link.getLinkId()))
                 .traceClockNanos(linkIn.lastTaskStart.getNanoTime() - initNanoTime));
       }
       super.exitGeneration();
@@ -353,8 +341,10 @@ public final class TraceEventWriter {
               .name("thread_name")
               .phase("M")
               .pid(pid)
-              .arg("name", threadName)
-              .arg("markListId", markListId)
+              .args(
+                  TraceEvent.TagMap.EMPTY
+                      .withKeyed("name", threadName)
+                      .withKeyed("markListId", markListId))
               .tid(currentThreadId));
     }
 
@@ -367,19 +357,14 @@ public final class TraceEventWriter {
       } else if (unmatchedEnd) {
         categories = Collections.singletonList("unfinished");
       }
-      Map<String, ?> args = tagArgs(mark.getTagName(), mark.getTagId());
       TraceEvent traceEvent =
           TraceEvent.EVENT
-              .name(mark.getTaskName())
+              .name(taskName(mark))
               .phase("B")
               .pid(pid)
-              .args(args)
               .categories(categories)
               .tid(currentThreadId)
               .traceClockNanos(mark.getNanoTime() - initNanoTime);
-      if (!args.isEmpty()) {
-        traceEvent.incrementArgsSize();
-      }
       traceEvents.add(traceEvent);
       taskStack.add(new TaskStart(mark, traceEvents.size() - 1));
     }
@@ -393,21 +378,16 @@ public final class TraceEventWriter {
       } else if (unmatchedEnd) {
         categories = Collections.singletonList("unfinished");
       }
+      // TODO: maybe copy the args from the start task
       taskStack.pollLast();
-      // TODO: maybe complain about task name mismatch?
-      Map<String, ?> args = tagArgs(mark.getTagName(), mark.getTagId());
       TraceEvent traceEvent =
           TraceEvent.EVENT
-              .name(mark.getTaskName())
+              .name(taskName(mark))
               .phase("E")
               .pid(pid)
-              .args(args)
               .categories(categories)
               .tid(currentThreadId)
               .traceClockNanos(mark.getNanoTime() - initNanoTime);
-      if (!args.isEmpty()) {
-        traceEvent.incrementArgsSize();
-      }
       traceEvents.add(traceEvent);
     }
 
@@ -415,39 +395,75 @@ public final class TraceEventWriter {
     protected void onAttachTag(Mark mark) {
       TaskStart taskStart = taskStack.peekLast();
       TraceEvent taskEvent = traceEvents.get(taskStart.traceEventIdx);
-      int size = taskEvent.getArgsSize();
-      boolean updated = false;
-      if (!(mark.getTagName() == null || mark.getTagName().equals(Mark.NO_TAG_NAME))) {
-        taskEvent =
-            taskEvent.arg("tag" + (size == 0 ? "" : String.valueOf(size)), mark.getTagName());
-        updated = true;
+      TraceEvent.TagMap args = taskEvent.args();
+      out:
+      {
+        switch (mark.getOperation()) {
+          case TAG_N0S1:
+            args = args.withUnkeyed(mark.getTagStringValue(), Mark.NO_TAG_ID);
+            break out;
+          case TAG_N1S0:
+            args = args.withUnkeyed(Mark.NO_TAG_NAME, mark.getTagFirstNumeric());
+            break out;
+          case TAG_N1S1:
+            args = args.withUnkeyed(mark.getTagStringValue(), mark.getTagFirstNumeric());
+            break out;
+          case TAG_KEYED_N0S2:
+            args = args.withKeyed(mark.getTagKey(), mark.getTagStringValue());
+            break out;
+          case NONE:
+          case TASK_START_N1S1:
+          case TASK_START_N1S2:
+          case TASK_END_N1S1:
+          case TASK_END_N1S2:
+          case EVENT_N1S1:
+          case EVENT_N1S2:
+          case EVENT_N2S2:
+          case EVENT_N2S3:
+          case MARK:
+          case LINK:
+            break;
+        }
+        throw new AssertionError(mark.getOperation());
       }
-      if (mark.getTagId() != Mark.NO_TAG_ID) {
-        taskEvent = taskEvent.arg("id" + (size == 0 ? "" : String.valueOf(size)), mark.getTagId());
-        updated = true;
-      }
-      if (updated) {
-        taskEvent.incrementArgsSize();
-      }
-
-      traceEvents.set(taskStart.traceEventIdx, taskEvent);
+      traceEvents.set(taskStart.traceEventIdx, taskEvent.args(args));
     }
 
     @Override
     protected void onEvent(Mark mark) {
-      Map<String, ?> args = tagArgs(mark.getTagName(), mark.getTagId());
+      TraceEvent.TagMap tagMap = TraceEvent.TagMap.EMPTY;
+      out:
+      {
+        switch (mark.getOperation()) {
+          case EVENT_N2S2:
+          case EVENT_N2S3:
+            tagMap = tagMap.withUnkeyed(mark.getTagStringValue(), mark.getTagFirstNumeric());
+            break out;
+          case NONE:
+          case TASK_START_N1S1:
+          case TASK_START_N1S2:
+          case TASK_END_N1S1:
+          case TASK_END_N1S2:
+          case EVENT_N1S1:
+          case EVENT_N1S2:
+          case MARK:
+          case LINK:
+          case TAG_N0S1:
+          case TAG_N1S0:
+          case TAG_N1S1:
+          case TAG_KEYED_N0S2:
+            break;
+        }
+        throw new AssertionError(mark.getOperation());
+      }
       TraceEvent traceEvent =
           TraceEvent.EVENT
-              .name(mark.getTaskName())
+              .name(taskName(mark))
               .phase("i")
               .pid(pid)
-              .args(args)
+              .args(tagMap)
               .tid(currentThreadId)
               .traceClockNanos(mark.getNanoTime() - initNanoTime);
-      if (!args.isEmpty()) {
-        traceEvent.incrementArgsSize();
-      }
-
       traceEvents.add(traceEvent);
     }
 
@@ -482,5 +498,29 @@ public final class TraceEventWriter {
         linkIdToLinkIn.add(linkTuple);
       }
     }
+  }
+
+  private static String taskName(Mark mark) {
+    switch (mark.getOperation()) {
+      case TASK_START_N1S1:
+      case TASK_END_N1S1:
+      case EVENT_N1S1:
+      case EVENT_N2S2:
+        return mark.getTaskName();
+      case TASK_START_N1S2:
+      case TASK_END_N1S2:
+      case EVENT_N1S2:
+      case EVENT_N2S3:
+        return mark.getTaskName() + '.' + mark.getSubTaskName();
+      case MARK:
+      case LINK:
+      case TAG_N0S1:
+      case TAG_KEYED_N0S2:
+      case TAG_N1S0:
+      case TAG_N1S1:
+      case NONE:
+        throw new UnsupportedOperationException(mark.toString());
+    }
+    throw new AssertionError(mark.getOperation());
   }
 }

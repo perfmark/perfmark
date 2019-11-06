@@ -16,34 +16,13 @@
 
 package io.perfmark.java6;
 
-import static io.perfmark.impl.Mark.NO_NANOTIME;
-import static io.perfmark.impl.Mark.NO_TAG_ID;
-import static io.perfmark.impl.Mark.NO_TAG_NAME;
-import static io.perfmark.impl.Mark.Operation.ATTACH_TAG;
-import static io.perfmark.impl.Mark.Operation.EVENT;
-import static io.perfmark.impl.Mark.Operation.EVENT_M;
-import static io.perfmark.impl.Mark.Operation.EVENT_T;
-import static io.perfmark.impl.Mark.Operation.EVENT_TM;
-import static io.perfmark.impl.Mark.Operation.LINK;
-import static io.perfmark.impl.Mark.Operation.LINK_M;
-import static io.perfmark.impl.Mark.Operation.TASK_END;
-import static io.perfmark.impl.Mark.Operation.TASK_END_M;
-import static io.perfmark.impl.Mark.Operation.TASK_END_T;
-import static io.perfmark.impl.Mark.Operation.TASK_END_TM;
-import static io.perfmark.impl.Mark.Operation.TASK_START;
-import static io.perfmark.impl.Mark.Operation.TASK_START_M;
-import static io.perfmark.impl.Mark.Operation.TASK_START_T;
-import static io.perfmark.impl.Mark.Operation.TASK_START_TM;
 import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.Internal;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.Marker;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Assume;
 import org.junit.Test;
 
 public class SynchronizedMarkHolderTest {
@@ -60,9 +39,7 @@ public class SynchronizedMarkHolderTest {
     List<Mark> marks = mh.read(false);
     assertEquals(2, marks.size());
     List<Mark> expected =
-        Arrays.asList(
-            Mark.create("task", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_START),
-            Mark.create("task", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_END));
+        Arrays.asList(Mark.taskStart(gen, 3, "task"), Mark.taskEnd(gen, 4, "task"));
     assertEquals(expected, marks);
   }
 
@@ -72,41 +49,13 @@ public class SynchronizedMarkHolderTest {
     mh.stop(gen, "task", "tag", 9, 4);
 
     List<Mark> marks = mh.read(false);
-    assertEquals(2, marks.size());
+    assertEquals(4, marks.size());
     List<Mark> expected =
         Arrays.asList(
-            Mark.create("task", Marker.NONE, "tag", 9, 3, gen, TASK_START_T),
-            Mark.create("task", Marker.NONE, "tag", 9, 4, gen, TASK_END_T));
-    assertEquals(expected, marks);
-  }
-
-  @Test
-  public void taskTagStartStop_marker() {
-    Marker marker = io.perfmark.impl.Internal.createMarker();
-    mh.start(gen, "task", marker, 3);
-    mh.stop(gen, "task", marker, 4);
-
-    List<Mark> marks = mh.read(false);
-    assertEquals(2, marks.size());
-    List<Mark> expected =
-        Arrays.asList(
-            Mark.create("task", marker, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_START_M),
-            Mark.create("task", marker, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_END_M));
-    assertEquals(expected, marks);
-  }
-
-  @Test
-  public void taskStartStop_tag_marker() {
-    Marker marker = io.perfmark.impl.Internal.createMarker();
-    mh.start(gen, "task", marker, "tag", 2, 3);
-    mh.stop(gen, "task", marker, "tag", 2, 4);
-
-    List<Mark> marks = mh.read(false);
-    assertEquals(2, marks.size());
-    List<Mark> expected =
-        Arrays.asList(
-            Mark.create("task", marker, "tag", 2, 3, gen, TASK_START_TM),
-            Mark.create("task", marker, "tag", 2, 4, gen, TASK_END_TM));
+            Mark.taskStart(gen, 3, "task"),
+            Mark.tag(gen, "tag", 9),
+            Mark.tag(gen, "tag", 9),
+            Mark.taskEnd(gen, 4, "task"));
     assertEquals(expected, marks);
   }
 
@@ -122,10 +71,10 @@ public class SynchronizedMarkHolderTest {
     assertEquals(4, marks.size());
     List<Mark> expected =
         Arrays.asList(
-            Mark.create("task1", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_START),
-            Mark.create("task2", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_START),
-            Mark.create("task2", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 5, gen, TASK_END),
-            Mark.create("task1", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 6, gen, TASK_END));
+            Mark.taskStart(gen, 3, "task1"),
+            Mark.taskStart(gen, 4, "task2"),
+            Mark.taskEnd(gen, 5, "task2"),
+            Mark.taskEnd(gen, 6, "task1"));
     assertEquals(expected, marks);
   }
 
@@ -139,51 +88,33 @@ public class SynchronizedMarkHolderTest {
     assertEquals(3, marks.size());
     List<Mark> expected =
         Arrays.asList(
-            Mark.create("task", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_START),
-            Mark.create(null, Marker.NONE, "tag", 8, NO_NANOTIME, gen, ATTACH_TAG),
-            Mark.create("task", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_END));
+            Mark.taskStart(gen, 3, "task"), Mark.tag(gen, "tag", 8), Mark.taskEnd(gen, 4, "task"));
     assertEquals(expected, marks);
   }
 
   @Test
   public void event() {
-    Marker marker = Internal.createMarker();
-
-    mh.event(gen, "task1", 8, -1);
-    mh.event(gen, "ev", marker, 7, -1);
-    mh.event(gen, "task2", 5, -1);
-    mh.event(gen, "ev", marker, 6, -1);
+    mh.event(gen, "task1", 8);
+    mh.event(gen, "task2", 5);
 
     List<Mark> marks = mh.read(false);
 
-    assertEquals(4, marks.size());
-    List<Mark> expected =
-        Arrays.asList(
-            Mark.create("task1", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 8, gen, EVENT),
-            Mark.create("ev", marker, NO_TAG_NAME, NO_TAG_ID, 7, gen, EVENT_M),
-            Mark.create("task2", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 5, gen, EVENT),
-            Mark.create("ev", marker, NO_TAG_NAME, NO_TAG_ID, 6, gen, EVENT_M));
+    assertEquals(2, marks.size());
+    List<Mark> expected = Arrays.asList(Mark.event(gen, 8, "task1"), Mark.event(gen, 5, "task2"));
     assertEquals(expected, marks);
   }
 
   @Test
   public void event_tag() {
-    Marker marker = Internal.createMarker();
-
-    mh.event(gen, "task1", "tag", 4, 8, -1);
-    mh.event(gen, "ev", marker, "tag", 4, 7, -1);
-    mh.event(gen, "task2", "tag", 4, 5, -1);
-    mh.event(gen, "ev", marker, "tag", 4, 6, -1);
+    mh.event(gen, "task1", "tag1", 7, 8);
+    mh.event(gen, "task2", "tag2", 6, 5);
 
     List<Mark> marks = mh.read(false);
 
-    assertEquals(4, marks.size());
+    assertEquals(2, marks.size());
     List<Mark> expected =
         Arrays.asList(
-            Mark.create("task1", Marker.NONE, "tag", 4, 8, gen, EVENT_T),
-            Mark.create("ev", marker, "tag", 4, 7, gen, EVENT_TM),
-            Mark.create("task2", Marker.NONE, "tag", 4, 5, gen, EVENT_T),
-            Mark.create("ev", marker, "tag", 4, 6, gen, EVENT_TM));
+            Mark.event(gen, 8, "task1", "tag1", 7), Mark.event(gen, 5, "task2", "tag2", 6));
     assertEquals(expected, marks);
   }
 
@@ -199,30 +130,10 @@ public class SynchronizedMarkHolderTest {
     assertEquals(marks.size(), 4);
     List<Mark> expected =
         Arrays.asList(
-            Mark.create("task1", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_START),
-            Mark.create(null, Marker.NONE, NO_TAG_NAME, 9, NO_NANOTIME, gen, LINK),
-            Mark.create(null, Marker.NONE, NO_TAG_NAME, -9, NO_NANOTIME, gen, LINK),
-            Mark.create("task1", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_END));
-    assertEquals(expected, marks);
-  }
-
-  @Test
-  public void linkInLinkOut_marker() {
-    Marker marker = Internal.createMarker();
-    mh.start(gen, "task1", 3);
-    mh.link(gen, 9, marker);
-    mh.link(gen, -9, marker);
-    mh.stop(gen, "task1", 4);
-
-    List<Mark> marks = mh.read(false);
-
-    assertEquals(marks.size(), 4);
-    List<Mark> expected =
-        Arrays.asList(
-            Mark.create("task1", Marker.NONE, NO_TAG_NAME, NO_TAG_ID, 3, gen, TASK_START),
-            Mark.create(null, marker, NO_TAG_NAME, 9, NO_NANOTIME, gen, LINK_M),
-            Mark.create(null, marker, NO_TAG_NAME, -9, NO_NANOTIME, gen, LINK_M),
-            Mark.create("task1", marker, NO_TAG_NAME, NO_TAG_ID, 4, gen, TASK_END));
+            Mark.taskStart(gen, 3, "task1"),
+            Mark.link(gen, 9),
+            Mark.link(gen, -9),
+            Mark.taskEnd(gen, 4, "task1"));
     assertEquals(expected, marks);
   }
 
@@ -233,29 +144,5 @@ public class SynchronizedMarkHolderTest {
     List<Mark> marks = mh.read(false);
 
     assertEquals(marks.size(), 1);
-  }
-
-  @Test
-  public void read_getsAllButLastIfNotWriter() {
-    Assume.assumeTrue("holder " + mh + " is not fixed size", mh instanceof SynchronizedMarkHolder);
-    int events = mh.maxMarks() - 1;
-    for (int i = 0; i < events; i++) {
-      mh.start(gen, "task", 3);
-    }
-
-    List<Mark> marks = mh.read(true);
-    assertEquals(events, marks.size());
-  }
-
-  @Test
-  public void read_getsAllIfNotWriterButNoWrap() {
-    Assume.assumeTrue("holder " + mh + " is not fixed size", mh instanceof SynchronizedMarkHolder);
-    int events = mh.maxMarks() - 2;
-    for (int i = 0; i < events; i++) {
-      mh.start(gen, "task", 3);
-    }
-
-    List<Mark> marks = mh.read(true);
-    assertEquals(events, marks.size());
   }
 }

@@ -16,44 +16,49 @@
 
 package io.perfmark.java6;
 
+import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.Marker;
+import java.util.AbstractCollection;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 
 final class SynchronizedMarkHolder extends MarkHolder {
-  private static final long START_OP = Mark.Operation.TASK_START.ordinal();
-  private static final long START_T_OP = Mark.Operation.TASK_START_T.ordinal();
-  private static final long START_M_OP = Mark.Operation.TASK_START_M.ordinal();
-  private static final long START_TM_OP = Mark.Operation.TASK_START_TM.ordinal();
-  private static final long STOP_OP = Mark.Operation.TASK_END.ordinal();
-  private static final long STOP_T_OP = Mark.Operation.TASK_END_T.ordinal();
-  private static final long STOP_M_OP = Mark.Operation.TASK_END_M.ordinal();
-  private static final long STOP_TM_OP = Mark.Operation.TASK_END_TM.ordinal();
-  private static final long EVENT_OP = Mark.Operation.EVENT.ordinal();
-  private static final long EVENT_T_OP = Mark.Operation.EVENT_T.ordinal();
-  private static final long EVENT_M_OP = Mark.Operation.EVENT_M.ordinal();
-  private static final long EVENT_TM_OP = Mark.Operation.EVENT_TM.ordinal();
+  private static final long GEN_MASK = (1 << Generator.GEN_OFFSET) - 1;
+
+  private static final long START_N1S1_OP = Mark.Operation.TASK_START_N1S1.ordinal();
+  private static final long START_N1S2_OP = Mark.Operation.TASK_START_N1S2.ordinal();
+  private static final long STOP_N1S1_OP = Mark.Operation.TASK_END_N1S1.ordinal();
+  private static final long STOP_N1S2_OP = Mark.Operation.TASK_END_N1S2.ordinal();
+  private static final long EVENT_N1S1_OP = Mark.Operation.EVENT_N1S1.ordinal();
+  private static final long EVENT_N1S2_OP = Mark.Operation.EVENT_N1S2.ordinal();
+  private static final long EVENT_N2S2_OP = Mark.Operation.EVENT_N2S2.ordinal();
+  private static final long EVENT_N2S3_OP = Mark.Operation.EVENT_N2S3.ordinal();
   private static final long LINK_OP = Mark.Operation.LINK.ordinal();
-  private static final long LINK_M_OP = Mark.Operation.LINK_M.ordinal();
-  private static final long ATTACH_T_OP = Mark.Operation.ATTACH_TAG.ordinal();
+  private static final long MARK_OP = Mark.Operation.MARK.ordinal();
+  private static final long TAG_N0S1_OP = Mark.Operation.TAG_N0S1.ordinal();
+  private static final long TAG_N1S0_OP = Mark.Operation.TAG_N1S0.ordinal();
+  private static final long TAG_N1S1_OP = Mark.Operation.TAG_N1S1.ordinal();
+  private static final long TAG_KEYED_N0S2_OP = Mark.Operation.TAG_KEYED_N0S2.ordinal();
 
   private final int maxEvents;
+  private final long maxEventsMask;
 
   // where to write to next
-  private int idx;
-  private final String[] taskNames;
+  private long nIdx;
+  private long sIdx;
+  private long mIdx;
+
+  private final long[] nums;
+  private final String[] strings;
   private final Marker[] markers;
-  private final String[] tagNames;
-  private final long[] tagIds;
-  private final long[] nanoTimes;
-  private final long[] durationNanoTimes;
-  private final long[] genOps;
 
   SynchronizedMarkHolder() {
     this(32768);
@@ -67,251 +72,186 @@ final class SynchronizedMarkHolder extends MarkHolder {
       throw new IllegalArgumentException(maxEvents + " is not positive");
     }
     this.maxEvents = maxEvents;
-    this.taskNames = new String[maxEvents];
+    this.maxEventsMask = maxEvents - 1L;
+    this.nums = new long[maxEvents];
+    this.strings = new String[maxEvents];
     this.markers = new Marker[maxEvents];
-    this.tagNames = new String[maxEvents];
-    this.tagIds = new long[maxEvents];
-    this.nanoTimes = new long[maxEvents];
-    this.durationNanoTimes = new long[maxEvents];
-    this.genOps = new long[maxEvents];
+  }
+
+  private void writeNnss(long genOp, long n0, long n1, String s0, String s1) {
+    nums[(int) (nIdx++ & maxEventsMask)] = n0;
+    nums[(int) (nIdx++ & maxEventsMask)] = n1;
+    strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    strings[(int) (sIdx++ & maxEventsMask)] = s1;
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
+  }
+
+  private void writeNs(long genOp, long n0, String s0) {
+    nums[(int) (nIdx++ & maxEventsMask)] = n0;
+    strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
+  }
+
+  private void writeN(long genOp, long n0) {
+    nums[(int) (nIdx++ & maxEventsMask)] = n0;
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 
   @Override
   public synchronized void start(
       long gen, String taskName, String tagName, long tagId, long nanoTime) {
-    taskNames[idx] = taskName;
-    tagNames[idx] = tagName;
-    tagIds[idx] = tagId;
-    nanoTimes[idx] = nanoTime;
-    genOps[idx] = gen + START_T_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
-  }
-
-  @Override
-  public synchronized void start(
-      long gen, String taskName, Marker marker, String tagName, long tagId, long nanoTime) {
-    taskNames[idx] = taskName;
-    markers[idx] = marker;
-    tagNames[idx] = tagName;
-    tagIds[idx] = tagId;
-    nanoTimes[idx] = nanoTime;
-    genOps[idx] = gen + START_TM_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
+    writeNs(gen + START_N1S1_OP, nanoTime, taskName);
+    writeNs(gen + TAG_N1S1_OP, tagId, tagName);
   }
 
   @Override
   public synchronized void start(long gen, String taskName, long nanoTime) {
-    taskNames[idx] = taskName;
-    nanoTimes[idx] = nanoTime;
-    genOps[idx] = gen + START_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
-  }
-
-  @Override
-  public synchronized void start(long gen, String taskName, Marker marker, long nanoTime) {
-    taskNames[idx] = taskName;
-    markers[idx] = marker;
-    nanoTimes[idx] = nanoTime;
-    genOps[idx] = gen + START_M_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
+    writeNs(gen + START_N1S1_OP, nanoTime, taskName);
   }
 
   @Override
   public synchronized void link(long gen, long linkId) {
-    nanoTimes[idx] = Mark.NO_NANOTIME;
-    tagIds[idx] = linkId;
-    genOps[idx] = gen + LINK_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
-  }
-
-  @Override
-  public synchronized void link(long gen, long linkId, Marker marker) {
-    markers[idx] = marker;
-    nanoTimes[idx] = Mark.NO_NANOTIME;
-    tagIds[idx] = linkId;
-    genOps[idx] = gen + LINK_M_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
+    writeN(gen + LINK_OP, linkId);
   }
 
   @Override
   public synchronized void stop(
       long gen, String taskName, String tagName, long tagId, long nanoTime) {
-    taskNames[idx] = taskName;
-    tagNames[idx] = tagName;
-    tagIds[idx] = tagId;
-    nanoTimes[idx] = nanoTime;
-    genOps[idx] = gen + STOP_T_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
-  }
-
-  @Override
-  public synchronized void stop(
-      long gen, String taskName, Marker marker, String tagName, long tagId, long nanoTime) {
-    taskNames[idx] = taskName;
-    markers[idx] = marker;
-    tagNames[idx] = tagName;
-    tagIds[idx] = tagId;
-    nanoTimes[idx] = nanoTime;
-    genOps[idx] = gen + STOP_TM_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
+    writeNs(gen + TAG_N1S1_OP, tagId, tagName);
+    writeNs(gen + STOP_N1S1_OP, nanoTime, taskName);
   }
 
   @Override
   public synchronized void stop(long gen, String taskName, long nanoTime) {
-    taskNames[idx] = taskName;
-    nanoTimes[idx] = nanoTime;
-    genOps[idx] = gen + STOP_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
-  }
-
-  @Override
-  public synchronized void stop(long gen, String taskName, Marker marker, long nanoTime) {
-    taskNames[idx] = taskName;
-    markers[idx] = marker;
-    nanoTimes[idx] = nanoTime;
-    genOps[idx] = gen + STOP_M_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
+    writeNs(gen + STOP_N1S1_OP, nanoTime, taskName);
   }
 
   @Override
   public synchronized void event(
-      long gen, String eventName, String tagName, long tagId, long nanoTime, long durationNanos) {
-    taskNames[idx] = eventName;
-    tagNames[idx] = tagName;
-    tagIds[idx] = tagId;
-    nanoTimes[idx] = nanoTime;
-    durationNanoTimes[idx] = durationNanos;
-    genOps[idx] = gen + EVENT_T_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
+      long gen, String eventName, String tagName, long tagId, long nanoTime) {
+    writeNnss(gen + EVENT_N2S2_OP, nanoTime, tagId, eventName, tagName);
   }
 
   @Override
-  public synchronized void event(
-      long gen,
-      String taskName,
-      Marker marker,
-      String tagName,
-      long tagId,
-      long nanoTime,
-      long durationNanos) {
-    taskNames[idx] = taskName;
-    markers[idx] = marker;
-    tagNames[idx] = tagName;
-    tagIds[idx] = tagId;
-    nanoTimes[idx] = nanoTime;
-    durationNanoTimes[idx] = durationNanos;
-    genOps[idx] = gen + EVENT_TM_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
-  }
-
-  @Override
-  public synchronized void event(long gen, String eventName, long nanoTime, long durationNanos) {
-    taskNames[idx] = eventName;
-    nanoTimes[idx] = nanoTime;
-    durationNanoTimes[idx] = durationNanos;
-    genOps[idx] = gen + EVENT_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
-  }
-
-  @Override
-  public synchronized void event(
-      long gen, String eventName, Marker marker, long nanoTime, long durationNanos) {
-    taskNames[idx] = eventName;
-    markers[idx] = marker;
-    nanoTimes[idx] = nanoTime;
-    durationNanoTimes[idx] = durationNanos;
-    genOps[idx] = gen + EVENT_M_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
+  public synchronized void event(long gen, String eventName, long nanoTime) {
+    writeNs(gen + EVENT_N1S1_OP, nanoTime, eventName);
   }
 
   @Override
   public synchronized void attachTag(long gen, String tagName, long tagId) {
-    tagNames[idx] = tagName;
-    tagIds[idx] = tagId;
-    genOps[idx] = gen + ATTACH_T_OP;
-    if (++idx == maxEvents) {
-      idx = 0;
-    }
+    writeNs(gen + TAG_N1S1_OP, tagId, tagName);
   }
 
   @Override
   public synchronized void resetForTest() {
-    Arrays.fill(taskNames, null);
+    Arrays.fill(nums, 0);
+    Arrays.fill(strings, null);
     Arrays.fill(markers, null);
-    Arrays.fill(tagNames, null);
-    Arrays.fill(tagIds, 0);
-    Arrays.fill(nanoTimes, 0);
-    Arrays.fill(durationNanoTimes, 0);
-    Arrays.fill(genOps, 0);
-    idx = 0;
+    nIdx = 0;
+    sIdx = 0;
+    mIdx = 0;
   }
 
   @Override
   public List<Mark> read(boolean concurrentWrites) {
-    final String[] localTaskNames = new String[maxEvents];
-    final Marker[] localMarkers = new Marker[maxEvents];
-    final String[] localTagNames = new String[maxEvents];
-    final long[] localTagIds = new long[maxEvents];
-    final long[] localNanoTimes = new long[maxEvents];
-    final long[] localGenOps = new long[maxEvents];
-    int localIdx;
+    Kyoo<Long> numQ;
+    Kyoo<String> stringQ;
+    Kyoo<Marker> markerQ;
+    {
+      final long[] nums = new long[maxEvents];
+      final String[] strings = new String[maxEvents];
+      final Marker[] markers = new Marker[maxEvents];
+      final long nIdx;
+      final long sIdx;
+      final long mIdx;
 
-    synchronized (this) {
-      System.arraycopy(taskNames, 0, localTaskNames, 0, maxEvents);
-      System.arraycopy(markers, 0, localMarkers, 0, maxEvents);
-      System.arraycopy(tagNames, 0, localTagNames, 0, maxEvents);
-      System.arraycopy(tagIds, 0, localTagIds, 0, maxEvents);
-      System.arraycopy(nanoTimes, 0, localNanoTimes, 0, maxEvents);
-      System.arraycopy(genOps, 0, localGenOps, 0, maxEvents);
-      localIdx = idx;
-    }
-    Deque<Mark> marks = new ArrayDeque<Mark>(maxEvents);
-    for (int i = 0; i < maxEvents; i++) {
-      if (localIdx-- == 0) {
-        localIdx += maxEvents;
+      synchronized (this) {
+        System.arraycopy(this.nums, 0, nums, 0, maxEvents);
+        System.arraycopy(this.strings, 0, strings, 0, maxEvents);
+        System.arraycopy(this.markers, 0, markers, 0, maxEvents);
+        nIdx = this.nIdx;
+        sIdx = this.sIdx;
+        mIdx = this.mIdx;
       }
-      long gen = localGenOps[localIdx] & ~0xFFL;
-      Mark.Operation op = Mark.Operation.valueOf((int) (localGenOps[localIdx] & 0xFFL));
-      if (op == Mark.Operation.NONE) {
+      Long[] numsBoxed = new Long[nums.length];
+      for (int i = 0; i < nums.length; i++) {
+        numsBoxed[i] = nums[i];
+      }
+      numQ = new Kyoo<Long>(numsBoxed, nIdx, (int) Math.min(nIdx, maxEvents));
+      stringQ = new Kyoo<String>(strings, sIdx, (int) Math.min(sIdx, maxEvents));
+      markerQ = new Kyoo<Marker>(markers, mIdx, (int) Math.min(mIdx, maxEvents));
+    }
+
+    Deque<Mark> marks = new ArrayDeque<Mark>(maxEvents);
+
+    while (true) {
+      if (numQ.isEmpty()) {
         break;
       }
-      marks.addFirst(
-          Mark.create(
-              localTaskNames[localIdx],
-              localMarkers[localIdx],
-              localTagNames[localIdx],
-              localTagIds[localIdx],
-              localNanoTimes[localIdx],
-              gen,
-              op));
+      long genOp = numQ.remove();
+      long gen = genOp & ~GEN_MASK;
+      Mark.Operation op = Mark.Operation.valueOf((int) (genOp & GEN_MASK));
+
+      if (op.getNumbers() > numQ.size()
+          || op.getStrings() > stringQ.size()
+          || op.getMarkers() > markerQ.size()) {
+        break;
+      }
+      long n1;
+      String s1;
+      long n2;
+      String s2;
+      switch (op) {
+        case TASK_START_N1S1:
+          n1 = numQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.taskStart(gen, n1, s1));
+          break;
+        case TASK_START_N1S2:
+          throw new UnsupportedOperationException();
+        case TASK_END_N1S1:
+          n1 = numQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.taskEnd(gen, n1, s1));
+          break;
+        case TASK_END_N1S2:
+          throw new UnsupportedOperationException();
+        case EVENT_N1S1:
+          n1 = numQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.event(gen, n1, s1));
+          break;
+        case EVENT_N1S2:
+          throw new UnsupportedOperationException();
+        case EVENT_N2S2:
+          n2 = numQ.remove();
+          s2 = stringQ.remove();
+          n1 = numQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.event(gen, n1, s1, s2, n2));
+          break;
+        case EVENT_N2S3:
+          throw new UnsupportedOperationException();
+        case MARK:
+          throw new UnsupportedOperationException();
+        case LINK:
+          n1 = numQ.remove();
+          marks.addFirst(Mark.link(gen, n1));
+          break;
+        case TAG_N0S1:
+          throw new UnsupportedOperationException();
+        case TAG_N1S0:
+          throw new UnsupportedOperationException();
+        case TAG_N1S1:
+          n1 = numQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.tag(gen, s1, n1));
+          break;
+        case TAG_KEYED_N0S2:
+          throw new UnsupportedOperationException();
+        case NONE:
+          throw new UnsupportedOperationException();
+      }
     }
 
     return Collections.unmodifiableList(new ArrayList<Mark>(marks));
@@ -320,5 +260,71 @@ final class SynchronizedMarkHolder extends MarkHolder {
   @Override
   public int maxMarks() {
     return maxEvents;
+  }
+
+  private final class Kyoo<T> extends AbstractCollection<T> implements Queue<T> {
+
+    private final T[] elements;
+    private final long wIdx;
+    private final int size;
+
+    private int ri;
+
+    Kyoo(T[] elements, long wIdx, int size) {
+      this.elements = elements;
+      this.wIdx = wIdx;
+      this.size = size;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int size() {
+      return size - ri;
+    }
+
+    @Override
+    public boolean offer(T t) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public T remove() {
+      checkSize();
+      return poll();
+    }
+
+    @Override
+    public T poll() {
+      if (size() == 0) {
+        return null;
+      }
+      int rIdx = (int) (((wIdx - 1) - ri++) & maxEventsMask);
+      return elements[rIdx];
+    }
+
+    @Override
+    public T element() {
+      checkSize();
+      return peek();
+    }
+
+    @Override
+    public T peek() {
+      if (size() == 0) {
+        return null;
+      }
+      int rIdx = (int) (((wIdx - 1) - ri) & maxEventsMask);
+      return elements[rIdx];
+    }
+
+    private void checkSize() {
+      if (size() == 0) {
+        throw new IllegalStateException();
+      }
+    }
   }
 }

@@ -16,7 +16,6 @@
 
 package io.perfmark.java9;
 
-import io.perfmark.impl.Marker;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -27,7 +26,6 @@ import org.openjdk.jmh.annotations.State;
 
 @State(Scope.Benchmark)
 public class VarHandleMarkHolderBenchmark {
-  public final Marker MARKER = Marker.NONE;
 
   public final VarHandleMarkHolder markHolder = new VarHandleMarkHolder(16384);
 
@@ -48,20 +46,6 @@ public class VarHandleMarkHolderBenchmark {
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void start_marker_tag() {
-    markHolder.start(1, "hi", MARKER, "tag", 2, 1234);
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void start_marker_noTag() {
-    markHolder.start(1, "hi", MARKER, 1234);
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void stop_name_tag() {
     markHolder.stop(1, "hi", "tag", 2, 1234);
   }
@@ -76,20 +60,6 @@ public class VarHandleMarkHolderBenchmark {
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void stop_marker_tag() {
-    markHolder.stop(1, "hi", MARKER, "tag", 2, 1234);
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void stop_marker_noTag() {
-    markHolder.stop(1, "hi", MARKER, 1234);
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void link() {
     markHolder.link(1, 9999);
   }
@@ -97,35 +67,14 @@ public class VarHandleMarkHolderBenchmark {
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void link_marker() {
-    markHolder.link(1, 9999, MARKER);
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void event_name_tag() {
-    markHolder.event(1, "hi", "tag", 2, 8, 1234);
+    markHolder.event(1, "hi", "tag", 2, 8);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void event_name_noTag() {
-    markHolder.event(1, "hi", 8, 1234);
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void event_marker_tag() {
-    markHolder.event(1, "hi", Marker.NONE, "tag", 2, 8, 1234);
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void event_marker_noTag() {
-    markHolder.event(1, "hi", Marker.NONE, 8, 1234);
+    markHolder.event(1, "hi", 8);
   }
 }

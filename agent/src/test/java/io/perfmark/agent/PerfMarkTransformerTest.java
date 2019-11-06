@@ -32,11 +32,13 @@ import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
+@Ignore // disabled until marker support is added back in
 public class PerfMarkTransformerTest {
 
   @Test

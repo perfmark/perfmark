@@ -18,7 +18,6 @@ package io.perfmark.java9;
 
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
-import io.perfmark.impl.Marker;
 import java.util.List;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Description;
@@ -64,13 +63,12 @@ import org.openjdk.jcstress.infra.results.L_Result;
 @Outcome(id = "31", expect = Expect.ACCEPTABLE, desc = "31 Writes")
 @Outcome(id = "32", expect = Expect.ACCEPTABLE, desc = "32 Writes")
 @Outcome(id = "-1", expect = Expect.FORBIDDEN, desc = "Wrong Type")
-@Outcome(id = "-2", expect = Expect.FORBIDDEN, desc = "Wrong Marker")
 @Outcome(id = "-3", expect = Expect.FORBIDDEN, desc = "Wrong ID")
 @State
 @Description("Simulates the PerfMarkStorage reader.")
 public class PerfMarkStorageStress {
   private static final int OFFSET;
-  private static final int SIZE = 8;
+  private static final int SIZE = 32;
 
   static {
     OFFSET = 31;
@@ -82,7 +80,7 @@ public class PerfMarkStorageStress {
   @Actor
   public void writer() {
     for (long i = 0; i < SIZE * 4; i++) {
-      holder.link(i << OFFSET, i, Marker.NONE);
+      holder.link(i << OFFSET, i);
     }
   }
 
@@ -96,11 +94,8 @@ public class PerfMarkStorageStress {
       if (mark.getOperation() != Mark.Operation.LINK) {
         ret = -1;
         break;
-      } else if (mark.getMarker() != Marker.NONE) {
-        ret = -2;
-        break;
       } else if (mark.getGeneration() >>> OFFSET != mark.getLinkId()) {
-        ret = -3;
+        ret = -2;
         break;
       } else {
         // keep going
