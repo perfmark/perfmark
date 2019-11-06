@@ -14,9 +14,23 @@ dependencies {
             project(':perfmark-java7')
 }
 
+
 compileTestJava {
     sourceCompatibility = 1.7
     targetCompatibility = 1.7
+}
+
+compileJmhJava {
+    sourceCompatibility = 1.9
+    targetCompatibility = 1.9
+}
+
+configurations {
+    jmhCompileClasspath {
+        attributes {
+            attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 9)
+        }
+    }
 }
 
 javadoc {
