@@ -154,6 +154,10 @@ public final class Storage {
     localMarkHolder.get().start(gen, taskName, System.nanoTime());
   }
 
+  static void startAnyways(long gen, String taskName, String subTaskName) {
+    localMarkHolder.get().start(gen, taskName, subTaskName, System.nanoTime());
+  }
+
   static void stopAnyways(long gen, String taskName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().stop(gen, taskName, tagName, tagId, nanoTime);
@@ -164,6 +168,11 @@ public final class Storage {
     localMarkHolder.get().stop(gen, taskName, nanoTime);
   }
 
+  static void stopAnyways(long gen, String taskName, String subTaskName) {
+    long nanoTime = System.nanoTime();
+    localMarkHolder.get().stop(gen, taskName, subTaskName, nanoTime);
+  }
+
   static void eventAnyways(long gen, String eventName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().event(gen, eventName, tagName, tagId, nanoTime);
@@ -172,6 +181,11 @@ public final class Storage {
   static void eventAnyways(long gen, String eventName) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().event(gen, eventName, nanoTime);
+  }
+
+  static void eventAnyways(long gen, String eventName, String subEventName) {
+    long nanoTime = System.nanoTime();
+    localMarkHolder.get().event(gen, eventName, subEventName, nanoTime);
   }
 
   static void linkAnyways(long gen, long linkId) {

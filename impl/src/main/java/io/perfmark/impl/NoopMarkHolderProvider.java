@@ -38,6 +38,9 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
     public void start(long gen, String taskName, long nanoTime) {}
 
     @Override
+    public void start(long gen, String taskName, String subTaskName, long nanoTime) {}
+
+    @Override
     public void link(long gen, long linkId) {}
 
     @Override
@@ -47,10 +50,16 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
     public void stop(long gen, String taskName, long nanoTime) {}
 
     @Override
+    public void stop(long gen, String taskName, String subTaskName, long nanoTime) {}
+
+    @Override
     public void event(long gen, String eventName, String tagName, long tagId, long nanoTime) {}
 
     @Override
     public void event(long gen, String eventName, long nanoTime) {}
+
+    @Override
+    public void event(long gen, String eventName, String subEventName, long nanoTime) {}
 
     @Override
     public void attachTag(long gen, String tagName, long tagId) {}

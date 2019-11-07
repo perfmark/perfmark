@@ -34,13 +34,16 @@ import java.util.List;
 final class VarHandleMarkHolder extends MarkHolder {
   private static final long GEN_MASK = (1 << Generator.GEN_OFFSET) - 1;
   private static final long START_OP = 1; // Mark.Operation.TASK_START.ordinal();
-  private static final long START_T_OP = 2; // Mark.Operation.TASK_START_T.ordinal();
-  private static final long STOP_OP = 3; // Mark.Operation.TASK_END.ordinal();
-  private static final long STOP_T_OP = 4; // Mark.Operation.TASK_END_T.ordinal();
-  private static final long EVENT_OP = 5; // Mark.Operation.EVENT.ordinal();
-  private static final long EVENT_T_OP = 6; // Mark.Operation.EVENT_T.ordinal();
-  private static final long LINK_OP = 7; // Mark.Operation.LINK.ordinal();
-  private static final long ATTACH_T_OP = 8; // Mark.Operation.ATTACH_TAG.ordinal();
+  private static final long START_S_OP = 2;
+  private static final long START_T_OP = 3; // Mark.Operation.TASK_START_T.ordinal();
+  private static final long STOP_OP = 4; // Mark.Operation.TASK_END.ordinal();
+  private static final long STOP_T_OP = 5; // Mark.Operation.TASK_END_T.ordinal();
+  private static final long STOP_S_OP = 6;
+  private static final long EVENT_OP = 7; // Mark.Operation.EVENT.ordinal();
+  private static final long EVENT_T_OP = 8; // Mark.Operation.EVENT_T.ordinal();
+  private static final long EVENT_S_OP = 9;
+  private static final long LINK_OP = 10; // Mark.Operation.LINK.ordinal();
+  private static final long ATTACH_T_OP = 11; // Mark.Operation.ATTACH_TAG.ordinal();
 
   private static final VarHandle IDX;
   private static final VarHandle MARKERS;
@@ -118,6 +121,18 @@ final class VarHandleMarkHolder extends MarkHolder {
   }
 
   @Override
+  public void start(long gen, String taskName, String subTaskName, long nanoTime) {
+    long localIdx = (long) IDX.get(this);
+    int i = (int) (localIdx & maxEventsMax);
+    STRINGS.setOpaque(taskNames, i, taskName);
+    STRINGS.setOpaque(tagNames, i, subTaskName);
+    LONGS.setOpaque(nanoTimes, i, nanoTime);
+    LONGS.setOpaque(genOps, i, gen + START_S_OP);
+    IDX.setRelease(this, localIdx + 1);
+    VarHandle.storeStoreFence();
+  }
+
+  @Override
   public void link(long gen, long linkId) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
@@ -152,6 +167,18 @@ final class VarHandleMarkHolder extends MarkHolder {
   }
 
   @Override
+  public void stop(long gen, String taskName, String subTaskName, long nanoTime) {
+    long localIdx = (long) IDX.get(this);
+    int i = (int) (localIdx & maxEventsMax);
+    STRINGS.setOpaque(taskNames, i, taskName);
+    STRINGS.setOpaque(tagNames, i, subTaskName);
+    LONGS.setOpaque(nanoTimes, i, nanoTime);
+    LONGS.setOpaque(genOps, i, gen + STOP_S_OP);
+    IDX.setRelease(this, localIdx + 1);
+    VarHandle.storeStoreFence();
+  }
+
+  @Override
   public void event(long gen, String eventName, String tagName, long tagId, long nanoTime) {
     long localIdx = (long) IDX.get(this);
     int i = (int) (localIdx & maxEventsMax);
@@ -171,6 +198,18 @@ final class VarHandleMarkHolder extends MarkHolder {
     STRINGS.setOpaque(taskNames, i, eventName);
     LONGS.setOpaque(nanoTimes, i, nanoTime);
     LONGS.setOpaque(genOps, i, gen + EVENT_OP);
+    IDX.setRelease(this, localIdx + 1);
+    VarHandle.storeStoreFence();
+  }
+
+  @Override
+  public void event(long gen, String eventName, String subEventName, long nanoTime) {
+    long localIdx = (long) IDX.get(this);
+    int i = (int) (localIdx & maxEventsMax);
+    STRINGS.setOpaque(taskNames, i, eventName);
+    STRINGS.setOpaque(tagNames, i, subEventName);
+    LONGS.setOpaque(nanoTimes, i, nanoTime);
+    LONGS.setOpaque(genOps, i, gen + EVENT_S_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
   }
@@ -240,6 +279,16 @@ final class VarHandleMarkHolder extends MarkHolder {
         case (int) START_OP:
           marks.addFirst(Mark.taskStart(gen, localNanoTimes[readIdx], localTaskNames[readIdx]));
           break;
+        case (int) START_S_OP:
+          marks.addFirst(
+              Mark.taskStart(
+                  gen, localNanoTimes[readIdx], localTaskNames[readIdx], localTagNames[readIdx]));
+          break;
+        case (int) STOP_S_OP:
+          marks.addFirst(
+              Mark.taskEnd(
+                  gen, localNanoTimes[readIdx], localTaskNames[readIdx], localTagNames[readIdx]));
+          break;
         case (int) STOP_OP:
           marks.addFirst(Mark.taskEnd(gen, localNanoTimes[readIdx], localTaskNames[readIdx]));
           break;
@@ -258,6 +307,11 @@ final class VarHandleMarkHolder extends MarkHolder {
                   localTaskNames[readIdx],
                   localTagNames[readIdx],
                   localTagIds[readIdx]));
+          break;
+        case (int) EVENT_S_OP:
+          marks.addFirst(
+              Mark.event(
+                  gen, localNanoTimes[readIdx], localTaskNames[readIdx], localTagNames[readIdx]));
           break;
         case (int) LINK_OP:
           marks.addFirst(Mark.link(gen, localTagIds[readIdx]));

@@ -43,13 +43,19 @@ public class Impl {
 
   protected void startTask(String taskName) {}
 
+  protected void startTask(String taskName, String subTaskName) {}
+
   protected void event(String eventName, Tag tag) {}
 
   protected void event(String eventName) {}
 
+  protected void event(String eventName, String subEventName) {}
+
   protected void stopTask(String taskName, Tag tag) {}
 
   protected void stopTask(String taskName) {}
+
+  protected void stopTask(String taskName, String subTaskName) {}
 
   protected Link linkOut() {
     return NO_LINK;
