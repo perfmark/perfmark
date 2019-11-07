@@ -86,6 +86,13 @@ final class SynchronizedMarkHolder extends MarkHolder {
     nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 
+  private void writeNss(long genOp, long n0, String s0, String s1) {
+    nums[(int) (nIdx++ & maxEventsMask)] = n0;
+    strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    strings[(int) (sIdx++ & maxEventsMask)] = s1;
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
+  }
+
   private void writeNs(long genOp, long n0, String s0) {
     nums[(int) (nIdx++ & maxEventsMask)] = n0;
     strings[(int) (sIdx++ & maxEventsMask)] = s0;
@@ -110,6 +117,11 @@ final class SynchronizedMarkHolder extends MarkHolder {
   }
 
   @Override
+  public synchronized void start(long gen, String taskName, String subTaskName, long nanoTime) {
+    writeNss(gen + START_N1S2_OP, nanoTime, taskName, subTaskName);
+  }
+
+  @Override
   public synchronized void link(long gen, long linkId) {
     writeN(gen + LINK_OP, linkId);
   }
@@ -127,6 +139,11 @@ final class SynchronizedMarkHolder extends MarkHolder {
   }
 
   @Override
+  public synchronized void stop(long gen, String taskName, String subTaskName, long nanoTime) {
+    writeNss(gen + STOP_N1S2_OP, nanoTime, taskName, subTaskName);
+  }
+
+  @Override
   public synchronized void event(
       long gen, String eventName, String tagName, long tagId, long nanoTime) {
     writeNnss(gen + EVENT_N2S2_OP, nanoTime, tagId, eventName, tagName);
@@ -135,6 +152,11 @@ final class SynchronizedMarkHolder extends MarkHolder {
   @Override
   public synchronized void event(long gen, String eventName, long nanoTime) {
     writeNs(gen + EVENT_N1S1_OP, nanoTime, eventName);
+  }
+
+  @Override
+  public synchronized void event(long gen, String eventName, String subEventName, long nanoTime) {
+    writeNss(gen + EVENT_N1S2_OP, nanoTime, eventName, subEventName);
   }
 
   @Override
@@ -208,21 +230,33 @@ final class SynchronizedMarkHolder extends MarkHolder {
           marks.addFirst(Mark.taskStart(gen, n1, s1));
           break;
         case TASK_START_N1S2:
-          throw new UnsupportedOperationException();
+          n1 = numQ.remove();
+          s2 = stringQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.taskStart(gen, n1, s1, s2));
+          break;
         case TASK_END_N1S1:
           n1 = numQ.remove();
           s1 = stringQ.remove();
           marks.addFirst(Mark.taskEnd(gen, n1, s1));
           break;
         case TASK_END_N1S2:
-          throw new UnsupportedOperationException();
+          n1 = numQ.remove();
+          s2 = stringQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.taskEnd(gen, n1, s1, s2));
+          break;
         case EVENT_N1S1:
           n1 = numQ.remove();
           s1 = stringQ.remove();
           marks.addFirst(Mark.event(gen, n1, s1));
           break;
         case EVENT_N1S2:
-          throw new UnsupportedOperationException();
+          n1 = numQ.remove();
+          s2 = stringQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.event(gen, n1, s1, s2));
+          break;
         case EVENT_N2S2:
           n2 = numQ.remove();
           s2 = stringQ.remove();

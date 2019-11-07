@@ -44,6 +44,19 @@ public class SynchronizedMarkHolderTest {
   }
 
   @Test
+  public void taskTagStartStop_subTask() {
+    mh.start(gen, "task", "subtask", 3);
+    mh.stop(gen, "task", "subtask", 4);
+
+    List<Mark> marks = mh.read(false);
+    assertEquals(2, marks.size());
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.taskStart(gen, 3, "task", "subtask"), Mark.taskEnd(gen, 4, "task", "subtask"));
+    assertEquals(expected, marks);
+  }
+
+  @Test
   public void taskTagStartStop_tag() {
     mh.start(gen, "task", "tag", 9, 3);
     mh.stop(gen, "task", "tag", 9, 4);
@@ -115,6 +128,20 @@ public class SynchronizedMarkHolderTest {
     List<Mark> expected =
         Arrays.asList(
             Mark.event(gen, 8, "task1", "tag1", 7), Mark.event(gen, 5, "task2", "tag2", 6));
+    assertEquals(expected, marks);
+  }
+
+  @Test
+  public void event_subevent() {
+    mh.event(gen, "task1", "subtask3", 8);
+    mh.event(gen, "task2", "subtask4", 5);
+
+    List<Mark> marks = mh.read(false);
+
+    assertEquals(2, marks.size());
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.event(gen, 8, "task1", "subtask3"), Mark.event(gen, 5, "task2", "subtask4"));
     assertEquals(expected, marks);
   }
 

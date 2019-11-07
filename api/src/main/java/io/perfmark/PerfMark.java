@@ -95,14 +95,17 @@ public final class PerfMark {
   }
 
   /**
-   * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
-   * task should be a runtime-time constant, usually a string literal. Tasks with the same name can
-   * be grouped together for analysis later, so avoid using too many unique task names.
+   * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The names of
+   * the task and subtask should be runtime-time constants, usually a string literal. Tasks with the
+   * same name can be grouped together for analysis later, so avoid using too many unique task
+   * names.
    *
    * @param taskName the name of the task.
+   * @param subTaskName the name of the sub task
+   * @since 0.20.0
    */
   public static void startTask(String taskName, String subTaskName) {
-    impl.startTask(taskName + subTaskName);
+    impl.startTask(taskName, subTaskName);
   }
 
   /**
@@ -130,6 +133,19 @@ public final class PerfMark {
    */
   public static void event(String eventName) {
     impl.event(eventName);
+  }
+
+  /**
+   * Marks an event. Events are logically both a task start and a task end. Events have no duration
+   * associated. Events still represent the instant something occurs. If PerfMark is disabled, this
+   * method is a no-op.
+   *
+   * @param eventName the name of the event.
+   * @param subEventName the name of the sub event.
+   * @since 0.20.0
+   */
+  public static void event(String eventName, String subEventName) {
+    impl.event(eventName, subEventName);
   }
 
   /**
@@ -163,6 +179,24 @@ public final class PerfMark {
    */
   public static void stopTask(String taskName) {
     impl.stopTask(taskName);
+  }
+
+  /**
+   * Marks the end of a task. If PerfMark is disabled, this method is a no-op. The task name should
+   * match the ones provided to the corresponding {@link #startTask(String, String)}. If the task
+   * name or tag do not match, the implementation may not be able to associate the starting and
+   * stopping of a single task. The name of the task should be a runtime-time constant, usually a
+   * string literal.
+   *
+   * <p>It is important that {@link #stopTask} always be called after starting a task, even in case
+   * of exceptions. Failing to do so may result in corrupted results.
+   *
+   * @param taskName the name of the task being ended.
+   * @param subTaskName the name of the sub task being ended.
+   * @since 0.20.0
+   */
+  public static void stopTask(String taskName, String subTaskName) {
+    impl.stopTask(taskName, subTaskName);
   }
 
   /**

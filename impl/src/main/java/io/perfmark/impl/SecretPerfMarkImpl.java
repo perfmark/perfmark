@@ -162,6 +162,15 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
+    protected void startTask(String taskName, String subTaskName) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      Storage.startAnyways(gen, taskName, subTaskName);
+    }
+
+    @Override
     protected void stopTask(String taskName, Tag tag) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
@@ -180,6 +189,15 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
+    protected void stopTask(String taskName, String subTaskName) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      Storage.stopAnyways(gen, taskName, subTaskName);
+    }
+
+    @Override
     protected void event(String eventName, Tag tag) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
@@ -195,6 +213,15 @@ final class SecretPerfMarkImpl {
         return;
       }
       Storage.eventAnyways(gen, eventName);
+    }
+
+    @Override
+    protected void event(String eventName, String subEventName) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      Storage.eventAnyways(gen, eventName, subEventName);
     }
 
     @Override

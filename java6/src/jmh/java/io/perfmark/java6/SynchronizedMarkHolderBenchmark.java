@@ -46,6 +46,13 @@ public class SynchronizedMarkHolderBenchmark {
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void start_name_subname() {
+    markHolder.start(1, "hi", "there", 1234);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void stop_name_tag() {
     markHolder.stop(1, "hi", "tag", 2, 1234);
   }
@@ -55,6 +62,13 @@ public class SynchronizedMarkHolderBenchmark {
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void stop_name_noTag() {
     markHolder.stop(1, "hi", 1234);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void stop_name_subname() {
+    markHolder.stop(1, "hi", "there", 1234);
   }
 
   @Benchmark
@@ -76,5 +90,12 @@ public class SynchronizedMarkHolderBenchmark {
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void event_name_noTag() {
     markHolder.event(1, "hi", 2);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void event_name_subname() {
+    markHolder.event(1, "hi", "there", 2);
   }
 }
