@@ -20,10 +20,6 @@ import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Assume;
