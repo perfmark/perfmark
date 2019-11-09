@@ -25,12 +25,8 @@ compileJmhJava {
     targetCompatibility = 1.9
 }
 
-configurations {
-    jmhCompileClasspath {
-        attributes {
-            attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 9)
-        }
-    }
+java {
+    disableAutoTargetJvm()
 }
 
 javadoc {
@@ -42,6 +38,8 @@ jmh {
     warmup = "1s"
     fork = 1
     warmupIterations = 10
+
+    duplicateClassesStrategy "include"
 
     /*
     profilers = ["perfasm"]

@@ -65,6 +65,15 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
     public void attachTag(long gen, String tagName, long tagId) {}
 
     @Override
+    public void attachKeyedTag(long gen, String name, String value) {}
+
+    @Override
+    public void attachKeyedTag(long gen, String name, long value0) {}
+
+    @Override
+    public void attachKeyedTag(long gen, String name, long value0, long value1) {}
+
+    @Override
     public void resetForTest() {}
 
     @Override

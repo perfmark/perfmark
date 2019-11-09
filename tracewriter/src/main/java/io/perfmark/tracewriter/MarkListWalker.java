@@ -109,12 +109,11 @@ class MarkListWalker {
       List<? extends MarkList> markLists) {
     Map<Long, List<MarkList>> generationToMarkLists = new TreeMap<>();
     for (MarkList markList : markLists) {
-      List<Mark> marks = markList;
-      if (marks.isEmpty()) {
+      if (markList.isEmpty()) {
         continue;
       }
       Map<Long, List<Mark>> generationToMarks = new TreeMap<>();
-      for (Mark mark : marks) {
+      for (Mark mark : markList) {
         List<Mark> groupedMarks = generationToMarks.get(mark.getGeneration());
         if (groupedMarks == null) {
           generationToMarks.put(mark.getGeneration(), groupedMarks = new ArrayList<>());
@@ -217,6 +216,8 @@ class MarkListWalker {
       case LINK:
       case TAG_N0S1:
       case TAG_KEYED_N0S2:
+      case TAG_KEYED_N2S1:
+      case TAG_KEYED_N1S1:
       case TAG_N1S0:
       case TAG_N1S1:
       case NONE:
@@ -243,6 +244,8 @@ class MarkListWalker {
       case LINK:
       case TAG_N0S1:
       case TAG_KEYED_N0S2:
+      case TAG_KEYED_N2S1:
+      case TAG_KEYED_N1S1:
       case TAG_N1S0:
       case TAG_N1S1:
         break;

@@ -20,10 +20,6 @@ import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Assume;
@@ -109,6 +105,26 @@ public class VarHandleMarkHolderTest {
     List<Mark> expected =
         Arrays.asList(
             Mark.taskStart(gen, 3, "task"), Mark.tag(gen, "tag", 8), Mark.taskEnd(gen, 4, "task"));
+    assertEquals(expected, marks);
+  }
+
+  @Test
+  public void attachKeyedTag() {
+    mh.start(gen, "task", 3);
+    mh.attachKeyedTag(gen, "key1", 8);
+    mh.attachKeyedTag(gen, "key2", 8, 9);
+    mh.attachKeyedTag(gen, "key3", "value");
+    mh.stop(gen, "task", 4);
+
+    List<Mark> marks = mh.read(false);
+    assertEquals(5, marks.size());
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.taskStart(gen, 3, "task"),
+            Mark.keyedTag(gen, "key1", 8),
+            Mark.keyedTag(gen, "key2", 8, 9),
+            Mark.keyedTag(gen, "key3", "value"),
+            Mark.taskEnd(gen, 4, "task"));
     assertEquals(expected, marks);
   }
 
@@ -202,13 +218,5 @@ public class VarHandleMarkHolderTest {
 
     List<Mark> marks = mh.read(true);
     assertEquals(events, marks.size());
-  }
-
-  @Test
-  public void bb() {
-    ByteBuffer buf = ByteBuffer.allocateDirect(4096).alignedSlice(4);
-    VarHandle q = MethodHandles.byteBufferViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
-    q.setVolatile(buf, 0, 1);
-    System.out.println((int) q.getVolatile(buf, 0));
   }
 }
