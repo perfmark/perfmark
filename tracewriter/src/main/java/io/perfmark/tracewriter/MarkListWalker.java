@@ -109,12 +109,11 @@ class MarkListWalker {
       List<? extends MarkList> markLists) {
     Map<Long, List<MarkList>> generationToMarkLists = new TreeMap<>();
     for (MarkList markList : markLists) {
-      List<Mark> marks = markList;
-      if (marks.isEmpty()) {
+      if (markList.isEmpty()) {
         continue;
       }
       Map<Long, List<Mark>> generationToMarks = new TreeMap<>();
-      for (Mark mark : marks) {
+      for (Mark mark : markList) {
         List<Mark> groupedMarks = generationToMarks.get(mark.getGeneration());
         if (groupedMarks == null) {
           generationToMarks.put(mark.getGeneration(), groupedMarks = new ArrayList<>());

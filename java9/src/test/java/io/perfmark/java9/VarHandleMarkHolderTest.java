@@ -223,12 +223,4 @@ public class VarHandleMarkHolderTest {
     List<Mark> marks = mh.read(true);
     assertEquals(events, marks.size());
   }
-
-  @Test
-  public void bb() {
-    ByteBuffer buf = ByteBuffer.allocateDirect(4096).alignedSlice(4);
-    VarHandle q = MethodHandles.byteBufferViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
-    q.setVolatile(buf, 0, 1);
-    System.out.println((int) q.getVolatile(buf, 0));
-  }
 }

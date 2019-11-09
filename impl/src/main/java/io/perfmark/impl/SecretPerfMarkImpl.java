@@ -234,6 +234,33 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
+    protected void attachTag(String tagName, String tagValue) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      Storage.attachKeyedTagAnyways(gen, tagName, tagValue);
+    }
+
+    @Override
+    protected void attachTag(String tagName, long tagValue) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      Storage.attachKeyedTagAnyways(gen, tagName, tagValue);
+    }
+
+    @Override
+    protected void attachTag(String tagName, long tagValue0, long tagValue1) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      Storage.attachKeyedTagAnyways(gen, tagName, tagValue0, tagValue1);
+    }
+
+    @Override
     protected Tag createTag(@Nullable String tagName, long tagId) {
       if (!isEnabled(getGen())) {
         return NO_TAG;

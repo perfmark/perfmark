@@ -324,5 +324,67 @@ public final class PerfMark {
     impl.attachTag(tag);
   }
 
+  /**
+   * Attaches an additional keyed tag to the current active task. The tag provided is independent of
+   * the tag used with {@code startTask} and {@code stopTask}. This tag operation is different than
+   * {@link Tag} in that the tag value has an associated name (also called a key). The tag name and
+   * value are attached to the most recently started task, and don't have to match any other tags.
+   * This method is useful for when you have the tag information after the task is started.
+   *
+   * @param tagName The name of the value being attached
+   * @param tagValue The value to attach to the current task.
+   * @since 0.20.0
+   */
+  public static void attachTag(String tagName, String tagValue) {
+    impl.attachTag(tagName, tagValue);
+  }
+
+  /**
+   * Attaches an additional keyed tag to the current active task. The tag provided is independent of
+   * the tag used with {@code startTask} and {@code stopTask}. This tag operation is different than
+   * {@link Tag} in that the tag value has an associated name (also called a key). The tag name and
+   * value are attached to the most recently started task, and don't have to match any other tags.
+   * This method is useful for when you have the tag information after the task is started.
+   *
+   * @param tagName The name of the value being attached
+   * @param tagValue The value to attach to the current task.
+   * @since 0.20.0
+   */
+  public static void attachTag(String tagName, long tagValue) {
+    impl.attachTag(tagName, tagValue);
+  }
+
+  /**
+   * Attaches an additional keyed tag to the current active task. The tag provided is independent of
+   * the tag used with {@code startTask} and {@code stopTask}. This tag operation is different than
+   * {@link Tag} in that the tag values have an associated name (also called a key). The tag name
+   * and values are attached to the most recently started task, and don't have to match any other
+   * tags. This method is useful for when you have the tag information after the task is started.
+   *
+   * <p>This method may treat the given two longs as special. If the tag name contains the string
+   * "uuid" (case insensitive), the value may be treated as a single 128 bit value. An example
+   * usage:
+   *
+   * <pre>
+   *   RPC rpc = ...
+   *   PerfMark.startTask("sendRPC");
+   *   try {
+   *     UUID u = rpc.uuid();
+   *     PerfMark.attachTag("rpc uuid", u.getMostSignificantBits(), u.getLeastSignificantBits());
+   *     send(rpc);
+   *   } finally {
+   *     PerfMark.stopTask("sendRPC");
+   *   }
+   * </pre>
+   *
+   * @param tagName The name of the value being attached
+   * @param tagValue0 The first value to attach to the current task.
+   * @param tagValue1 The second value to attach to the current task.
+   * @since 0.20.0
+   */
+  public static void attachTag(String tagName, long tagValue0, long tagValue1) {
+    impl.attachTag(tagName, tagValue0, tagValue1);
+  }
+
   private PerfMark() {}
 }

@@ -196,6 +196,19 @@ public final class Storage {
     localMarkHolder.get().attachTag(gen, tagName, tagId);
   }
 
+  static void attachKeyedTagAnyways(long gen, @Nullable String tagName, String tagValue) {
+    localMarkHolder.get().attachKeyedTag(gen, tagName, tagValue);
+  }
+
+  static void attachKeyedTagAnyways(long gen, @Nullable String tagName, long tagValue) {
+    localMarkHolder.get().attachKeyedTag(gen, tagName, tagValue);
+  }
+
+  static void attachKeyedTagAnyways(
+      long gen, @Nullable String tagName, long tagValue0, long tagValue1) {
+    localMarkHolder.get().attachKeyedTag(gen, tagName, tagValue0, tagValue1);
+  }
+
   public static void resetForTest() {
     localMarkHolder.remove();
   }

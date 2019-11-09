@@ -16,6 +16,7 @@
 
 package io.perfmark.java9;
 
+import io.perfmark.impl.Generator;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkHolderProvider;
 
@@ -26,8 +27,8 @@ final class SecretVarHandleMarkHolderProvider {
     public VarHandleMarkHolderProvider() {
       // Do some basic operations to see if it works.
       MarkHolder holder = create();
-      holder.start(1, "bogus", 0);
-      holder.stop(1, "bogus", 0);
+      holder.start(1 << Generator.GEN_OFFSET, "bogus", 0);
+      holder.stop(1 << Generator.GEN_OFFSET, "bogus", 0);
       int size = holder.read(false).size();
       if (size != 2) {
         throw new AssertionError("Wrong size " + size);

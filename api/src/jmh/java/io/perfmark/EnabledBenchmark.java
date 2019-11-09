@@ -67,4 +67,25 @@ public class EnabledBenchmark {
   public void event() {
     PerfMark.event("hi", TAG);
   }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void attachKeyedTag_ss() {
+    PerfMark.attachTag("hi", "there");
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void attachKeyedTag_sn() {
+    PerfMark.attachTag("hi", 934);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void attachKeyedTag_snn() {
+    PerfMark.attachTag("hi", 934, 5);
+  }
 }
