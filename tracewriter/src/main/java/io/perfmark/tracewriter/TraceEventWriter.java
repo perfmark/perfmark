@@ -411,6 +411,14 @@ public final class TraceEventWriter {
           case TAG_KEYED_N0S2:
             args = args.withKeyed(mark.getTagKey(), mark.getTagStringValue());
             break out;
+          case TAG_KEYED_N1S1:
+            args = args.withKeyed(mark.getTagKey(), mark.getTagFirstNumeric());
+            break out;
+          case TAG_KEYED_N2S1:
+            args =
+                args.withKeyed(
+                    mark.getTagKey(), mark.getTagFirstNumeric(), mark.getTagSecondNumeric());
+            break out;
           case NONE:
           case TASK_START_N1S1:
           case TASK_START_N1S2:
@@ -452,6 +460,8 @@ public final class TraceEventWriter {
           case TAG_N1S0:
           case TAG_N1S1:
           case TAG_KEYED_N0S2:
+          case TAG_KEYED_N1S1:
+          case TAG_KEYED_N2S1:
             break;
         }
         throw new AssertionError(mark.getOperation());
@@ -516,6 +526,8 @@ public final class TraceEventWriter {
       case LINK:
       case TAG_N0S1:
       case TAG_KEYED_N0S2:
+      case TAG_KEYED_N1S1:
+      case TAG_KEYED_N2S1:
       case TAG_N1S0:
       case TAG_N1S1:
       case NONE:

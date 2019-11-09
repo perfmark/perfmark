@@ -98,6 +98,18 @@ public final class Mark {
     return new Mark(N0, N0, N0, tagName, S0, S0, M0, generation, Operation.TAG_N0S1);
   }
 
+  public static Mark keyedTag(long generation, String tagName, String value) {
+    return new Mark(N0, N0, N0, tagName, value, S0, M0, generation, Operation.TAG_KEYED_N0S2);
+  }
+
+  public static Mark keyedTag(long generation, String tagName, long value) {
+    return new Mark(value, N0, N0, tagName, S0, S0, M0, generation, Operation.TAG_KEYED_N1S1);
+  }
+
+  public static Mark keyedTag(long generation, String tagName, long value0, long value1) {
+    return new Mark(value0, value1, N0, tagName, S0, S0, M0, generation, Operation.TAG_KEYED_N2S1);
+  }
+
   public static Mark link(long generation, long linkId) {
     return new Mark(linkId, N0, N0, S0, S0, S0, M0, generation, Operation.LINK);
   }
@@ -172,6 +184,10 @@ public final class Mark {
      * An unkeyed tag that has a string and numeric value. The values are unrelated to each other.
      */
     TAG_N1S1(OperationType.TAG, 1, 1),
+
+    TAG_KEYED_N1S1(OperationType.TAG, 1, 1),
+
+    TAG_KEYED_N2S1(OperationType.TAG, 2, 1),
 
     TAG_KEYED_N0S2(OperationType.TAG, 0, 2),
     ;
@@ -268,6 +284,8 @@ public final class Mark {
       case TASK_END_N1S2:
       case EVENT_N1S1:
       case EVENT_N1S2:
+      case TAG_KEYED_N1S1:
+      case TAG_KEYED_N2S1:
       case MARK:
       case LINK:
         throw new UnsupportedOperationException();
@@ -279,6 +297,8 @@ public final class Mark {
     switch (operation) {
       case TAG_N1S0:
       case TAG_N1S1:
+      case TAG_KEYED_N1S1:
+      case TAG_KEYED_N2S1:
         return n1;
       case EVENT_N2S2:
       case EVENT_N2S3:
@@ -299,9 +319,36 @@ public final class Mark {
     throw new AssertionError(operation.opType);
   }
 
+  public long getTagSecondNumeric() {
+    switch (operation) {
+      case TAG_KEYED_N2S1:
+        return n2;
+      case TAG_N1S0:
+      case TAG_N1S1:
+      case TAG_KEYED_N1S1:
+      case EVENT_N2S2:
+      case EVENT_N2S3:
+      case TAG_N0S1:
+      case TAG_KEYED_N0S2:
+      case NONE:
+      case TASK_START_N1S1:
+      case TASK_START_N1S2:
+      case TASK_END_N1S1:
+      case TASK_END_N1S2:
+      case EVENT_N1S1:
+      case EVENT_N1S2:
+      case MARK:
+      case LINK:
+        throw new UnsupportedOperationException();
+    }
+    throw new AssertionError(operation.opType);
+  }
+
   public String getTagKey() {
     switch (operation) {
       case TAG_KEYED_N0S2:
+      case TAG_KEYED_N1S1:
+      case TAG_KEYED_N2S1:
         return s1;
       case TAG_N1S1:
       case TAG_N0S1:
@@ -356,6 +403,8 @@ public final class Mark {
       case TAG_N1S0:
       case TAG_N1S1:
       case TAG_KEYED_N0S2:
+      case TAG_KEYED_N1S1:
+      case TAG_KEYED_N2S1:
         throw new UnsupportedOperationException();
     }
     throw new AssertionError(operation);
@@ -377,6 +426,8 @@ public final class Mark {
       case LINK:
       case TAG_N0S1:
       case TAG_KEYED_N0S2:
+      case TAG_KEYED_N1S1:
+      case TAG_KEYED_N2S1:
       case TAG_N1S0:
       case TAG_N1S1:
         throw new UnsupportedOperationException();

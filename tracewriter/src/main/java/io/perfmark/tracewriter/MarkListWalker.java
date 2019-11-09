@@ -217,6 +217,8 @@ class MarkListWalker {
       case LINK:
       case TAG_N0S1:
       case TAG_KEYED_N0S2:
+      case TAG_KEYED_N2S1:
+      case TAG_KEYED_N1S1:
       case TAG_N1S0:
       case TAG_N1S1:
       case NONE:
@@ -243,6 +245,8 @@ class MarkListWalker {
       case LINK:
       case TAG_N0S1:
       case TAG_KEYED_N0S2:
+      case TAG_KEYED_N2S1:
+      case TAG_KEYED_N1S1:
       case TAG_N1S0:
       case TAG_N1S1:
         break;

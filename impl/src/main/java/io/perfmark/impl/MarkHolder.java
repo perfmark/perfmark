@@ -44,6 +44,12 @@ public abstract class MarkHolder {
 
   public abstract void attachTag(long gen, String tagName, long tagId);
 
+  public abstract void attachKeyedTag(long gen, String name, String value);
+
+  public abstract void attachKeyedTag(long gen, String name, long value0);
+
+  public abstract void attachKeyedTag(long gen, String name, long value0, long value1);
+
   public abstract void resetForTest();
 
   public abstract List<Mark> read(boolean concurrentWrites);

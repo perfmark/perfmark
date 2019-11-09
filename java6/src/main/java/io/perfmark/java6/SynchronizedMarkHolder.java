@@ -40,13 +40,11 @@ final class SynchronizedMarkHolder extends MarkHolder {
   private static final long EVENT_N1S1_OP = Mark.Operation.EVENT_N1S1.ordinal();
   private static final long EVENT_N1S2_OP = Mark.Operation.EVENT_N1S2.ordinal();
   private static final long EVENT_N2S2_OP = Mark.Operation.EVENT_N2S2.ordinal();
-  private static final long EVENT_N2S3_OP = Mark.Operation.EVENT_N2S3.ordinal();
   private static final long LINK_OP = Mark.Operation.LINK.ordinal();
-  private static final long MARK_OP = Mark.Operation.MARK.ordinal();
-  private static final long TAG_N0S1_OP = Mark.Operation.TAG_N0S1.ordinal();
-  private static final long TAG_N1S0_OP = Mark.Operation.TAG_N1S0.ordinal();
   private static final long TAG_N1S1_OP = Mark.Operation.TAG_N1S1.ordinal();
   private static final long TAG_KEYED_N0S2_OP = Mark.Operation.TAG_KEYED_N0S2.ordinal();
+  private static final long TAG_KEYED_N1S1_OP = Mark.Operation.TAG_KEYED_N1S1.ordinal();
+  private static final long TAG_KEYED_N2S1_OP = Mark.Operation.TAG_KEYED_N2S1.ordinal();
 
   private final int maxEvents;
   private final long maxEventsMask;
@@ -101,6 +99,19 @@ final class SynchronizedMarkHolder extends MarkHolder {
 
   private void writeN(long genOp, long n0) {
     nums[(int) (nIdx++ & maxEventsMask)] = n0;
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
+  }
+
+  private void writeNns(long genOp, long n0, long n1, String s0) {
+    nums[(int) (nIdx++ & maxEventsMask)] = n0;
+    nums[(int) (nIdx++ & maxEventsMask)] = n1;
+    strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
+  }
+
+  private void writeSs(long genOp, String s0, String s1) {
+    strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    strings[(int) (sIdx++ & maxEventsMask)] = s1;
     nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 
@@ -162,6 +173,21 @@ final class SynchronizedMarkHolder extends MarkHolder {
   @Override
   public synchronized void attachTag(long gen, String tagName, long tagId) {
     writeNs(gen + TAG_N1S1_OP, tagId, tagName);
+  }
+
+  @Override
+  public void attachKeyedTag(long gen, String name, long value0) {
+    writeNs(gen + TAG_KEYED_N1S1_OP, value0, name);
+  }
+
+  @Override
+  public void attachKeyedTag(long gen, String name, String value) {
+    writeSs(gen + TAG_KEYED_N0S2_OP, name, value);
+  }
+
+  @Override
+  public void attachKeyedTag(long gen, String name, long value0, long value1) {
+    writeNns(gen + TAG_KEYED_N2S1_OP, value0, value1, name);
   }
 
   @Override
@@ -282,7 +308,21 @@ final class SynchronizedMarkHolder extends MarkHolder {
           marks.addFirst(Mark.tag(gen, s1, n1));
           break;
         case TAG_KEYED_N0S2:
-          throw new UnsupportedOperationException();
+          s2 = stringQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.keyedTag(gen, s1, s2));
+          break;
+        case TAG_KEYED_N1S1:
+          n1 = numQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.keyedTag(gen, s1, n1));
+          break;
+        case TAG_KEYED_N2S1:
+          n2 = numQ.remove();
+          n1 = numQ.remove();
+          s1 = stringQ.remove();
+          marks.addFirst(Mark.keyedTag(gen, s1, n1, n2));
+          break;
         case NONE:
           throw new UnsupportedOperationException();
       }

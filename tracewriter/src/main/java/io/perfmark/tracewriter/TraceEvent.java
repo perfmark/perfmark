@@ -219,6 +219,13 @@ final class TraceEvent implements Cloneable {
       return new TagMap(Collections.unmodifiableList(keyedValues), unkeyedValues);
     }
 
+    TagMap withKeyed(@Nullable String tagName, long tagValue0, long tagValue1) {
+      List<Entry<String, ?>> keyedValues = new ArrayList<>(this.keyedValues);
+      keyedValues.add(
+          new SimpleImmutableEntry<>(String.valueOf(tagName), tagValue0 + ":" + tagValue1));
+      return new TagMap(Collections.unmodifiableList(keyedValues), unkeyedValues);
+    }
+
     @Override
     public Set<Entry<String, Object>> entrySet() {
       return null;

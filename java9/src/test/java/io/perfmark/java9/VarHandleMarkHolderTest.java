@@ -113,6 +113,26 @@ public class VarHandleMarkHolderTest {
   }
 
   @Test
+  public void attachKeyedTag() {
+    mh.start(gen, "task", 3);
+    mh.attachKeyedTag(gen, "key1", 8);
+    mh.attachKeyedTag(gen, "key2", 8, 9);
+    mh.attachKeyedTag(gen, "key3", "value");
+    mh.stop(gen, "task", 4);
+
+    List<Mark> marks = mh.read(false);
+    assertEquals(5, marks.size());
+    List<Mark> expected =
+        Arrays.asList(
+            Mark.taskStart(gen, 3, "task"),
+            Mark.keyedTag(gen, "key1", 8),
+            Mark.keyedTag(gen, "key2", 8, 9),
+            Mark.keyedTag(gen, "key3", "value"),
+            Mark.taskEnd(gen, 4, "task"));
+    assertEquals(expected, marks);
+  }
+
+  @Test
   public void event() {
     mh.event(gen, "task1", 8);
     mh.event(gen, "task2", 5);

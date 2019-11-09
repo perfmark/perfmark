@@ -44,6 +44,9 @@ final class VarHandleMarkHolder extends MarkHolder {
   private static final long EVENT_S_OP = 9;
   private static final long LINK_OP = 10; // Mark.Operation.LINK.ordinal();
   private static final long ATTACH_T_OP = 11; // Mark.Operation.ATTACH_TAG.ordinal();
+  private static final long ATTACH_SS_OP = 12;
+  private static final long ATTACH_SN_OP = 13;
+  private static final long ATTACH_SNN_OP = 14;
 
   private static final VarHandle IDX;
   private static final VarHandle MARKERS;
@@ -226,6 +229,40 @@ final class VarHandleMarkHolder extends MarkHolder {
   }
 
   @Override
+  public void attachKeyedTag(long gen, String name, long value) {
+    long localIdx = (long) IDX.get(this);
+    int i = (int) (localIdx & maxEventsMax);
+    STRINGS.setOpaque(tagNames, i, name);
+    LONGS.setOpaque(tagIds, i, value);
+    LONGS.setOpaque(genOps, i, gen + ATTACH_SN_OP);
+    IDX.setRelease(this, localIdx + 1);
+    VarHandle.storeStoreFence();
+  }
+
+  @Override
+  public void attachKeyedTag(long gen, String name, long value0, long value1) {
+    long localIdx = (long) IDX.get(this);
+    int i = (int) (localIdx & maxEventsMax);
+    STRINGS.setOpaque(tagNames, i, name);
+    LONGS.setOpaque(tagIds, i, value0);
+    LONGS.setOpaque(nanoTimes, i, value1);
+    LONGS.setOpaque(genOps, i, gen + ATTACH_SNN_OP);
+    IDX.setRelease(this, localIdx + 1);
+    VarHandle.storeStoreFence();
+  }
+
+  @Override
+  public void attachKeyedTag(long gen, String name, String value) {
+    long localIdx = (long) IDX.get(this);
+    int i = (int) (localIdx & maxEventsMax);
+    STRINGS.setOpaque(tagNames, i, name);
+    STRINGS.setOpaque(taskNames, i, value);
+    LONGS.setOpaque(genOps, i, gen + ATTACH_SS_OP);
+    IDX.setRelease(this, localIdx + 1);
+    VarHandle.storeStoreFence();
+  }
+
+  @Override
   public void resetForTest() {
     Arrays.fill(taskNames, null);
     Arrays.fill(markers, null);
@@ -318,6 +355,17 @@ final class VarHandleMarkHolder extends MarkHolder {
           break;
         case (int) ATTACH_T_OP:
           marks.addFirst(Mark.tag(gen, localTagNames[readIdx], localTagIds[readIdx]));
+          break;
+        case (int) ATTACH_SS_OP:
+          marks.addFirst(Mark.keyedTag(gen, localTagNames[readIdx], localTaskNames[readIdx]));
+          break;
+        case (int) ATTACH_SN_OP:
+          marks.addFirst(Mark.keyedTag(gen, localTagNames[readIdx], localTagIds[readIdx]));
+          break;
+        case (int) ATTACH_SNN_OP:
+          marks.addFirst(
+              Mark.keyedTag(
+                  gen, localTagNames[readIdx], localTagIds[readIdx], localNanoTimes[readIdx]));
           break;
         default:
           throw new ConcurrentModificationException("Read of storage was not threadsafe " + opVal);
