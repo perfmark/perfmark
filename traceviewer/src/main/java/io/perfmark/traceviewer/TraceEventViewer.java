@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import io.perfmark.PerfMark;
 import io.perfmark.tracewriter.TraceEventWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -49,6 +50,14 @@ import javax.annotation.Nullable;
  */
 public final class TraceEventViewer {
   private static final Logger logger = Logger.getLogger(TraceEventViewer.class.getName());
+
+  public static void main(String[] args) throws Exception {
+    PerfMark.setEnabled(true);
+    PerfMark.startTask("hio");
+    PerfMark.attachTag("hi", 123);
+    PerfMark.stopTask("hio");
+    writeTraceHtml();
+  }
 
   // Copied from trace2html.html in the Catapult tracing code.
   private static final String INLINE_TRACE_DATA =
