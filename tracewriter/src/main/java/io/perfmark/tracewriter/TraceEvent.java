@@ -22,8 +22,10 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
@@ -228,7 +230,38 @@ final class TraceEvent implements Cloneable {
 
     @Override
     public Set<Entry<String, Object>> entrySet() {
-      return null;
+      List<Entry<String, ?>> pairs = new ArrayList<>(keyedValues.size() + unkeyedValues.size());
+      pairs.addAll(keyedValues);
+      for (Object value : unkeyedValues) {
+        if (value instanceof Long) {
+          pairs.add(new SimpleImmutableEntry<>("id", value));
+        } else if (value instanceof String) {
+          pairs.add(new SimpleImmutableEntry<>("tag", value));
+        } else {
+          pairs.add(new SimpleImmutableEntry<>("tag", String.valueOf(value)));
+        }
+      }
+
+      Map<String, Object> ret = new LinkedHashMap<>();
+      addEntry:
+      for (Entry<String, ?> kv : pairs) {
+        String name = kv.getKey();
+        Object value = kv.getValue();
+        String derivedName = name;
+        int usages = 0;
+        while (true) {
+          if (!ret.containsKey(derivedName)) {
+            ret.put(derivedName, value);
+            continue addEntry;
+          }
+          if (ret.get(derivedName).equals(value)) {
+            continue addEntry;
+          }
+          usages++;
+          derivedName = name + " (" + usages + ')';
+        }
+      }
+      return Collections.unmodifiableSet(ret.entrySet());
     }
   }
 }
