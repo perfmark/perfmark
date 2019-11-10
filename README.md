@@ -32,7 +32,7 @@ tracing function calls to their code to see how long each part takes.
     
 ## Usage
 
-To use PerfMark, add a dependency on `io.perfmark:perfmark-api:0.17.0`.  In your code, add the 
+To use PerfMark, add a dependency on `io.perfmark:perfmark-api:0.20.0`.  In your code, add the 
 PerfMark tracing calls like so:
 
 ```java
