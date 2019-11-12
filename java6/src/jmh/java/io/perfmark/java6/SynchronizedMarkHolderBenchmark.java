@@ -16,6 +16,7 @@
 
 package io.perfmark.java6;
 
+import io.perfmark.impl.Generator;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -24,78 +25,86 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class SynchronizedMarkHolderBenchmark {
 
+  private static final long gen = 1 << Generator.GEN_OFFSET;
+  private static final String taskName = "hi";
+
   public final SynchronizedMarkHolder markHolder = new SynchronizedMarkHolder(16384);
+
+  private String tagName = "tag";
+  private long tagId = 0xf0f0;
+  private long nanoTime = 0xf1f1;
+  private long linkId = 0xf2f2;
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void start_name_tag() {
-    markHolder.start(1, "hi", "tag", 2, 1234);
+    markHolder.start(gen, taskName, tagName, tagId, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void start_name_noTag() {
-    markHolder.start(1, "hi", 1234);
+    markHolder.start(gen, taskName, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void start_name_subname() {
-    markHolder.start(1, "hi", "there", 1234);
+    markHolder.start(gen, taskName, taskName, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void stop_name_tag() {
-    markHolder.stop(1, "hi", "tag", 2, 1234);
+    markHolder.stop(gen, taskName, tagName, tagId, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void stop_name_noTag() {
-    markHolder.stop(1, "hi", 1234);
+    markHolder.stop(gen, taskName, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void stop_name_subname() {
-    markHolder.stop(1, "hi", "there", 1234);
+    markHolder.stop(gen, taskName, tagName, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void link() {
-    markHolder.link(1, 9999);
+    markHolder.link(gen, linkId);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void event_name_tag() {
-    markHolder.event(1, "hi", "tag", 2, 8);
+    markHolder.event(gen, taskName, tagName, tagId, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void event_name_noTag() {
-    markHolder.event(1, "hi", 2);
+    markHolder.event(gen, taskName, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void event_name_subname() {
-    markHolder.event(1, "hi", "there", 2);
+    markHolder.event(gen, taskName, taskName, nanoTime);
   }
 }
