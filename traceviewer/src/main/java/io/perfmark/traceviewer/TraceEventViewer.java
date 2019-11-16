@@ -121,7 +121,7 @@ public final class TraceEventViewer {
     try (OutputStreamWriter w = new OutputStreamWriter(baos, UTF_8)) {
       TraceEventWriter.writeTraceEvents(w);
     }
-    byte[] traceData64 = Base64.getUrlEncoder().encode(baos.toByteArray());
+    byte[] traceData64 = Base64.getEncoder().encode(baos.toByteArray());
 
     String indexWithTraceViewer =
         replaceIndexTraceImport(index, traceViewer, new String(traceData64, UTF_8));
