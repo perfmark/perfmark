@@ -432,6 +432,9 @@ public final class TraceEventWriter {
       out:
       {
         switch (mark.getOperation()) {
+          case EVENT_N1S1:
+          case EVENT_N1S2:
+            break out;
           case EVENT_N2S2:
           case EVENT_N2S3:
             tagMap = tagMap.withUnkeyed(mark.getTagStringValue(), mark.getTagFirstNumeric());
@@ -441,8 +444,6 @@ public final class TraceEventWriter {
           case TASK_START_N1S2:
           case TASK_END_N1S1:
           case TASK_END_N1S2:
-          case EVENT_N1S1:
-          case EVENT_N1S2:
           case MARK:
           case LINK:
           case TAG_N0S1:
