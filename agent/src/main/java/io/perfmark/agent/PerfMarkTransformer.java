@@ -151,7 +151,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
     public MethodVisitor visitMethod(
         int access, String name, String descriptor, String signature, String[] exceptions) {
       clinitSeen = clinitSeen || name.equals("<clinit>");
-      return new PerfMarkMethodVisitor(
+      return new PerfMarkClassReader.PerfMarkMethodVisitor(
           super.visitMethod(access, name, descriptor, signature, exceptions), name);
     }
 
@@ -257,7 +257,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
     @Override
     public MethodVisitor visitMethod(
         int access, String name, String descriptor, String signature, String[] exceptions) {
-      return new PerfMarkMethodVisitor(
+      return new PerfMarkMethodRewriter.PerfMarkMethodVisitor(
           perfmarkClassReader.api(),
           super.visitMethod(access, name, descriptor, signature, exceptions),
           name);

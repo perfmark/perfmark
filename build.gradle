@@ -123,7 +123,7 @@ subprojects {
 
     if (rootProject.properties.get('errorProne', true)) {
         dependencies {
-            errorprone 'com.google.errorprone:error_prone_core:2.3.3'
+            errorprone 'com.google.errorprone:error_prone_core:2.3.4'
             errorproneJavac 'com.google.errorprone:javac:9+181-r4173-1'
         }
     } else {
@@ -144,7 +144,7 @@ subprojects {
 
     ext {
         libraries = [
-                errorprone: 'com.google.errorprone:error_prone_annotations:2.3.3',
+                errorprone: 'com.google.errorprone:error_prone_annotations:2.3.4',
                 jsr305: 'com.google.code.findbugs:jsr305:3.0.2',
                 gson: 'com.google.code.gson:gson:2.8.6',
                 truth: 'com.google.truth:truth:1.0'

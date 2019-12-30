@@ -15,7 +15,7 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 maven_install(
     artifacts = [
         "junit:junit:4.12",
-        "com.google.errorprone:error_prone_annotations:2.3.3",
+        "com.google.errorprone:error_prone_annotations:2.3.4",
         "com.google.code.findbugs:jsr305:3.0.2",
         "com.google.code.gson:gson:2.8.6",
         "com.google.truth:truth:1.0",
