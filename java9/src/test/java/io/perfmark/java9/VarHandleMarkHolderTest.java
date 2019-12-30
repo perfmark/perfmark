@@ -22,7 +22,6 @@ import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -198,7 +197,6 @@ public class VarHandleMarkHolderTest {
 
   @Test
   public void read_getsAllButLastIfNotWriter() {
-    Assume.assumeTrue("holder " + mh + " is not fixed size", mh instanceof VarHandleMarkHolder);
     int events = mh.maxMarks() - 1;
     for (int i = 0; i < events; i++) {
       mh.start(gen, "task", 3);
@@ -210,7 +208,6 @@ public class VarHandleMarkHolderTest {
 
   @Test
   public void read_getsAllIfNotWriterButNoWrap() {
-    Assume.assumeTrue("holder " + mh + " is not fixed size", mh instanceof VarHandleMarkHolder);
     int events = mh.maxMarks() - 2;
     for (int i = 0; i < events; i++) {
       mh.start(gen, "task", 3);

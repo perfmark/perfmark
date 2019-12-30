@@ -56,3 +56,7 @@ jcstress {
     // mode "tough"
     deoptRatio "2"
 }
+
+compileJcstressJava {
+    options.errorprone.excludedPaths = ".*/build/generated/sources/annotationProcessor/.*"
+}
