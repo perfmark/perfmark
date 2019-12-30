@@ -17,8 +17,8 @@ maven_install(
         "junit:junit:4.12",
         "com.google.errorprone:error_prone_annotations:2.3.3",
         "com.google.code.findbugs:jsr305:3.0.2",
-        "com.google.code.gson:gson:2.8.5",
-        "com.google.truth:truth:0.46",
+        "com.google.code.gson:gson:2.8.6",
+        "com.google.truth:truth:1.0",
     ],
     repositories = [
         "https://maven.google.com",
