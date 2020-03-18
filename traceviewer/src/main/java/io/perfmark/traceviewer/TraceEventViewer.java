@@ -110,6 +110,13 @@ public final class TraceEventViewer {
     }
     String index = readAll(indexStream);
 
+    InputStream webComponentsStream =
+        TraceEventViewer.class.getResourceAsStream("third_party/polymer/webcomponents.min.js");
+    if (webComponentsStream == null) {
+      throw new IOException("unable to find webcomponents.min.js");
+    }
+    String webComponents = readAll(webComponentsStream);
+
     InputStream traceViewerStream =
         TraceEventViewer.class.getResourceAsStream("third_party/catapult/trace_viewer_full.html");
     if (traceViewerStream == null) {
@@ -123,8 +130,11 @@ public final class TraceEventViewer {
     }
     byte[] traceData64 = Base64.getEncoder().encode(baos.toByteArray());
 
+    String indexWithWebComponents = replaceIndexWebComponents(index, webComponents);
+
     String indexWithTraceViewer =
-        replaceIndexTraceImport(index, traceViewer, new String(traceData64, UTF_8));
+        replaceIndexTraceImport(
+            indexWithWebComponents, traceViewer, new String(traceData64, UTF_8));
 
     String fullIndex = replaceIndexTraceData(indexWithTraceViewer, INLINE_TRACE_DATA);
     writer.write(fullIndex);
@@ -161,6 +171,19 @@ public final class TraceEventViewer {
         + index.substring(line3pos);
   }
 
+  private static String replaceIndexWebComponents(String index, String replacement) {
+    int start = index.indexOf("IO_PERFMARK_WEBCOMPONENTS");
+    if (start == -1) {
+      throw new IllegalArgumentException("index doesn't contain IO_PERFMARK_WEBCOMPONENTS");
+    }
+    int line0pos = index.lastIndexOf('\n', start);
+    assert line0pos != -1;
+    int line1pos = index.indexOf('\n', line0pos + 1);
+    assert line1pos != -1;
+
+    return index.substring(0, line0pos + 1) + replacement + index.substring(line1pos);
+  }
+
   private static String replaceIndexTraceData(String index, String replacement) {
     int start = index.indexOf("IO_PERFMARK_TRACE_URL");
     if (start == -1) {
@@ -178,14 +201,9 @@ public final class TraceEventViewer {
   }
 
   private static String trimTraceViewer(String traceViewer) {
-    int line0pos = traceViewer.indexOf('\n'); // <!DOCTYPE html>
-    int line1pos = traceViewer.indexOf('\n', line0pos + 1); // <html>
-    int line2pos = traceViewer.indexOf('\n', line1pos + 1); // <head i18n-values= ...
-    int line3pos = traceViewer.indexOf('\n', line2pos + 1); // <meta http-equiv="Content-Type" ...
-
+    int startpos = traceViewer.indexOf("<template");
     int lastpos = traceViewer.lastIndexOf("</head>");
-
-    return traceViewer.substring(line3pos + 1, lastpos);
+    return traceViewer.substring(startpos, lastpos);
   }
 
   private static String readAll(InputStream stream) throws IOException {
