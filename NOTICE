@@ -24,3 +24,9 @@ be obtained at:
   * HOMEPAGE:
     * https://github.com/catapult-project/catapult
 
+This product contains a modified portion of 'Polymer', a library for Web
+Components, which can be obtained at:
+  * LICENSE:
+    * traceviewer/src/main/resources/io/perfmark/traceviewer/third_party/polymer/LICENSE (New BSD License)
+  * HOMEPAGE:
+    * https://github.com/Polymer/polymer
