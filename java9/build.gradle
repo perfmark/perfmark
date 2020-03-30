@@ -6,11 +6,10 @@ sourceCompatibility = 1.9
 targetCompatibility = 1.9
 
 dependencies {
-    compile project(':perfmark-impl'),
-            libraries.jsr305
-    testCompile project(':perfmark-api'),
-            project(':perfmark-impl'),
-            project(':perfmark-java7')
+    implementation project(':perfmark-impl')
+    compileOnly libraries.jsr305
+    testImplementation project(':perfmark-api')
+    jcstressImplementation project(':perfmark-impl')
 }
 
 javadoc {

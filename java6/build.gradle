@@ -4,8 +4,8 @@ sourceCompatibility = 1.6
 targetCompatibility = 1.6
 
 dependencies {
-    compile project(':perfmark-impl'),
-            libraries.jsr305
+    implementation project(':perfmark-impl')
+    compileOnly libraries.jsr305
 }
 
 javadoc {

@@ -4,15 +4,16 @@ sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
 dependencies {
-    compile libraries.jsr305,
-            "net.bytebuddy:byte-buddy:1.9.13",
+    compileOnly libraries.jsr305,
+            libraries.errorprone
+    implementation "net.bytebuddy:byte-buddy:1.9.13",
             "org.ow2.asm:asm:7.1",
             "org.ow2.asm:asm-commons:7.1",
             project(":perfmark-api"),
-            project(":perfmark-impl"),
-            libraries.errorprone
-    testCompile project(":perfmark-java6"),
-            libraries.truth
+            project(":perfmark-impl")
+    testImplementation libraries.truth
+    testRuntimeOnly project(":perfmark-java6")
+
 }
 
 compileTestJava {
