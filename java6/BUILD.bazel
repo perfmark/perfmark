@@ -14,6 +14,7 @@ java_library(
         "src/main/java/io/perfmark/java6/SynchronizedMarkHolder.java",
     ],
     deps = [
+        "//impl:generator",
         "//impl:mark",
         "//impl:mark-holder",
         "//impl:marker",

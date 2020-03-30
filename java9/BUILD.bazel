@@ -28,6 +28,7 @@ java_library(
     ],
     deps = [
         ":mark-holder",
+        "//impl:generator",
         "//impl:mark-holder",
         "//impl:mark-holder-provider",
     ],
