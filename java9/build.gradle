@@ -6,11 +6,9 @@ sourceCompatibility = 1.9
 targetCompatibility = 1.9
 
 dependencies {
-    api project(':perfmark-impl')
+    implementation project(':perfmark-impl')
     compileOnly libraries.jsr305
-    testCompile project(':perfmark-api'),
-            project(':perfmark-impl'),
-            project(':perfmark-java7')
+    testImplementation project(':perfmark-api')
     jcstressImplementation project(':perfmark-impl')
 }
 

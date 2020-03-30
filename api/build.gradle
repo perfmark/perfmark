@@ -6,9 +6,9 @@ targetCompatibility = 1.6
 dependencies {
     compileOnly libraries.jsr305,
             libraries.errorprone
-    testCompile project(':perfmark-impl'),
-            project(':perfmark-java6'),
+    testImplementation project(':perfmark-impl'),
             libraries.truth
+    testRuntimeOnly project(':perfmark-java6')
 
     jmh project(':perfmark-java9'),
             project(':perfmark-java7')

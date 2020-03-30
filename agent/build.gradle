@@ -11,8 +11,9 @@ dependencies {
             "org.ow2.asm:asm-commons:7.1",
             project(":perfmark-api"),
             project(":perfmark-impl")
-    testCompile project(":perfmark-java6"),
-            libraries.truth
+    testImplementation libraries.truth
+    testRuntimeOnly project(":perfmark-java6")
+
 }
 
 compileTestJava {
