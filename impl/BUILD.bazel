@@ -42,6 +42,7 @@ java_library(
     ],
     visibility = ["//:__subpackages__"],
     deps = [
+        ":generator",
         ":mark",
         ":mark-holder",
         ":mark-holder-provider",
