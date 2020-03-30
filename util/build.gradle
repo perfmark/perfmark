@@ -4,7 +4,9 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    compile project(':perfmark-api')
+    api project(':perfmark-api')
+    compileOnly libraries.jsr305,
+            libraries.errorprone
     testCompile project(':perfmark-impl'), 
             project(':perfmark-java6')
     jmhRuntimeClasspath project(':perfmark-java7'),

@@ -15,7 +15,7 @@ buildscript {
 
 subprojects {
     apply plugin: "checkstyle"
-    apply plugin: "java"
+    apply plugin: "java-library"
     apply plugin: 'maven-publish'
     apply plugin: "idea"
     apply plugin: "jacoco"
