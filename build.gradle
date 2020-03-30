@@ -27,6 +27,7 @@ subprojects {
     repositories {
         maven {
             url "https://maven-central.storage-download.googleapis.com/repos/central/data/" }
+        mavenCentral()
         mavenLocal()
     }
     
@@ -147,11 +148,11 @@ subprojects {
                 errorprone: 'com.google.errorprone:error_prone_annotations:2.3.4',
                 jsr305: 'com.google.code.findbugs:jsr305:3.0.2',
                 gson: 'com.google.code.gson:gson:2.8.6',
-                truth: 'com.google.truth:truth:1.0'
+                truth: 'com.google.truth:truth:1.0.1'
         ]
     }
 
     dependencies {
-        testCompile group: 'junit', name: 'junit', version: '4.12'
+        testImplementation group: 'junit', name: 'junit', version: '4.13'
     }
 }
