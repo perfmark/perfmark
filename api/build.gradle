@@ -1,7 +1,7 @@
 description = "PerfMark API"
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
 
 dependencies {
     compileOnly libraries.jsr305,
@@ -12,12 +12,6 @@ dependencies {
 
     jmh project(':perfmark-java9'),
             project(':perfmark-java7')
-}
-
-
-compileTestJava {
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
 }
 
 compileJmhJava {

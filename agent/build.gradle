@@ -16,7 +16,13 @@ dependencies {
 
 }
 
+import net.ltgt.gradle.errorprone.CheckSeverity
+
 compileTestJava {
+    // Broken in JDK12+.  See https://github.com/google/error-prone/issues/1106
+    properties.put("errorProne", "false")
+    options.errorprone.check("SameNameButDifferent", CheckSeverity.OFF)
+
     sourceCompatibility = 1.9
     targetCompatibility = 1.9
 }
