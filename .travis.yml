@@ -1,7 +1,11 @@
 language: java
 
-jdk:
-  - openjdk11
+matrix:
+  include:
+    - jdk: openjdk8
+    - jdk: openjdk11
+    - jdk: openjdk14 
+
 
 notifications:
   email: false
