@@ -1,7 +1,12 @@
 description = "PerfMark Java6 API"
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+if (JavaVersion.current().isJava12Compatible()) {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+} else {
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
+}
 
 dependencies {
     implementation project(':perfmark-impl')
