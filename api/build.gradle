@@ -1,7 +1,12 @@
 description = "PerfMark API"
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+if (JavaVersion.current().isJava12Compatible()) {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+} else {
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6
+}
 
 dependencies {
     compileOnly libraries.jsr305,
@@ -14,9 +19,14 @@ dependencies {
             project(':perfmark-java7')
 }
 
+compileTestJava {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+}
+
 compileJmhJava {
-    sourceCompatibility = 1.9
-    targetCompatibility = 1.9
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 }
 
 java {

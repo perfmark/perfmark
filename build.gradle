@@ -1,6 +1,5 @@
 buildscript {
     repositories {
-        mavenLocal()
         maven { url "https://plugins.gradle.org/m2/" }
         jcenter()
     }
@@ -28,7 +27,6 @@ subprojects {
         maven {
             url "https://maven-central.storage-download.googleapis.com/repos/central/data/" }
         mavenCentral()
-        mavenLocal()
     }
     
     
@@ -108,7 +106,6 @@ subprojects {
                      }
                  }
             }
-            mavenLocal()
         }
     }
     

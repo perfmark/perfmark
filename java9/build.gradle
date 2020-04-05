@@ -2,6 +2,12 @@ apply plugin: 'jcstress'
 
 description = "PerfMark Java9 API"
 
+if (!JavaVersion.current().isJava9Compatible()) {
+    project.tasks.all {
+        task -> task.enabled = false
+    }
+}
+
 sourceCompatibility = 1.9
 targetCompatibility = 1.9
 

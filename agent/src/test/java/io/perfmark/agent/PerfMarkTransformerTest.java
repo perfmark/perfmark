@@ -27,7 +27,9 @@ import io.perfmark.agent.PerfMarkTransformer.PerfMarkClassReader;
 import io.perfmark.impl.Internal;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.Storage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -329,7 +331,16 @@ public class PerfMarkTransformerTest {
 
   private static byte[] getBytes(Class<?> clz) throws IOException {
     String className = clz.getName().replace('.', '/') + ".class";
-    return clz.getClassLoader().getResourceAsStream(className).readAllBytes();
+    try (InputStream stream = clz.getClassLoader().getResourceAsStream(className);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+      int read;
+      byte[] buf = new byte[1024];
+      while ((read = stream.read(buf)) != -1) {
+        baos.write(buf, 0, read);
+      }
+
+      return baos.toByteArray();
+    }
   }
 
   private static final class TestClassLoader extends ClassLoader {
