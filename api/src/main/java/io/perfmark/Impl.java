@@ -71,6 +71,9 @@ public class Impl {
 
   protected void attachTag(String tagName, long tagValue0, long tagValue1) {}
 
+  protected <T> void attachTag(
+      String tagName, T tagObject, StringFunction<? super T> stringFunction) {}
+
   protected Tag createTag(@Nullable String tagName, long tagId) {
     return NO_TAG;
   }

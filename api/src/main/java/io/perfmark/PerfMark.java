@@ -386,5 +386,59 @@ public final class PerfMark {
     impl.attachTag(tagName, tagValue0, tagValue1);
   }
 
+  /**
+   * Attaches an additional keyed tag to the current active task. The tag provided is independent of
+   * the tag used with {@code startTask} and {@code stopTask}. This tag operation is different than
+   * {@link Tag} in that the tag value has an associated name (also called a key). The tag name and
+   * value are attached to the most recently started task, and don't have to match any other tags.
+   * This method is useful for when you have the tag information after the task is started.
+   *
+   * <p>Unlike {@link #attachTag(String, String)}, this defers constructing the tagValue String
+   * until later, and avoids doing any work while PerfMark is disabled. Callers are expected to
+   * provide a method handle that can consume the {@code tagObject}, and produce a tagValue. For
+   * example:
+   *
+   * <pre>
+   *   Response resp = client.makeCall(request);
+   *   PerfMark.attachTag("httpServerHeader", resp, r -> r.getHeaders().get("Server"));
+   * </pre>
+   *
+   * <p>Also unlike {@link #attachTag(String, String)}, this function is easier to misuse. Prefer
+   * using the other attachTag methods unless you are confident you need this one. Be familiar with
+   * following issues:
+   *
+   * <ul>
+   *   <li>Callers should be careful to not capture the {@code tagObject}, and instead use the
+   *       argument to {@code stringFunction}. This avoids a memory allocation and possibly holding
+   *       the tagObject alive longer than necessary.
+   *   <li>The {@code stringFunction} should be idempotent, have no side effects, and be safe to
+   *       invoke from other threads. If the string function references state that may be changed,
+   *       callers must synchronize access. The string function may be called multiple times for the
+   *       same tag object. Additionally, if {@code attachTag()} is called with the same tag object
+   *       and string function multiple times, PerfMark may invoke the function only once.
+   *   <li>The tag object may kept alive longer than normal, and prevent garbage collection from
+   *       reclaiming it. If the tag object retains a large amount of resources, this may appear as
+   *       a memory leak. The risk of this memory increase will need to be balanced with the cost of
+   *       eagerly constructing the tag value string. Additionally, if the string function is a
+   *       capturing lambda (refers to local or global state), the function itself may appear as a
+   *       leak.
+   *   <li>If the stringFunction is {@code null}, or if it throws an exception when called, the tag
+   *       value will not be attached. It is implementation defined if such problems are reported
+   *       (e.g. logged). Note that exceptions are expensive compared to PerfMark calls, and thus
+   *       may slow down tracing. If an exception is thrown, or if the stringFunction is {@code
+   *       null}, PerfMark may invoke other methods on the tag object or string function, such as
+   *       {@code toString()} and {@code getClass()}.
+   * </ul>
+   *
+   * @param tagName The name of the value being attached
+   * @param tagObject The tag object which will passed to the stringFunction.
+   * @param stringFunction The function that will convert the object to
+   * @since 0.22.0
+   */
+  public static <T> void attachTag(
+      String tagName, T tagObject, StringFunction<? super T> stringFunction) {
+    impl.attachTag(tagName, tagObject, stringFunction);
+  }
+
   private PerfMark() {}
 }

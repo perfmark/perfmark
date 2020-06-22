@@ -92,6 +92,7 @@ public class PerfMarkTest {
     PerfMark.startTask("task3", tag3);
     PerfMark.startTask("task4");
     PerfMark.attachTag(PerfMark.createTag("extra"));
+    PerfMark.attachTag("name", "extra2", String::valueOf);
     Link link = PerfMark.linkOut();
     PerfMark.linkIn(link);
     PerfMark.stopTask("task4");
@@ -101,7 +102,7 @@ public class PerfMarkTest {
 
     List<Mark> marks = Storage.readForTest();
 
-    Truth.assertThat(marks).hasSize(17);
+    Truth.assertThat(marks).hasSize(18);
     List<Mark> expected =
         Arrays.asList(
             Mark.taskStart(gen, marks.get(0).getNanoTime(), "task1"),
@@ -112,16 +113,88 @@ public class PerfMarkTest {
             Mark.tag(gen, tag3.tagName, tag3.tagId),
             Mark.taskStart(gen, marks.get(6).getNanoTime(), "task4"),
             Mark.tag(gen, "extra", NO_TAG_ID),
+            Mark.keyedTag(gen, "name", "extra2"),
             Mark.link(gen, link.linkId),
             Mark.link(gen, -link.linkId),
-            Mark.taskEnd(gen, marks.get(10).getNanoTime(), "task4"),
+            Mark.taskEnd(gen, marks.get(11).getNanoTime(), "task4"),
             Mark.tag(gen, tag3.tagName, tag3.tagId),
-            Mark.taskEnd(gen, marks.get(12).getNanoTime(), "task3"),
+            Mark.taskEnd(gen, marks.get(13).getNanoTime(), "task3"),
             Mark.tag(gen, tag2.tagName, tag2.tagId),
-            Mark.taskEnd(gen, marks.get(14).getNanoTime(), "task2"),
+            Mark.taskEnd(gen, marks.get(15).getNanoTime(), "task2"),
             Mark.tag(gen, tag1.tagName, tag1.tagId),
-            Mark.taskEnd(gen, marks.get(16).getNanoTime(), "task1"));
+            Mark.taskEnd(gen, marks.get(17).getNanoTime(), "task1"));
     assertEquals(expected, marks);
+  }
+
+  @Test
+  public void attachTag_nullFunctionFailsSilently() {
+    Storage.resetForTest();
+    PerfMark.setEnabled(true);
+
+    PerfMark.attachTag("name", "extra2", null);
+
+    List<Mark> marks = Storage.readForTest();
+    Truth.assertThat(marks).hasSize(0);
+  }
+
+  @Test
+  public void attachTag_functionFailureSucceeds() {
+    Storage.resetForTest();
+    PerfMark.setEnabled(true);
+
+    PerfMark.attachTag(
+        "name",
+        "extra2",
+        v -> {
+          throw new RuntimeException("bad");
+        });
+
+    List<Mark> marks = Storage.readForTest();
+    Truth.assertThat(marks).hasSize(0);
+  }
+
+  @Test
+  public void attachTag_functionFailureObjectFailureSucceeds() {
+    Storage.resetForTest();
+    PerfMark.setEnabled(true);
+    Object o =
+        new Object() {
+          @Override
+          public String toString() {
+            throw new RuntimeException("worse");
+          }
+        };
+
+    PerfMark.attachTag(
+        "name",
+        o,
+        v -> {
+          throw new RuntimeException("bad");
+        });
+
+    List<Mark> marks = Storage.readForTest();
+    Truth.assertThat(marks).hasSize(0);
+  }
+
+  @Test
+  public void attachTag_doubleFunctionFailureSucceeds() {
+    Storage.resetForTest();
+    PerfMark.setEnabled(true);
+
+    PerfMark.attachTag(
+        "name",
+        "extra2",
+        v -> {
+          throw new RuntimeException("bad") {
+            @Override
+            public String toString() {
+              throw new RuntimeException("worse");
+            }
+          };
+        });
+
+    List<Mark> marks = Storage.readForTest();
+    Truth.assertThat(marks).hasSize(0);
   }
 
   public static final class FakeGenerator extends Generator {

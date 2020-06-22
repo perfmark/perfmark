@@ -18,11 +18,13 @@ package io.perfmark.impl;
 
 import io.perfmark.Impl;
 import io.perfmark.Link;
+import io.perfmark.StringFunction;
 import io.perfmark.Tag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
@@ -32,6 +34,9 @@ final class SecretPerfMarkImpl {
     private static final Tag NO_TAG = packTag(Mark.NO_TAG_NAME, Mark.NO_TAG_ID);
     private static final Link NO_LINK = packLink(Mark.NO_LINK_ID);
     private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
+    /** Sigyl value used for identity comparison. */
+    @SuppressWarnings("StringOperationCanBeSimplified")
+    private static final String NO_TAG_VALUE = new String("");
 
     private static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";
 
@@ -240,6 +245,58 @@ final class SecretPerfMarkImpl {
         return;
       }
       Storage.attachKeyedTagAnyways(gen, tagName, tagValue);
+    }
+
+    @Override
+    @SuppressWarnings({"StringEquality", "ReferenceEquality"})
+    protected <T> void attachTag(
+        String tagName, T tagObject, StringFunction<? super T> stringFunction) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      String tagValue = deriveTagValue(tagName, tagObject, stringFunction);
+      if (tagValue != NO_TAG_VALUE) {
+        Storage.attachKeyedTagAnyways(gen, tagName, tagValue);
+      }
+    }
+
+    static <T> String deriveTagValue(
+        String tagName, T tagObject, StringFunction<? super T> stringFunction) {
+      if (stringFunction == null) {
+        handleTagValueFailure(
+            tagName, tagObject, stringFunction, new NullPointerException("stringFunction"));
+        return NO_TAG_VALUE;
+      }
+      try {
+        return stringFunction.apply(tagObject);
+      } catch (Throwable t) {
+        handleTagValueFailure(tagName, tagObject, stringFunction, t);
+        return NO_TAG_VALUE;
+      }
+    }
+
+    static <T> void handleTagValueFailure(
+        String tagName, T tagObject, StringFunction<? super T> stringFunction, Throwable cause) {
+      try {
+        if (logger.isLoggable(Level.WARNING)) {
+          LogRecord lr =
+              new LogRecord(
+                  Level.WARNING,
+                  "PerfMark.attachTag ignored: tagName={0}, tagObject={1}, stringFunction={2}");
+          lr.setParameters(new Object[] {tagName, tagObject, stringFunction});
+          lr.setThrown(cause);
+          logger.log(lr);
+        }
+      } catch (Throwable t) {
+        // Need to be careful here.  It's possible that the Exception thrown may itself throw
+        // while trying to convert it to a String.  Instead, only pass the class name, which is
+        // safer than passing the whole object.
+        logger.log(
+            Level.WARNING,
+            "PerfMark.attachTag failed for {0}: {1}",
+            new Object[] {tagName, t.getClass()});
+      }
     }
 
     @Override
