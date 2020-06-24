@@ -33,6 +33,8 @@ public class EnabledBenchmark {
   @Param({"true", "false"})
   public boolean enabled;
 
+  final String there = "there";
+
   @Setup
   public void setup() {
     PerfMark.setEnabled(enabled);
@@ -87,5 +89,38 @@ public class EnabledBenchmark {
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public void attachKeyedTag_snn() {
     PerfMark.attachTag("hi", 934, 5);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void attachKeyedTag_ss_methodRef() {
+    PerfMark.attachTag("hi", this, EnabledBenchmark::getStringValue);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void attachKeyedTag_ss_ctor() {
+    PerfMark.attachTag("hi", there, String::new);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void attachKeyedTag_ss_globalRef() {
+    PerfMark.attachTag("hi", this, ignore -> this.there);
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void attachKeyedTag_ss_localRef() {
+    String bar = there;
+    PerfMark.attachTag("hi", this, ignore -> bar);
+  }
+
+  static String getStringValue(EnabledBenchmark self) {
+    return self.there;
   }
 }
