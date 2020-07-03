@@ -53,6 +53,10 @@ public final class Mark {
     return new Mark(nanoTime, N0, N0, name, subName, S0, M0, generation, Operation.TASK_START_N1S2);
   }
 
+  public static Mark taskEnd(long generation, long nanoTime) {
+    return new Mark(nanoTime, N0, N0, S0, S0, S0, M0, generation, Operation.TASK_END_N1S0);
+  }
+
   public static Mark taskEnd(long generation, long nanoTime, String name) {
     return new Mark(nanoTime, N0, N0, name, S0, S0, M0, generation, Operation.TASK_END_N1S1);
   }
@@ -162,6 +166,7 @@ public final class Mark {
     /** startTask(String name, String subTaskName) 1 long for nanoTime. */
     TASK_START_N1S2(OperationType.TASK_START, 1, 2),
 
+    TASK_END_N1S0(OperationType.TASK_END, 1, 0),
     TASK_END_N1S1(OperationType.TASK_END, 1, 1),
     TASK_END_N1S2(OperationType.TASK_END, 1, 2),
 
@@ -280,6 +285,7 @@ public final class Mark {
       case NONE:
       case TASK_START_N1S1:
       case TASK_START_N1S2:
+      case TASK_END_N1S0:
       case TASK_END_N1S1:
       case TASK_END_N1S2:
       case EVENT_N1S1:
@@ -308,6 +314,7 @@ public final class Mark {
       case NONE:
       case TASK_START_N1S1:
       case TASK_START_N1S2:
+      case TASK_END_N1S0:
       case TASK_END_N1S1:
       case TASK_END_N1S2:
       case EVENT_N1S1:
@@ -333,6 +340,7 @@ public final class Mark {
       case NONE:
       case TASK_START_N1S1:
       case TASK_START_N1S2:
+      case TASK_END_N1S0:
       case TASK_END_N1S1:
       case TASK_END_N1S2:
       case EVENT_N1S1:
@@ -356,6 +364,7 @@ public final class Mark {
       case NONE:
       case TASK_START_N1S1:
       case TASK_START_N1S2:
+      case TASK_END_N1S0:
       case TASK_END_N1S1:
       case TASK_END_N1S2:
       case EVENT_N1S1:
@@ -399,6 +408,7 @@ public final class Mark {
       case NONE:
       case MARK:
       case LINK:
+      case TASK_END_N1S0:
       case TAG_N0S1:
       case TAG_N1S0:
       case TAG_N1S1:
@@ -418,6 +428,7 @@ public final class Mark {
       case EVENT_N2S3:
         return s2;
       case TASK_START_N1S1:
+      case TASK_END_N1S0:
       case TASK_END_N1S1:
       case EVENT_N1S1:
       case EVENT_N2S2:

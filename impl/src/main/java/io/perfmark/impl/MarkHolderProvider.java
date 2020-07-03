@@ -18,7 +18,7 @@ package io.perfmark.impl;
 
 public abstract class MarkHolderProvider {
 
-  public MarkHolderProvider() {}
+  protected MarkHolderProvider() {}
 
   public abstract MarkHolder create();
 }

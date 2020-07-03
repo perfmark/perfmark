@@ -158,6 +158,11 @@ public final class Storage {
     localMarkHolder.get().start(gen, taskName, subTaskName, System.nanoTime());
   }
 
+  static void stopAnyways(long gen) {
+    long nanoTime = System.nanoTime();
+    localMarkHolder.get().stop(gen, nanoTime);
+  }
+
   static void stopAnyways(long gen, String taskName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().stop(gen, taskName, tagName, tagId, nanoTime);

@@ -176,6 +176,15 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
+    protected void stopTask() {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      Storage.stopAnyways(gen);
+    }
+
+    @Override
     protected void stopTask(String taskName, Tag tag) {
       final long gen = getGen();
       if (!isEnabled(gen)) {

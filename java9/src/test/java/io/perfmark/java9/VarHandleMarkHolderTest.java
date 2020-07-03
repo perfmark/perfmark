@@ -78,18 +78,22 @@ public class VarHandleMarkHolderTest {
   public void taskStartStartStopStop() {
     mh.start(gen, "task1", 3);
     mh.start(gen, "task2", 4);
-    mh.stop(gen, "task2", 5);
-    mh.stop(gen, "task1", 6);
+    mh.start(gen, "task3", 5);
+    mh.stop(gen, 6);
+    mh.stop(gen, "task2", 7);
+    mh.stop(gen, "task1", 8);
 
     List<Mark> marks = mh.read(false);
 
-    assertEquals(4, marks.size());
+    assertEquals(6, marks.size());
     List<Mark> expected =
         Arrays.asList(
             Mark.taskStart(gen, 3, "task1"),
             Mark.taskStart(gen, 4, "task2"),
-            Mark.taskEnd(gen, 5, "task2"),
-            Mark.taskEnd(gen, 6, "task1"));
+            Mark.taskStart(gen, 5, "task3"),
+            Mark.taskEnd(gen, 6),
+            Mark.taskEnd(gen, 7, "task2"),
+            Mark.taskEnd(gen, 8, "task1"));
     assertEquals(expected, marks);
   }
 

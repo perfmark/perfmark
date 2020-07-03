@@ -35,6 +35,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
 
   private static final long START_N1S1_OP = Mark.Operation.TASK_START_N1S1.ordinal();
   private static final long START_N1S2_OP = Mark.Operation.TASK_START_N1S2.ordinal();
+  private static final long STOP_N1S0_OP = Mark.Operation.TASK_END_N1S0.ordinal();
   private static final long STOP_N1S1_OP = Mark.Operation.TASK_END_N1S1.ordinal();
   private static final long STOP_N1S2_OP = Mark.Operation.TASK_END_N1S2.ordinal();
   private static final long EVENT_N1S1_OP = Mark.Operation.EVENT_N1S1.ordinal();
@@ -135,6 +136,11 @@ final class SynchronizedMarkHolder extends MarkHolder {
   @Override
   public synchronized void link(long gen, long linkId) {
     writeN(gen + LINK_OP, linkId);
+  }
+
+  @Override
+  public synchronized void stop(long gen, long nanoTime) {
+    writeN(gen + STOP_N1S0_OP, nanoTime);
   }
 
   @Override
@@ -260,6 +266,10 @@ final class SynchronizedMarkHolder extends MarkHolder {
           s2 = stringQ.remove();
           s1 = stringQ.remove();
           marks.addFirst(Mark.taskStart(gen, n1, s1, s2));
+          break;
+        case TASK_END_N1S0:
+          n1 = numQ.remove();
+          marks.addFirst(Mark.taskEnd(gen, n1));
           break;
         case TASK_END_N1S1:
           n1 = numQ.remove();

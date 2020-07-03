@@ -411,6 +411,7 @@ public final class TraceEventWriter {
           case NONE:
           case TASK_START_N1S1:
           case TASK_START_N1S2:
+          case TASK_END_N1S0:
           case TASK_END_N1S1:
           case TASK_END_N1S2:
           case EVENT_N1S1:
@@ -442,6 +443,7 @@ public final class TraceEventWriter {
           case NONE:
           case TASK_START_N1S1:
           case TASK_START_N1S2:
+          case TASK_END_N1S0:
           case TASK_END_N1S1:
           case TASK_END_N1S2:
           case MARK:
@@ -502,6 +504,8 @@ public final class TraceEventWriter {
 
   private static String taskName(Mark mark) {
     switch (mark.getOperation()) {
+      case TASK_END_N1S0:
+        return MarkListWalker.UNKNOWN_TASK_NAME;
       case TASK_START_N1S1:
       case TASK_END_N1S1:
       case EVENT_N1S1:

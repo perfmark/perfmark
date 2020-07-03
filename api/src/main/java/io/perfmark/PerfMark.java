@@ -149,11 +149,22 @@ public final class PerfMark {
   }
 
   /**
+   * Marks the end of a task. If PerfMark is disabled, this method is a no-op.
+   *
+   * <p>It is important that {@link #stopTask} always be called after starting a task, even in case
+   * of exceptions. Failing to do so may result in corrupted results.
+   */
+  public static void stopTask() {
+    impl.stopTask();
+  }
+
+  /**
    * Marks the end of a task. If PerfMark is disabled, this method is a no-op. The task name and tag
-   * should match the ones provided to the corresponding {@link #startTask(String, Tag)}. If the
-   * task name or tag do not match, the implementation may not be able to associate the starting and
-   * stopping of a single task. The name of the task should be a runtime-time constant, usually a
-   * string literal.
+   * should match the ones provided to the corresponding {@link #startTask(String, Tag)}, if
+   * provided. If the task name or tag do not match, the implementation will prefer the starting
+   * name and tag. The name and tag help identify the task if PerfMark is enabled mid way through
+   * the task, or if the previous results have been overwritten. The name of the task should be a
+   * runtime-time constant, usually a string literal. Consider using {@link #stopTask()} instead.
    *
    * <p>It is important that {@link #stopTask} always be called after starting a task, even in case
    * of exceptions. Failing to do so may result in corrupted results.
@@ -167,10 +178,11 @@ public final class PerfMark {
 
   /**
    * Marks the end of a task. If PerfMark is disabled, this method is a no-op. The task name should
-   * match the ones provided to the corresponding {@link #startTask(String)}. If the task name or
-   * tag do not match, the implementation may not be able to associate the starting and stopping of
-   * a single task. The name of the task should be a runtime-time constant, usually a string
-   * literal.
+   * match the ones provided to the corresponding {@link #startTask(String)}, if provided. If the
+   * task name does not match, the implementation will prefer the starting name. The name helps
+   * identify the task if PerfMark is enabled mid way through the task, or if the previous results
+   * have been overwritten. The name of the task should be a runtime-time constant, usually a string
+   * literal. Consider using {@link #stopTask()} instead.
    *
    * <p>It is important that {@link #stopTask} always be called after starting a task, even in case
    * of exceptions. Failing to do so may result in corrupted results.
@@ -183,10 +195,11 @@ public final class PerfMark {
 
   /**
    * Marks the end of a task. If PerfMark is disabled, this method is a no-op. The task name should
-   * match the ones provided to the corresponding {@link #startTask(String, String)}. If the task
-   * name or tag do not match, the implementation may not be able to associate the starting and
-   * stopping of a single task. The name of the task should be a runtime-time constant, usually a
-   * string literal.
+   * match the ones provided to the corresponding {@link #startTask(String, String)}, if provided.
+   * If the task name does not match, the implementation will prefer the starting name. The name
+   * helps identify the task if PerfMark is enabled mid way through the task, or if the previous
+   * results have been overwritten. The name of the task should be a runtime-time constant, usually
+   * a string literal. Consider using {@link #stopTask()} instead.
    *
    * <p>It is important that {@link #stopTask} always be called after starting a task, even in case
    * of exceptions. Failing to do so may result in corrupted results.
@@ -398,10 +411,10 @@ public final class PerfMark {
    * provide a method handle that can consume the {@code tagObject}, and produce a tagValue. For
    * example:
    *
-   * <pre>
-   *   Response resp = client.makeCall(request);
-   *   PerfMark.attachTag("httpServerHeader", resp, r -> r.getHeaders().get("Server"));
-   * </pre>
+   * <pre>{@code
+   * Response resp = client.makeCall(request);
+   * PerfMark.attachTag("httpServerHeader", resp, r -> r.getHeaders().get("Server"));
+   * }</pre>
    *
    * <p>Also unlike {@link #attachTag(String, String)}, this function is easier to misuse. Prefer
    * using the other attachTag methods unless you are confident you need this one. Be familiar with
