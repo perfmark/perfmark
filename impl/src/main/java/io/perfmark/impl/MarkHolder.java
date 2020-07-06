@@ -30,6 +30,8 @@ public abstract class MarkHolder {
 
   public abstract void link(long gen, long linkId);
 
+  public abstract void stop(long gen, long nanoTime);
+
   public abstract void stop(long gen, String taskName, String tagName, long tagId, long nanoTime);
 
   public abstract void stop(long gen, String taskName, long nanoTime);

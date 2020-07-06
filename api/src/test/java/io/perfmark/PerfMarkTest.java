@@ -187,7 +187,7 @@ public class PerfMarkTest {
         v -> {
           throw new RuntimeException("bad") {
             @Override
-            public String toString() {
+            public String getMessage() {
               throw new RuntimeException("worse");
             }
           };

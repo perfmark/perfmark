@@ -51,6 +51,8 @@ public class Impl {
 
   protected void event(String eventName, String subEventName) {}
 
+  protected void stopTask() {}
+
   protected void stopTask(String taskName, Tag tag) {}
 
   protected void stopTask(String taskName) {}

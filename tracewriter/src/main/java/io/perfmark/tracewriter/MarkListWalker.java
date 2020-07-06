@@ -32,6 +32,8 @@ import java.util.TreeMap;
 class MarkListWalker {
   MarkListWalker() {}
 
+  static final String UNKNOWN_TASK_NAME = "(unknown)";
+
   // TODO: make sure the generations dont have any timestamp overlap
   final void walk(List<? extends MarkList> markLists, long nowNanoTime) {
     Map<Long, List<MarkList>> generationToMarkLists = groupMarkListsByGeneration(markLists);
@@ -206,6 +208,7 @@ class MarkListWalker {
       case TASK_START_N1S2:
         return Mark.taskEnd(
             start.getGeneration(), lastNanoTime, start.getTaskName(), start.getSubTaskName());
+      case TASK_END_N1S0:
       case TASK_END_N1S1:
       case TASK_END_N1S2:
       case EVENT_N1S1:
@@ -228,6 +231,8 @@ class MarkListWalker {
 
   private static Mark createFakeStart(Mark end, long firstNanoTime) {
     switch (end.getOperation()) {
+      case TASK_END_N1S0:
+        return Mark.taskStart(end.getGeneration(), firstNanoTime, UNKNOWN_TASK_NAME);
       case TASK_END_N1S1:
         return Mark.taskStart(end.getGeneration(), firstNanoTime, end.getTaskName());
       case TASK_END_N1S2:

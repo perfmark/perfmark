@@ -44,6 +44,9 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
     public void link(long gen, long linkId) {}
 
     @Override
+    public void stop(long gen, long nanoTime) {}
+
+    @Override
     public void stop(long gen, String taskName, String tagName, long tagId, long nanoTime) {}
 
     @Override
