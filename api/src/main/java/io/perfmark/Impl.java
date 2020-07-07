@@ -39,6 +39,8 @@ public class Impl {
 
   protected void setEnabled(boolean value) {}
 
+  protected <T> void startTask(T taskNameObject, StringFunction<? super T> taskNameFunc) {}
+
   protected void startTask(String taskName, Tag tag) {}
 
   protected void startTask(String taskName) {}

@@ -95,6 +95,18 @@ public final class PerfMark {
   }
 
   /**
+   * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
+   * task should be a runtime-time constant, usually a string literal. Tasks with the same name can
+   * be grouped together for analysis later, so avoid using too many unique task names.
+   *
+   * @param taskNameObject the name of the task.
+   * @param taskNameFunction the function that will convert the taskNameObject to a String
+   */
+  public static <T> void startTask(T taskNameObject, StringFunction<? super T> taskNameFunction) {
+    impl.startTask(taskNameObject, taskNameFunction);
+  }
+
+  /**
    * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The names of
    * the task and subtask should be runtime-time constants, usually a string literal. Tasks with the
    * same name can be grouped together for analysis later, so avoid using too many unique task
