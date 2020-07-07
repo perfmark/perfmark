@@ -91,10 +91,12 @@ public class PerfMarkTest {
     PerfMark.startTask("task2", tag2);
     PerfMark.startTask("task3", tag3);
     PerfMark.startTask("task4");
+    PerfMark.startTask("task5");
     PerfMark.attachTag(PerfMark.createTag("extra"));
     PerfMark.attachTag("name", "extra2", String::valueOf);
     Link link = PerfMark.linkOut();
     PerfMark.linkIn(link);
+    PerfMark.stopTask();
     PerfMark.stopTask("task4");
     PerfMark.stopTask("task3", tag3);
     PerfMark.stopTask("task2", tag2);
@@ -102,7 +104,7 @@ public class PerfMarkTest {
 
     List<Mark> marks = Storage.readForTest();
 
-    Truth.assertThat(marks).hasSize(18);
+    Truth.assertThat(marks).hasSize(20);
     List<Mark> expected =
         Arrays.asList(
             Mark.taskStart(gen, marks.get(0).getNanoTime(), "task1"),
@@ -112,17 +114,19 @@ public class PerfMarkTest {
             Mark.taskStart(gen, marks.get(4).getNanoTime(), "task3"),
             Mark.tag(gen, tag3.tagName, tag3.tagId),
             Mark.taskStart(gen, marks.get(6).getNanoTime(), "task4"),
+            Mark.taskStart(gen, marks.get(7).getNanoTime(), "task5"),
             Mark.tag(gen, "extra", NO_TAG_ID),
             Mark.keyedTag(gen, "name", "extra2"),
             Mark.link(gen, link.linkId),
             Mark.link(gen, -link.linkId),
-            Mark.taskEnd(gen, marks.get(11).getNanoTime(), "task4"),
+            Mark.taskEnd(gen, marks.get(12).getNanoTime()),
+            Mark.taskEnd(gen, marks.get(13).getNanoTime(), "task4"),
             Mark.tag(gen, tag3.tagName, tag3.tagId),
-            Mark.taskEnd(gen, marks.get(13).getNanoTime(), "task3"),
+            Mark.taskEnd(gen, marks.get(15).getNanoTime(), "task3"),
             Mark.tag(gen, tag2.tagName, tag2.tagId),
-            Mark.taskEnd(gen, marks.get(15).getNanoTime(), "task2"),
+            Mark.taskEnd(gen, marks.get(17).getNanoTime(), "task2"),
             Mark.tag(gen, tag1.tagName, tag1.tagId),
-            Mark.taskEnd(gen, marks.get(17).getNanoTime(), "task1"));
+            Mark.taskEnd(gen, marks.get(19).getNanoTime(), "task1"));
     assertEquals(expected, marks);
   }
 
