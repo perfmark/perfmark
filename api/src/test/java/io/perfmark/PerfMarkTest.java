@@ -91,7 +91,7 @@ public class PerfMarkTest {
     PerfMark.startTask("task2", tag2);
     PerfMark.startTask("task3", tag3);
     PerfMark.startTask("task4");
-    PerfMark.startTask("task5");
+    PerfMark.startTask("task5", String::valueOf);
     PerfMark.attachTag(PerfMark.createTag("extra"));
     PerfMark.attachTag("name", "extra2", String::valueOf);
     Link link = PerfMark.linkOut();
@@ -138,7 +138,7 @@ public class PerfMarkTest {
     PerfMark.attachTag("name", "extra2", null);
 
     List<Mark> marks = Storage.readForTest();
-    Truth.assertThat(marks).hasSize(0);
+    Truth.assertThat(marks).hasSize(1);
   }
 
   @Test
@@ -154,7 +154,7 @@ public class PerfMarkTest {
         });
 
     List<Mark> marks = Storage.readForTest();
-    Truth.assertThat(marks).hasSize(0);
+    Truth.assertThat(marks).hasSize(1);
   }
 
   @Test
@@ -177,7 +177,7 @@ public class PerfMarkTest {
         });
 
     List<Mark> marks = Storage.readForTest();
-    Truth.assertThat(marks).hasSize(0);
+    Truth.assertThat(marks).hasSize(1);
   }
 
   @Test
@@ -198,7 +198,7 @@ public class PerfMarkTest {
         });
 
     List<Mark> marks = Storage.readForTest();
-    Truth.assertThat(marks).hasSize(0);
+    Truth.assertThat(marks).hasSize(1);
   }
 
   public static final class FakeGenerator extends Generator {
