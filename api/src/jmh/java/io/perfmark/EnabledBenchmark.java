@@ -51,6 +51,14 @@ public class EnabledBenchmark {
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
+  public void startStop_method() {
+    PerfMark.startTask("hi", String::valueOf);
+    PerfMark.stopTask();
+  }
+
+  @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
+  @OutputTimeUnit(TimeUnit.NANOSECONDS)
   public Tag createTag() {
     return PerfMark.createTag("tag", 2);
   }
