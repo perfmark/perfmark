@@ -17,6 +17,7 @@
 package io.perfmark;
 
 import com.google.errorprone.annotations.DoNotCall;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -122,6 +123,23 @@ public final class PerfMark {
    */
   public static void startTask(String taskName, String subTaskName) {
     impl.startTask(taskName, subTaskName);
+  }
+
+  /**
+   * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
+   * task should be a runtime-time constant, usually a string literal. Tasks with the same name can
+   * be grouped together for analysis later, so avoid using too many unique task names.
+   *
+   * <p>The returned closeable is meant to be used in a try-with-resources block. Callers should not
+   * allow the returned closeable to be used outside of the try block that initiated the call.
+   *
+   * @param taskName the name of the task.
+   * @since 0.23.0
+   */
+  @MustBeClosed
+  public static TaskCloseable traceTask(String taskName) {
+    impl.startTask(taskName);
+    return TaskCloseable.INSTANCE;
   }
 
   /**
