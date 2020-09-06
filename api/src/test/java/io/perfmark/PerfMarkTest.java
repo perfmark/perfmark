@@ -101,10 +101,13 @@ public class PerfMarkTest {
     PerfMark.stopTask("task3", tag3);
     PerfMark.stopTask("task2", tag2);
     PerfMark.stopTask("task1", tag1);
+    try (TaskCloseable task6 = PerfMark.traceTask("task6")) {
+      try (TaskCloseable task7 = PerfMark.traceTask("task7", String::valueOf)) {}
+    }
 
     List<Mark> marks = Storage.readForTest();
 
-    Truth.assertThat(marks).hasSize(20);
+    Truth.assertThat(marks).hasSize(24);
     List<Mark> expected =
         Arrays.asList(
             Mark.taskStart(gen, marks.get(0).getNanoTime(), "task1"),
@@ -126,7 +129,11 @@ public class PerfMarkTest {
             Mark.tag(gen, tag2.tagName, tag2.tagId),
             Mark.taskEnd(gen, marks.get(17).getNanoTime(), "task2"),
             Mark.tag(gen, tag1.tagName, tag1.tagId),
-            Mark.taskEnd(gen, marks.get(19).getNanoTime(), "task1"));
+            Mark.taskEnd(gen, marks.get(19).getNanoTime(), "task1"),
+            Mark.taskStart(gen, marks.get(20).getNanoTime(), "task6"),
+            Mark.taskStart(gen, marks.get(21).getNanoTime(), "task7"),
+            Mark.taskEnd(gen, marks.get(22).getNanoTime()),
+            Mark.taskEnd(gen, marks.get(23).getNanoTime()));
     assertEquals(expected, marks);
   }
 
