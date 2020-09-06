@@ -300,7 +300,7 @@ final class SecretPerfMarkImpl {
           LogRecord lr =
               new LogRecord(
                   Level.WARNING,
-                  "PerfMark.attachTag ignored: tagName={0}, tagObject={1}, stringFunction={2}");
+                  "PerfMark.attachTag failed: tagName={0}, tagObject={1}, stringFunction={2}");
           lr.setParameters(new Object[] {tagName, tagObject, stringFunction});
           lr.setThrown(cause);
           logger.log(lr);
@@ -322,7 +322,7 @@ final class SecretPerfMarkImpl {
         if (logger.isLoggable(Level.WARNING)) {
           LogRecord lr =
               new LogRecord(
-                  Level.WARNING, "PerfMark.startTask ignored: taskObject={0}, stringFunction={1}");
+                  Level.WARNING, "PerfMark.startTask failed: taskObject={0}, stringFunction={1}");
           lr.setParameters(new Object[] {taskNameObject, stringFunction});
           lr.setThrown(cause);
           logger.log(lr);
