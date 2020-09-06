@@ -7,5 +7,6 @@ dependencies {
     implementation project(':perfmark-tracewriter')
     compileOnly libraries.jsr305,
             libraries.errorprone
+    testImplementation project(':perfmark-api')
 }
 
