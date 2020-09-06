@@ -359,6 +359,7 @@ public final class TraceEventWriter {
     }
 
     @Override
+    @SuppressWarnings("ReferenceEquality") // For checking if it's an empty end mark
     protected void onTaskEnd(Mark mark, boolean unmatchedStart, boolean unmatchedEnd) {
       assert !(unmatchedStart && unmatchedEnd);
       List<String> categories = Collections.emptyList();
@@ -371,12 +372,15 @@ public final class TraceEventWriter {
       taskStack.pollLast();
       TraceEvent traceEvent =
           TraceEvent.EVENT
-              .name(taskName(mark))
               .phase("E")
               .pid(pid)
               .categories(categories)
               .tid(currentThreadId)
               .traceClockNanos(mark.getNanoTime() - initNanoTime);
+      String name = taskName(mark);
+      if (name != MarkListWalker.UNKNOWN_TASK_NAME) {
+        traceEvent = traceEvent.name(name);
+      }
       traceEvents.add(traceEvent);
     }
 
