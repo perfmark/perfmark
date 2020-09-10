@@ -17,6 +17,7 @@
 package io.perfmark;
 
 import com.google.errorprone.annotations.DoNotCall;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -122,6 +123,47 @@ public final class PerfMark {
    */
   public static void startTask(String taskName, String subTaskName) {
     impl.startTask(taskName, subTaskName);
+  }
+
+  /**
+   * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
+   * task should be a runtime-time constant, usually a string literal. Tasks with the same name can
+   * be grouped together for analysis later, so avoid using too many unique task names.
+   *
+   * <p>The returned closeable is meant to be used in a try-with-resources block. Callers should not
+   * allow the returned closeable to be used outside of the try block that initiated the call.
+   *
+   * <p>This method is <strong>NOT API STABLE</strong>.
+   *
+   * @param taskName the name of the task.
+   * @since 0.23.0
+   */
+  @MustBeClosed
+  public static TaskCloseable traceTask(String taskName) {
+    impl.startTask(taskName);
+    return TaskCloseable.INSTANCE;
+  }
+
+  /**
+   * Marks the beginning of a task. If PerfMark is disabled, this method is a no-op. The name of the
+   * task should be a runtime-time constant, usually a string literal. Tasks with the same name can
+   * be grouped together for analysis later, so avoid using too many unique task names.
+   *
+   * <p>This function has many more caveats than the {@link #traceTask(String)} that accept a
+   * string. See the docs at {@link #attachTag(String, Object, StringFunction)} for a list of risks
+   * associated with passing a function.
+   *
+   * <p>This method is <strong>NOT API STABLE</strong>.
+   *
+   * @param taskNameObject the name of the task.
+   * @param taskNameFunction the function that will convert the taskNameObject to a taskName
+   * @since 0.23.0
+   */
+  @MustBeClosed
+  public static <T> TaskCloseable traceTask(
+      T taskNameObject, StringFunction<? super T> taskNameFunction) {
+    impl.startTask(taskNameObject, taskNameFunction);
+    return TaskCloseable.INSTANCE;
   }
 
   /**

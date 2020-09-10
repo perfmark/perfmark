@@ -6,7 +6,6 @@ include ":perfmark-java7"
 include ":perfmark-java9"
 include ":perfmark-tracewriter"
 include ":perfmark-agent"
-include ":perfmark-util"
 include ":perfmark-traceviewer"
 
 project(':perfmark-api').projectDir = "$rootDir/api" as File
@@ -16,5 +15,4 @@ project(':perfmark-java7').projectDir = "$rootDir/java7" as File
 project(':perfmark-java9').projectDir = "$rootDir/java9" as File
 project(':perfmark-tracewriter').projectDir = "$rootDir/tracewriter" as File
 project(':perfmark-agent').projectDir = "$rootDir/agent" as File
-project(':perfmark-util').projectDir = "$rootDir/util" as File
 project(':perfmark-traceviewer').projectDir = "$rootDir/traceviewer" as File
