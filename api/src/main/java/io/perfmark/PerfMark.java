@@ -133,6 +133,8 @@ public final class PerfMark {
    * <p>The returned closeable is meant to be used in a try-with-resources block. Callers should not
    * allow the returned closeable to be used outside of the try block that initiated the call.
    *
+   * <p>This method is <strong>NOT API STABLE</strong>.
+   *
    * @param taskName the name of the task.
    * @since 0.23.0
    */
@@ -150,6 +152,8 @@ public final class PerfMark {
    * <p>This function has many more caveats than the {@link #traceTask(String)} that accept a
    * string. See the docs at {@link #attachTag(String, Object, StringFunction)} for a list of risks
    * associated with passing a function.
+   *
+   * <p>This method is <strong>NOT API STABLE</strong>.
    *
    * @param taskNameObject the name of the task.
    * @param taskNameFunction the function that will convert the taskNameObject to a taskName
