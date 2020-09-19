@@ -106,6 +106,7 @@ public final class PerfMark {
    *
    * @param taskNameObject the name of the task.
    * @param taskNameFunction the function that will convert the taskNameObject to a taskName
+   * @since 0.22.0
    */
   public static <T> void startTask(T taskNameObject, StringFunction<? super T> taskNameFunction) {
     impl.startTask(taskNameObject, taskNameFunction);
@@ -211,6 +212,8 @@ public final class PerfMark {
    *
    * <p>It is important that {@link #stopTask} always be called after starting a task, even in case
    * of exceptions. Failing to do so may result in corrupted results.
+   *
+   * @since 0.22.0
    */
   public static void stopTask() {
     impl.stopTask();

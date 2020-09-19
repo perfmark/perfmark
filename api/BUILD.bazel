@@ -5,16 +5,19 @@ java_library(
         ":link",
         ":perfmark",
         ":tag",
+        ":stringfunction",
     ],
 )
 
 java_library(
     name = "perfmark",
-    srcs = glob(["src/main/java/io/perfmark/PerfMark.java"]),
+    srcs = glob(["src/main/java/io/perfmark/PerfMark.java",
+             "src/main/java/io/perfmark/TaskCloseable.java"]),
     deps = [
         ":impl",
         ":link",
         ":tag",
+        ":stringfunction",
         "@maven//:com_google_code_findbugs_jsr305",
         "@maven//:com_google_errorprone_error_prone_annotations",
     ],
@@ -40,12 +43,19 @@ java_library(
 )
 
 java_library(
+    name = "stringfunction",
+    visibility = ["//:__subpackages__"],
+    srcs = glob(["src/main/java/io/perfmark/StringFunction.java"]),
+)
+
+java_library(
     name = "impl",
     srcs = glob(["src/main/java/io/perfmark/Impl.java"]),
     visibility = ["//:__subpackages__"],
     deps = [
         ":link",
         ":tag",
+        ":stringfunction",
         "@maven//:com_google_code_findbugs_jsr305",
         "@maven//:com_google_errorprone_error_prone_annotations",
     ],

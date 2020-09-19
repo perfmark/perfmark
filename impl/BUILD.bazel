@@ -12,6 +12,7 @@ java_library(
         "//api:impl",
         "//api:link",
         "//api:tag",
+        "//api:stringfunction",
         "@maven//:com_google_code_findbugs_jsr305",
     ],
 )
