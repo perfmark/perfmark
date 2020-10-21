@@ -145,7 +145,7 @@ subprojects {
                 errorprone: 'com.google.errorprone:error_prone_annotations:2.4.0',
                 jsr305: 'com.google.code.findbugs:jsr305:3.0.2',
                 gson: 'com.google.code.gson:gson:2.8.6',
-                truth: 'com.google.truth:truth:1.0.1'
+                truth: 'com.google.truth:truth:1.1'
         ]
     }
 
