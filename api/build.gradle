@@ -1,4 +1,5 @@
 description = "PerfMark API"
+ext.moduleName = "io.perfmark"
 
 if (JavaVersion.current().isJava12Compatible()) {
     sourceCompatibility = 1.7

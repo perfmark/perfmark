@@ -1,4 +1,5 @@
 description = "PerfMark Agent"
+ext.moduleName = "io.perfmark.agent"
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7

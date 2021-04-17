@@ -1,4 +1,5 @@
 description = "PerfMark Java7 API"
+ext.moduleName = "io.perfmark.java7"
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
