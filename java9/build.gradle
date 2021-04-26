@@ -14,9 +14,9 @@ sourceCompatibility = 1.9
 targetCompatibility = 1.9
 
 dependencies {
-    implementation project(':perfmark-impl')
+    implementation project(path: ':perfmark-impl', configuration: 'archives')
     compileOnly libraries.jsr305
-    testImplementation project(':perfmark-api')
+    testImplementation project(path: ':perfmark-api', configuration: 'archives')
     jcstressImplementation project(':perfmark-impl')
 }
 
