@@ -16,8 +16,7 @@ tasks.withType(JavaCompile) {
 dependencies {
     compileOnly libraries.jsr305,
             libraries.errorprone
-    implementation "net.bytebuddy:byte-buddy:1.9.13",
-            "org.ow2.asm:asm:7.1",
+    implementation "org.ow2.asm:asm:7.1",
             "org.ow2.asm:asm-commons:7.1",
             project(":perfmark-api"),
             project(":perfmark-impl")

@@ -11,6 +11,8 @@ java {
 tasks.withType(JavaCompile) {
     sourceCompatibility = jdkVersion
     targetCompatibility = jdkVersion
+
+    options.compilerArgs.add("-Xlint:-options")
 }
 
 dependencies {

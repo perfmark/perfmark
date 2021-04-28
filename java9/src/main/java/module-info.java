@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+@SuppressWarnings("module")
 module io.perfmark.java9 {
   requires io.perfmark.impl;
 
