@@ -78,7 +78,8 @@ final class PerfMarkTransformer implements ClassFileTransformer {
     return Collections.unmodifiableMap(map);
   }
 
-  private final Map<ClassLoader, Boolean> validatedClassLoaders = new IdentityHashMap<>();
+  private final IdentityHashMap<ClassLoader, Boolean> validatedClassLoaders =
+      new IdentityHashMap<>();
 
   @Override
   public byte[] transform(
