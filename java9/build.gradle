@@ -1,5 +1,5 @@
 apply plugin: 'jcstress'
-apply plugin: "org.javamodularity.moduleplugin"
+
 
 description = "PerfMark Java9 API"
 ext.moduleName = "io.perfmark.java9"
@@ -8,6 +8,8 @@ if (!JavaVersion.current().isJava9Compatible()) {
     project.tasks.all {
         task -> task.enabled = false
     }
+} else {
+    apply plugin: "org.javamodularity.moduleplugin"
 }
 
 sourceCompatibility = 1.9

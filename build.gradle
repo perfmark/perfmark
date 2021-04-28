@@ -51,7 +51,6 @@ subprojects {
     }
 
     afterEvaluate {
-
         jar {
             if (sourceCompatibility < JavaVersion.VERSION_1_9) {
                 manifest {
