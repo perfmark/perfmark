@@ -53,7 +53,7 @@ subprojects {
 
     afterEvaluate {
         jar {
-            if (sourceCompatibility < JavaVersion.VERSION_1_9) {
+            if (jdkVersion < JavaVersion.VERSION_1_9) {
                 manifest {
                     attributes  'Automatic-Module-Name': moduleName
                 }

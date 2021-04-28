@@ -1,12 +1,16 @@
 description = "PerfMark Java6 API"
 ext.moduleName = "io.perfmark.java6"
+ext.jdkVersion = JavaVersion.VERSION_1_6
 
-if (JavaVersion.current().isJava12Compatible()) {
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
-} else {
-    sourceCompatibility = 1.6
-    targetCompatibility = 1.6
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = jdkVersion
+    targetCompatibility = jdkVersion
 }
 
 dependencies {
