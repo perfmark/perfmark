@@ -25,12 +25,14 @@ dependencies {
 
 }
 
-import net.ltgt.gradle.errorprone.CheckSeverity
+// gradle thinks importing this is an error, so load it reflectively.
+def checkSeverityOff = Class.forName("net.ltgt.gradle.errorprone.CheckSeverity").getField("OFF").get(null);
+
 
 compileTestJava {
     // Broken in JDK12+.  See https://github.com/google/error-prone/issues/1106
     properties.put("errorProne", "false")
-    options.errorprone.check("SameNameButDifferent", CheckSeverity.OFF)
+    options.errorprone.check("SameNameButDifferent", checkSeverityOff)
 
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
