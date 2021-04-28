@@ -1,4 +1,5 @@
 description = "PerfMark Trace Viewer"
+ext.moduleName = "io.perfmark.traceviewer"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8

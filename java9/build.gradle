@@ -1,20 +1,24 @@
 apply plugin: 'jcstress'
 
+
 description = "PerfMark Java9 API"
+ext.moduleName = "io.perfmark.java9"
 
 if (!JavaVersion.current().isJava9Compatible()) {
     project.tasks.all {
         task -> task.enabled = false
     }
+} else {
+    apply plugin: "org.javamodularity.moduleplugin"
 }
 
 sourceCompatibility = 1.9
 targetCompatibility = 1.9
 
 dependencies {
-    implementation project(':perfmark-impl')
+    implementation project(path: ':perfmark-impl', configuration: 'archives')
     compileOnly libraries.jsr305
-    testImplementation project(':perfmark-api')
+    testImplementation project(path: ':perfmark-api', configuration: 'archives')
     jcstressImplementation project(':perfmark-impl')
 }
 

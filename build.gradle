@@ -5,10 +5,11 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.github.erizo.gradle:jcstress-gradle-plugin:0.8.3'
+        classpath 'com.github.erizo.gradle:jcstress-gradle-plugin:0.8.8'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:2.0.1'
         classpath "me.champeau.gradle:jmh-gradle-plugin:0.5.3"
         classpath "gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.8"
+        classpath "org.javamodularity:moduleplugin:1.7.0"
     }
 }
 
@@ -49,6 +50,15 @@ subprojects {
         }
     }
 
+    afterEvaluate {
+        jar {
+            if (sourceCompatibility < JavaVersion.VERSION_1_9) {
+                manifest {
+                    attributes  'Automatic-Module-Name': moduleName
+                }
+            }
+        }
+    }
 
 
     publishing {
@@ -116,6 +126,10 @@ subprojects {
 
     [publishMavenPublicationToMavenRepository, publishMavenPublicationToMavenLocal]*.onlyIf {
         !name.contains("perfmark-agent")
+    }
+
+    [javadoc]*.onlyIf {
+        !name.contains("perfmark-java9")
     }
 
 

@@ -1,4 +1,5 @@
 description = "PerfMark Tracer Output"
+ext.moduleName = "io.perfmark.tracewriter"
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
