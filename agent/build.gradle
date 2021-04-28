@@ -16,8 +16,8 @@ tasks.withType(JavaCompile) {
 dependencies {
     compileOnly libraries.jsr305,
             libraries.errorprone
-    implementation "org.ow2.asm:asm:7.1",
-            "org.ow2.asm:asm-commons:7.1",
+    implementation "org.ow2.asm:asm:9.1",
+            "org.ow2.asm:asm-commons:9.1",
             project(":perfmark-api"),
             project(":perfmark-impl")
     testImplementation libraries.truth
