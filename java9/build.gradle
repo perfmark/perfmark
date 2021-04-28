@@ -3,6 +3,18 @@ apply plugin: 'jcstress'
 
 description = "PerfMark Java9 API"
 ext.moduleName = "io.perfmark.java9"
+ext.jdkVersion = JavaVersion.VERSION_1_9
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = jdkVersion
+    targetCompatibility = jdkVersion
+}
 
 if (!JavaVersion.current().isJava9Compatible()) {
     project.tasks.all {
@@ -12,8 +24,7 @@ if (!JavaVersion.current().isJava9Compatible()) {
     apply plugin: "org.javamodularity.moduleplugin"
 }
 
-sourceCompatibility = 1.9
-targetCompatibility = 1.9
+
 
 dependencies {
     implementation project(path: ':perfmark-impl', configuration: 'archives')

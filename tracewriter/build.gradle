@@ -1,8 +1,17 @@
 description = "PerfMark Tracer Output"
 ext.moduleName = "io.perfmark.tracewriter"
+ext.jdkVersion = JavaVersion.VERSION_1_7
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = jdkVersion
+    targetCompatibility = jdkVersion
+}
 
 dependencies {
     api project(':perfmark-impl')
