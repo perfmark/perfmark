@@ -1,16 +1,22 @@
+plugins {
+    id "me.champeau.jmh"
+}
+
 description = "PerfMark Java7 API"
 ext.moduleName = "io.perfmark.java7"
 ext.jdkVersion = JavaVersion.VERSION_1_7
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(16)
     }
 }
 
 tasks.withType(JavaCompile) {
     sourceCompatibility = jdkVersion
     targetCompatibility = jdkVersion
+
+    options.compilerArgs.add("-Xlint:-options")
 }
 
 dependencies {

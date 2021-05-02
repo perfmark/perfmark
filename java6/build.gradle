@@ -1,3 +1,7 @@
+plugins {
+    id "me.champeau.jmh"
+}
+
 description = "PerfMark Java6 API"
 ext.moduleName = "io.perfmark.java6"
 ext.jdkVersion = JavaVersion.VERSION_1_6

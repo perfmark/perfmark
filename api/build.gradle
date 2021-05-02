@@ -1,3 +1,7 @@
+plugins {
+    id "me.champeau.jmh"
+}
+
 description = "PerfMark API"
 ext.moduleName = "io.perfmark"
 ext.jdkVersion = JavaVersion.VERSION_1_6
@@ -27,13 +31,13 @@ dependencies {
 }
 
 compileTestJava {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 compileJmhJava {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 java {
@@ -49,8 +53,6 @@ jmh {
     warmup = "1s"
     fork = 1
     warmupIterations = 10
-
-    duplicateClassesStrategy "include"
 
     /*
     profilers = ["perfasm"]
@@ -72,6 +74,7 @@ jmh {
             "-XX:PrintAssemblyOptions=syntax",
             "-XX:PrintAssemblyOptions=intel"
     ]
-    */
+     */
 
+    //duplicateClassesStrategy DuplicatesStrategy.INCLUDE
 }
