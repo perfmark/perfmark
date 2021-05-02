@@ -20,7 +20,12 @@ subprojects {
             url "https://maven-central.storage-download.googleapis.com/repos/central/data/" }
         mavenCentral()
     }
-    
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(16)
+        }
+    }
     
     task javadocJar(type: Jar) {
         classifier = 'javadoc'

@@ -7,15 +7,11 @@ description = "PerfMark Java9 API"
 ext.moduleName = "io.perfmark.java9"
 ext.jdkVersion = JavaVersion.VERSION_1_9
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(16)
-    }
-}
-
-tasks.withType(JavaCompile) {
+compileJava {
     sourceCompatibility = jdkVersion
     targetCompatibility = jdkVersion
+
+    options.compilerArgs.add("-Xlint:-options")
 }
 
 if (!JavaVersion.current().isJava9Compatible()) {
