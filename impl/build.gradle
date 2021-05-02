@@ -8,7 +8,7 @@ java {
     }
 }
 
-tasks.withType(JavaCompile) {
+compileJava {
     sourceCompatibility = jdkVersion
     targetCompatibility = jdkVersion
 

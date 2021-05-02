@@ -1,16 +1,16 @@
+plugins {
+    id "me.champeau.jmh"
+}
+
 description = "PerfMark Java7 API"
 ext.moduleName = "io.perfmark.java7"
 ext.jdkVersion = JavaVersion.VERSION_1_7
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-}
-
-tasks.withType(JavaCompile) {
+compileJava {
     sourceCompatibility = jdkVersion
     targetCompatibility = jdkVersion
+
+    options.compilerArgs.add("-Xlint:-options")
 }
 
 dependencies {
@@ -25,7 +25,6 @@ javadoc {
 jar {
     exclude 'io/perfmark/java7/Internal*'
 }
-
 
 jmh {
     timeOnIteration = "1s"

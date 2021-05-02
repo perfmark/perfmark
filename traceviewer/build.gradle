@@ -2,15 +2,11 @@ description = "PerfMark Trace Viewer"
 ext.moduleName = "io.perfmark.traceviewer"
 ext.jdkVersion = JavaVersion.VERSION_1_8
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-}
-
-tasks.withType(JavaCompile) {
+compileJava {
     sourceCompatibility = jdkVersion
     targetCompatibility = jdkVersion
+
+    options.compilerArgs.add("-Xlint:-options")
 }
 
 dependencies {
