@@ -46,7 +46,6 @@ public final class Storage {
       new ConcurrentHashMap<MarkHolderRef, Boolean>();
   private static final ThreadLocal<MarkHolder> localMarkHolder = new MarkHolderThreadLocal();
   static final MarkHolderProvider markHolderProvider;
-  private static final Logger logger;
 
   static {
     List<MarkHolderProvider> providers = new ArrayList<MarkHolderProvider>();
@@ -94,13 +93,15 @@ public final class Storage {
       markHolderProvider = new NoopMarkHolderProvider();
     }
 
-    logger = Logger.getLogger(Storage.class.getName());
+    if (!warnings.isEmpty() || !fines.isEmpty()) {
+      Logger logger = Logger.getLogger(Storage.class.getName());
 
-    for (Throwable error : warnings) {
-      logger.log(Level.WARNING, "Error loading MarkHolderProvider", error);
-    }
-    for (Throwable error : fines) {
-      logger.log(Level.FINE, "Error loading MarkHolderProvider", error);
+      for (Throwable error : warnings) {
+        logger.log(Level.WARNING, "Error loading MarkHolderProvider", error);
+      }
+      for (Throwable error : fines) {
+        logger.log(Level.FINE, "Error loading MarkHolderProvider", error);
+      }
     }
   }
 
