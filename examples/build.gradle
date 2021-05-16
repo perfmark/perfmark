@@ -1,0 +1,17 @@
+description = "PerfMark Examples"
+ext.moduleName = "io.perfmark.examples"
+ext.jdkVersion = JavaVersion.VERSION_1_8
+
+compileJava {
+    sourceCompatibility = jdkVersion
+    targetCompatibility = jdkVersion
+}
+
+dependencies {
+    implementation project(':perfmark-api'), project(':perfmark-tracewriter')
+    runtimeOnly project(':perfmark-java7'), project(':perfmark-java6')
+}
+
+javadoc {
+    exclude 'io/perfmark/examples**'
+}

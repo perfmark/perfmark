@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <title>PerfMark Trace UI</title>
+    <base href="/">
+</head>
+<body>
+    <h1>PerfMark Trace Viewer</h1>
+    <p>
+        This is an example Trace Viewer, using the <a href="https://ui.perfetto.dev">Perfetto UI</a>.
+    </p>
+    <button id="thebutton">Load</button>
+    <br />
+    <textarea id="logs" cols="80" rows="24">
+    </textarea>
+    <script>
+        (function() {
+          let origin = "https://ui.perfetto.dev";
+          let logs = document.getElementById("logs");
+          let thebutton = document.getElementById("thebutton");
+          let thewindow = undefined;
+
+          thebutton.addEventListener("click", function (evt) {
+            logs.innerText += "Loading ...\n";
+            fetch("trace.json").then(function(result) {
+              result.blob().then(function(blob) {
+                blob.arrayBuffer().then(arrayBuffer => {
+                    logs.innerText += "Trace JSON fetched.\n";
+                    if (thewindow) {
+                      thewindow.postMessage(arrayBuffer, origin);
+                      return;
+                    }
+                    loadWindow(arrayBuffer);
+                });
+              });
+            });
+          });
+
+          function loadWindow(arrayBuffer) {
+              if (thewindow === undefined) {
+                thewindow = null;
+              } else {
+                return;
+              }
+              logs.innerText += "Loading Perfetto Window\n";
+              let win = window.open(origin);
+              let thetimer = null;
+              window.addEventListener("message", function(evt) {
+                if (evt.data !== "PONG") {
+                  return;
+                }
+                window.clearInterval(thetimer);
+                logs.innerText += "Perfetto Window Ready\n";
+                thewindow = win;
+                thewindow.postMessage(arrayBuffer, origin);
+              });
+              thetimer = setInterval(function() {
+                win.postMessage("PING", origin);
+              }, 250);
+          }
+        })();
+    </script>
+</body>
+</html>
