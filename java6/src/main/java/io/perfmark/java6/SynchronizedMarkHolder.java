@@ -19,7 +19,6 @@ package io.perfmark.java6;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.Marker;
 import java.util.AbstractCollection;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -53,11 +52,9 @@ final class SynchronizedMarkHolder extends MarkHolder {
   // where to write to next
   private long nIdx;
   private long sIdx;
-  private long mIdx;
 
   private final long[] nums;
   private final String[] strings;
-  private final Marker[] markers;
 
   SynchronizedMarkHolder() {
     this(32768);
@@ -74,7 +71,6 @@ final class SynchronizedMarkHolder extends MarkHolder {
     this.maxEventsMask = maxEvents - 1L;
     this.nums = new long[maxEvents];
     this.strings = new String[maxEvents];
-    this.markers = new Marker[maxEvents];
   }
 
   private void writeNnss(long genOp, long n0, long n1, String s0, String s1) {
@@ -200,32 +196,25 @@ final class SynchronizedMarkHolder extends MarkHolder {
   public synchronized void resetForTest() {
     Arrays.fill(nums, 0);
     Arrays.fill(strings, null);
-    Arrays.fill(markers, null);
     nIdx = 0;
     sIdx = 0;
-    mIdx = 0;
   }
 
   @Override
   public List<Mark> read(boolean concurrentWrites) {
     Kyoo<Long> numQ;
     Kyoo<String> stringQ;
-    Kyoo<Marker> markerQ;
     {
       final long[] nums = new long[maxEvents];
       final String[] strings = new String[maxEvents];
-      final Marker[] markers = new Marker[maxEvents];
       final long nIdx;
       final long sIdx;
-      final long mIdx;
 
       synchronized (this) {
         System.arraycopy(this.nums, 0, nums, 0, maxEvents);
         System.arraycopy(this.strings, 0, strings, 0, maxEvents);
-        System.arraycopy(this.markers, 0, markers, 0, maxEvents);
         nIdx = this.nIdx;
         sIdx = this.sIdx;
-        mIdx = this.mIdx;
       }
       Long[] numsBoxed = new Long[nums.length];
       for (int i = 0; i < nums.length; i++) {
@@ -233,7 +222,6 @@ final class SynchronizedMarkHolder extends MarkHolder {
       }
       numQ = new Kyoo<Long>(numsBoxed, nIdx, (int) Math.min(nIdx, maxEvents));
       stringQ = new Kyoo<String>(strings, sIdx, (int) Math.min(sIdx, maxEvents));
-      markerQ = new Kyoo<Marker>(markers, mIdx, (int) Math.min(mIdx, maxEvents));
     }
 
     Deque<Mark> marks = new ArrayDeque<Mark>(maxEvents);
@@ -247,8 +235,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
       Mark.Operation op = Mark.Operation.valueOf((int) (genOp & GEN_MASK));
 
       if (op.getNumbers() > numQ.size()
-          || op.getStrings() > stringQ.size()
-          || op.getMarkers() > markerQ.size()) {
+          || op.getStrings() > stringQ.size()) {
         break;
       }
       long n1;
@@ -301,8 +288,6 @@ final class SynchronizedMarkHolder extends MarkHolder {
           marks.addFirst(Mark.event(gen, n1, s1, s2, n2));
           break;
         case EVENT_N2S3:
-          throw new UnsupportedOperationException();
-        case MARK:
           throw new UnsupportedOperationException();
         case LINK:
           n1 = numQ.remove();

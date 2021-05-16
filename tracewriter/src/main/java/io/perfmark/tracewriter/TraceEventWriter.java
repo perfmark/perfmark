@@ -422,7 +422,6 @@ public final class TraceEventWriter {
           case EVENT_N1S2:
           case EVENT_N2S2:
           case EVENT_N2S3:
-          case MARK:
           case LINK:
             break;
         }
@@ -450,7 +449,6 @@ public final class TraceEventWriter {
           case TASK_END_N1S0:
           case TASK_END_N1S1:
           case TASK_END_N1S2:
-          case MARK:
           case LINK:
           case TAG_N0S1:
           case TAG_N1S0:
@@ -520,7 +518,6 @@ public final class TraceEventWriter {
       case EVENT_N1S2:
       case EVENT_N2S3:
         return mark.getTaskName() + '.' + mark.getSubTaskName();
-      case MARK:
       case LINK:
       case TAG_N0S1:
       case TAG_KEYED_N0S2:

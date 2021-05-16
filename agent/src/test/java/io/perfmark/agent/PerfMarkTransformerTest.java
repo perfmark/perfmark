@@ -18,70 +18,75 @@ package io.perfmark.agent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 import io.perfmark.Link;
 import io.perfmark.PerfMark;
 import io.perfmark.Tag;
-import io.perfmark.agent.PerfMarkTransformer.PerfMarkClassReader;
-import io.perfmark.impl.Internal;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.Storage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-@Ignore // disabled until marker support is added back in
+//@Ignore // disabled until marker support is added back in
 public class PerfMarkTransformerTest {
 
   @Test
   public void deriveFileName() {
-    String file = PerfMarkClassReader.deriveFileName("io/perfmark/Clz");
+    String file = PerfMarkTransformer.deriveFileName("io/perfmark/Clz");
 
     assertEquals("Clz.java", file);
   }
 
   @Test
   public void deriveFileName_innerClass() {
-    String file = PerfMarkClassReader.deriveFileName("io/perfmark/Clz$Inner");
+    String file = PerfMarkTransformer.deriveFileName("io/perfmark/Clz$Inner");
 
     assertEquals("Clz.java", file);
   }
 
-  public static final class ClzAutoRecord {
-    public ClzAutoRecord() {
-      recordMe();
-    }
-
-    void recordMe() {
-      // seemingly nothing here.
-    }
-  }
-
   @Test
-  public void transform_auto() throws Exception {
+  public void transform_autoAnnotate() throws Exception {
+    // This test currently depends on the transformer treating this test class specially.
     PerfMark.setEnabled(true);
     Storage.resetForTest();
 
-    Class<?> clz = transformAndLoad(ClzAutoRecord.class);
+    Class<?> clz = transformAndLoad(TransformerTestClasses.ClzAutoRecord.class);
     Constructor<?> ctor = clz.getConstructor();
     ctor.setAccessible(true);
     ctor.newInstance();
     List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(2);
     for (Mark mark : marks) {
-      assertNotNull(mark.getMarker());
-      StackTraceElement element = Internal.getElement(mark.getMarker());
-      assertThat(element.getClassName()).isEqualTo(ClzAutoRecord.class.getName());
+      StackTraceElement element = null;
+      assertThat(element.getClassName()).isEqualTo(TransformerTestClasses.ClzAutoRecord.class.getName());
+      assertThat(element.getMethodName()).isEqualTo("recordMe");
+      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
+      // TODO: reenable.
+      // assertThat(element.getLineNumber()).isGreaterThan(0);
+    }
+  }
+
+  @Test
+  public void transform_record() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    Class<?> clz = transformAndLoad(TransformerTestClasses.SomeRecord.class);
+    Constructor<?> ctor = clz.getConstructor();
+    ctor.setAccessible(true);
+    ctor.newInstance();
+    List<Mark> marks = Storage.readForTest();
+    assertThat(marks).hasSize(2);
+    for (Mark mark : marks) {
+      StackTraceElement element = null;
+      assertThat(element.getClassName()).isEqualTo(TransformerTestClasses.SomeRecord.class.getName());
       assertThat(element.getMethodName()).isEqualTo("recordMe");
       assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
       // TODO: reenable.
@@ -94,31 +99,15 @@ public class PerfMarkTransformerTest {
     PerfMark.setEnabled(true);
     Storage.resetForTest();
 
-    final class ClzLocal implements Executor {
-      public ClzLocal() {
-        execute(
-            () -> {
-              PerfMark.startTask("task");
-              PerfMark.stopTask("task");
-            });
-      }
-
-      @Override
-      public void execute(Runnable command) {
-        command.run();
-      }
-    }
-
-    Class<?> clz = transformAndLoad(ClzLocal.class);
+    Class<?> clz = transformAndLoad(TransformerTestClasses.ClzCtorLambda.class);
     Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
     ctor.setAccessible(true);
     ctor.newInstance(this);
     List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(2);
     for (Mark mark : marks) {
-      assertNotNull(mark.getMarker());
-      StackTraceElement element = Internal.getElement(mark.getMarker());
-      assertThat(element.getClassName()).isEqualTo(ClzLocal.class.getName());
+      StackTraceElement element = null;
+      assertThat(element.getClassName()).isEqualTo(TransformerTestClasses.ClzCtorLambda.class.getName());
       assertThat(element.getMethodName()).isEqualTo("lambda$new$0");
       assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
       assertThat(element.getLineNumber()).isGreaterThan(0);
@@ -176,8 +165,7 @@ public class PerfMarkTransformerTest {
     List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(2);
     for (Mark mark : marks) {
-      assertNotNull(mark.getMarker());
-      StackTraceElement element = Internal.getElement(mark.getMarker());
+      StackTraceElement element = null;
       assertThat(element.getClassName()).isEqualTo(InterfaceWithDefaults.class.getName());
       assertThat(element.getMethodName()).isEqualTo("record");
       assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
@@ -206,8 +194,7 @@ public class PerfMarkTransformerTest {
     List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
-      assertNotNull(mark.getMarker());
-      StackTraceElement element = Internal.getElement(mark.getMarker());
+      StackTraceElement element = null;
       assertThat(element.getClassName()).isEqualTo(ClzLocal.class.getName());
       assertThat(element.getMethodName()).isEqualTo("<init>");
       assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
@@ -237,8 +224,7 @@ public class PerfMarkTransformerTest {
     List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
-      assertNotNull(mark.getMarker());
-      StackTraceElement element = Internal.getElement(mark.getMarker());
+      StackTraceElement element = null;
       assertThat(element.getClassName()).isEqualTo(ClzLocal.class.getName());
       assertThat(element.getMethodName()).isEqualTo("<init>");
       assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
@@ -268,8 +254,7 @@ public class PerfMarkTransformerTest {
     List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
-      assertNotNull(mark.getMarker());
-      StackTraceElement element = Internal.getElement(mark.getMarker());
+      StackTraceElement element = null;
       assertThat(element.getClassName()).isEqualTo(ClzLocal.class.getName());
       assertThat(element.getMethodName()).isEqualTo("<init>");
       assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
@@ -297,10 +282,9 @@ public class PerfMarkTransformerTest {
     ctor.setAccessible(true);
     ctor.newInstance();
     List<Mark> marks = Storage.readForTest();
-    assertThat(marks).hasSize(4);
+    assertThat(marks).hasSize(10);
     for (Mark mark : marks) {
-      assertNotNull(mark.getMarker());
-      StackTraceElement element = Internal.getElement(mark.getMarker());
+      StackTraceElement element = null;
       assertThat(element.getClassName()).isEqualTo(ClzWithClinit.class.getName());
       assertThat(element.getMethodName()).isEqualTo("<clinit>");
       assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
@@ -320,8 +304,7 @@ public class PerfMarkTransformerTest {
     List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(4);
     for (Mark mark : marks) {
-      assertNotNull(mark.getMarker());
-      StackTraceElement element = Internal.getElement(mark.getMarker());
+      StackTraceElement element = null;
       assertThat(element.getClassName()).isEqualTo(ClzFooter.class.getName());
       assertThat(element.getMethodName()).isEqualTo("<init>");
       assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
@@ -331,15 +314,8 @@ public class PerfMarkTransformerTest {
 
   private static byte[] getBytes(Class<?> clz) throws IOException {
     String className = clz.getName().replace('.', '/') + ".class";
-    try (InputStream stream = clz.getClassLoader().getResourceAsStream(className);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-      int read;
-      byte[] buf = new byte[1024];
-      while ((read = stream.read(buf)) != -1) {
-        baos.write(buf, 0, read);
-      }
-
-      return baos.toByteArray();
+    try (InputStream stream = clz.getClassLoader().getResourceAsStream(className)) {
+      return stream.readAllBytes();
     }
   }
 
@@ -357,8 +333,36 @@ public class PerfMarkTransformerTest {
     }
   }
 
+  private static Class<?> transformAndLoad2(Class<?> clz) throws IOException {
+    byte[] data = getBytes(clz);
+    try {
+      return new ClassLoader(clz.getClassLoader()) {
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+          if (name.equals(clz.getName())) {
+           byte[] newClassBytes =  new PerfMarkTransformer().transform(this, name, clz, null, data);
+           Class<?> newClass = defineClass(name, newClassBytes, 0, newClassBytes.length);
+           if (resolve) {
+             resolveClass(newClass);
+           }
+            return newClass;
+          }
+          return super.loadClass(name, resolve);
+        }
+
+        @Override
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+          return super.findClass(name);
+        }
+      }.loadClass(clz.getName());
+    } catch (ClassNotFoundException e) {
+      throw new IOException(e);
+    }
+  }
+
   private static Class<?> transformAndLoad(Class<?> clz) throws IOException {
-    return transformAndLoad(clz, new TestClassLoader());
+    return transformAndLoad2(clz);
   }
 
   private static Class<?> transformAndLoad(Class<?> clz, TestClassLoader cl) throws IOException {
