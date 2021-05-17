@@ -110,7 +110,8 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       @Override
       public void visitMethodInsn(
           int opcode, String owner, String name, String descriptor, boolean isInterface) {
-        if (owner.equals(SRC_OWNER) && PRE_TAG.contains(name)) {
+        if ((owner.equals(SRC_OWNER) && PRE_TAG.contains(name))
+            || owner.equals("io/perfmark/TaskCloseable") && name.equals("close")) {
           String tag =
               new StackTraceElement(className, methodName, fileName, lineNumber).toString();
           visitLdcInsn("PerfMark.stopCallSite");
