@@ -115,6 +115,31 @@ public final class Mark {
     return new Mark(linkId, N0, N0, S0, S0, S0, generation, Operation.LINK);
   }
 
+  public Mark withTaskName(String name) {
+    switch (operation) {
+      case EVENT_N1S1:
+      case TASK_END_N1S1:
+      case TASK_START_N1S1:
+        return new Mark(n1, n2, n3, name, s2, s3, generation, operation);
+      case TASK_START_N1S2:
+      case TASK_END_N1S0:
+      case NONE:
+      case TASK_END_N1S2:
+      case EVENT_N1S2:
+      case EVENT_N2S2:
+      case EVENT_N2S3:
+      case LINK:
+      case TAG_N0S1:
+      case TAG_N1S0:
+      case TAG_N1S1:
+      case TAG_KEYED_N1S1:
+      case TAG_KEYED_N2S1:
+      case TAG_KEYED_N0S2:
+        throw new UnsupportedOperationException();
+    }
+    throw new AssertionError();
+  }
+
   private Mark(
       long n1,
       long n2,

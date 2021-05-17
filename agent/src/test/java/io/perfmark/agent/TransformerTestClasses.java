@@ -16,7 +16,9 @@
 
 package io.perfmark.agent;
 
+import io.perfmark.Link;
 import io.perfmark.PerfMark;
+import io.perfmark.Tag;
 import java.util.concurrent.Executor;
 
 final class TransformerTestClasses {
@@ -52,6 +54,54 @@ final class TransformerTestClasses {
     }
   }
 
+  static final class ClzWithClinit {
+    static {
+      Tag tag = PerfMark.createTag("tag", 1);
+      PerfMark.startTask("task");
+      PerfMark.stopTask("task");
+      PerfMark.startTask("task", tag);
+      PerfMark.stopTask("task", tag);
+    }
+  }
+
+  static final class ClzWithInit {
+    {
+      Tag tag = PerfMark.createTag("tag", 1);
+      PerfMark.startTask("task");
+      PerfMark.stopTask("task");
+      PerfMark.startTask("task", tag);
+      PerfMark.stopTask("task", tag);
+    }
+  }
+
+  static final class ClzWithCtor {
+    public ClzWithCtor() {
+      Tag tag = PerfMark.createTag("tag", 1);
+      PerfMark.startTask("task");
+      PerfMark.stopTask("task");
+      PerfMark.startTask("task", tag);
+      PerfMark.stopTask("task", tag);
+    }
+  }
+
+  static final class ClzWithLinks {
+    public ClzWithLinks() {
+      PerfMark.startTask("task");
+      Link link = PerfMark.linkOut();
+      PerfMark.linkIn(link);
+      PerfMark.stopTask("task");
+    }
+  }
 
   private TransformerTestClasses() {}
+}
+
+final class ClzFooter {
+  {
+    Tag tag = PerfMark.createTag("tag", 1);
+    PerfMark.startTask("task");
+    PerfMark.stopTask("task");
+    PerfMark.startTask("task", tag);
+    PerfMark.stopTask("task", tag);
+  }
 }
