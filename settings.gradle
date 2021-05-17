@@ -1,5 +1,6 @@
 rootProject.name = 'perfmark'
 include ":perfmark-api"
+include ":perfmark-examples"
 include ":perfmark-impl"
 include ":perfmark-java6"
 include ":perfmark-java7"
@@ -9,6 +10,7 @@ include ":perfmark-agent"
 include ":perfmark-traceviewer"
 
 project(':perfmark-api').projectDir = "$rootDir/api" as File
+project(':perfmark-examples').projectDir = "$rootDir/examples" as File
 project(':perfmark-impl').projectDir = "$rootDir/impl" as File
 project(':perfmark-java6').projectDir = "$rootDir/java6" as File
 project(':perfmark-java7').projectDir = "$rootDir/java7" as File
