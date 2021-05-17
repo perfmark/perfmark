@@ -34,9 +34,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
-//@Ignore // disabled until marker support is added back in
-public class PerfMarkTransformerTest {
+@RunWith(JUnit4.class) public class PerfMarkTransformerTest {
 
   @Test
   public void deriveFileName() {
@@ -197,6 +195,54 @@ public class PerfMarkTransformerTest {
     Truth.assertThat(marks.get(4).getTagStringValue()).contains("init");
 
     assertEquals(marks.get(5).withTaskName("task"), marks.get(5));
+  }
+
+  @Test
+  public void transform_closeable() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithCloseable.class);
+    Constructor<?> ctor = clz.getConstructor();
+    ctor.setAccessible(true);
+    ctor.newInstance();
+    List<Mark> marks = Storage.readForTest();
+    assertThat(marks).hasSize(4);
+
+    assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
+
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("TransformerTestClasses$ClzWithCloseable");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("init");
+
+    assertEquals(marks.get(2).getTagKey(), "PerfMark.stopCallSite");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("TransformerTestClasses$ClzWithCloseable");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("init");
+
+    assertEquals(Mark.Operation.TASK_END_N1S0, marks.get(3).getOperation());
+  }
+
+  @Test
+  public void transform_wrongCloseable() throws Exception {
+    // If the wrong static type is used, the agent won't be able to instrument it.  Add a test to document this
+    // behavior.
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithWrongCloseable.class);
+    Constructor<?> ctor = clz.getConstructor();
+    ctor.setAccessible(true);
+    ctor.newInstance();
+    List<Mark> marks = Storage.readForTest();
+    assertThat(marks).hasSize(3);
+
+    assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
+
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("TransformerTestClasses$ClzWithWrongCloseable");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("init");
+
+    assertEquals(Mark.Operation.TASK_END_N1S0, marks.get(2).getOperation());
   }
 
   @Test

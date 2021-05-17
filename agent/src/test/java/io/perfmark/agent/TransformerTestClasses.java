@@ -19,6 +19,9 @@ package io.perfmark.agent;
 import io.perfmark.Link;
 import io.perfmark.PerfMark;
 import io.perfmark.Tag;
+import io.perfmark.TaskCloseable;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -92,6 +95,18 @@ final class TransformerTestClasses {
       Link link = PerfMark.linkOut();
       PerfMark.linkIn(link);
       PerfMark.stopTask("task");
+    }
+  }
+
+  static final class ClzWithCloseable {
+    public ClzWithCloseable() {
+      try (TaskCloseable discard = PerfMark.traceTask("task")) {}
+    }
+  }
+
+  static final class ClzWithWrongCloseable {
+    public ClzWithWrongCloseable() throws IOException {
+      try (Closeable discard = PerfMark.traceTask("task")) {}
     }
   }
 
