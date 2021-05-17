@@ -409,6 +409,40 @@ import org.junit.runners.JUnit4;
     assertEquals(marks.get(9).withTaskName("task"), marks.get(9));
   }
 
+  @Test
+  public void transform_anonymousClass() throws Exception {
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    Class<?> clz = transformAndLoad(new Runnable() {
+      // avoid IntelliJ thinking this should be a lambda.
+      public volatile int a;
+      @Override
+      public void run() {
+        PerfMark.startTask("task");
+        PerfMark.stopTask("task");
+      }
+    }.getClass());
+    Constructor<?> ctor = clz.getDeclaredConstructor(PerfMarkTransformerTest.class);
+    ctor.setAccessible(true);
+    Runnable instance = (Runnable) ctor.newInstance(this);
+    instance.run();
+    List<Mark> marks = Storage.readForTest();
+    assertThat(marks).hasSize(4);
+
+    assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
+
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("PerfMarkTransformerTest$");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("run");
+
+    assertEquals(marks.get(2).getTagKey(), "PerfMark.stopCallSite");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("PerfMarkTransformerTest$");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("run");
+
+    assertEquals(marks.get(3).withTaskName("task"), marks.get(3));
+  }
+
   private static Class<?> transformAndLoad(Class<?> toLoad, Class<?> ...extra) throws IOException {
     Map<String, Class<?>> toTransform = new HashMap<>();
     for (Class<?>  clz : extra) {
