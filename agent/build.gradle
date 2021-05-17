@@ -4,7 +4,7 @@ ext.jdkVersion = JavaVersion.VERSION_1_7
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(16)
     }
 }
 
@@ -34,8 +34,8 @@ compileTestJava {
     properties.put("errorProne", "false")
     options.errorprone.check("SameNameButDifferent", checkSeverityOff)
 
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = JavaVersion.VERSION_16
+    targetCompatibility = JavaVersion.VERSION_16
 }
 
 jar {

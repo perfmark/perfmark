@@ -14,18 +14,10 @@ compileJava {
     options.compilerArgs.add("-Xlint:-options")
 }
 
-if (!JavaVersion.current().isJava9Compatible()) {
-    project.tasks.all {
-        task -> task.enabled = false
-    }
-} else {
-    apply plugin: "org.javamodularity.moduleplugin"
-}
-
 dependencies {
-    implementation project(path: ':perfmark-impl', configuration: 'archives')
+    implementation project(':perfmark-impl')
     compileOnly libraries.jsr305
-    testImplementation project(path: ':perfmark-api', configuration: 'archives')
+    testImplementation project(':perfmark-api')
     jcstressImplementation project(':perfmark-impl')
 }
 

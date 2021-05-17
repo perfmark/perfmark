@@ -19,7 +19,6 @@ package io.perfmark.java9;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.Marker;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayDeque;
@@ -50,14 +49,12 @@ final class VarHandleMarkHolder extends MarkHolder {
   private static final long ATTACH_SNN_OP = 15;
 
   private static final VarHandle IDX;
-  private static final VarHandle MARKERS;
   private static final VarHandle STRINGS;
   private static final VarHandle LONGS;
 
   static {
     try {
       IDX = MethodHandles.lookup().findVarHandle(VarHandleMarkHolder.class, "idx", long.class);
-      MARKERS = MethodHandles.arrayElementVarHandle(Marker[].class);
       STRINGS = MethodHandles.arrayElementVarHandle(String[].class);
       LONGS = MethodHandles.arrayElementVarHandle(long[].class);
     } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -73,7 +70,6 @@ final class VarHandleMarkHolder extends MarkHolder {
   private volatile long idx;
 
   private final String[] taskNames;
-  private final Marker[] markers;
   private final String[] tagNames;
   private final long[] tagIds;
   private final long[] nanoTimes;
@@ -93,7 +89,6 @@ final class VarHandleMarkHolder extends MarkHolder {
     this.maxEvents = maxEvents;
     this.maxEventsMax = maxEvents - 1L;
     this.taskNames = new String[maxEvents];
-    this.markers = new Marker[maxEvents];
     this.tagNames = new String[maxEvents];
     this.tagIds = new long[maxEvents];
     this.nanoTimes = new long[maxEvents];
@@ -276,7 +271,6 @@ final class VarHandleMarkHolder extends MarkHolder {
   @Override
   public void resetForTest() {
     Arrays.fill(taskNames, null);
-    Arrays.fill(markers, null);
     Arrays.fill(tagNames, null);
     Arrays.fill(tagIds, 0);
     Arrays.fill(nanoTimes, 0);
@@ -288,7 +282,6 @@ final class VarHandleMarkHolder extends MarkHolder {
   @Override
   public List<Mark> read(boolean concurrentWrites) {
     final String[] localTaskNames = new String[maxEvents];
-    final Marker[] localMarkers = new Marker[maxEvents];
     final String[] localTagNames = new String[maxEvents];
     final long[] localTagIds = new long[maxEvents];
     final long[] localNanoTimes = new long[maxEvents];
@@ -298,7 +291,6 @@ final class VarHandleMarkHolder extends MarkHolder {
     int size = (int) Math.min(startIdx, maxEvents);
     for (int i = 0; i < size; i++) {
       localTaskNames[i] = (String) STRINGS.getOpaque(taskNames, i);
-      localMarkers[i] = (Marker) MARKERS.getOpaque(markers, i);
       localTagNames[i] = (String) STRINGS.getOpaque(tagNames, i);
       localTagIds[i] = (long) LONGS.getOpaque(tagIds, i);
       localNanoTimes[i] = (long) LONGS.getOpaque(nanoTimes, i);
