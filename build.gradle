@@ -117,11 +117,11 @@ subprojects {
     }
 
     [publishMavenPublicationToMavenRepository, publishMavenPublicationToMavenLocal]*.onlyIf {
-        !name.contains("perfmark-agent")
+        !name.contains("perfmark-agent") && !name.contains("perfmark-examples")
     }
 
     [javadoc]*.onlyIf {
-        !name.contains("perfmark-java9")
+        !name.contains("perfmark-java9") && !name.contains("perfmark-examples")
     }
 
 
