@@ -62,7 +62,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       String className, List<List<String>> methodsToAnnotate, byte[] classfileBuffer) {
     ClassReader cr = new ClassReader(classfileBuffer);
     ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-    cr.accept(new PerfMarkRewriter(Opcodes.ASM7, cw, className), ClassReader.SKIP_FRAMES);
+    cr.accept(new PerfMarkRewriter(Opcodes.ASM8, cw, className), ClassReader.SKIP_FRAMES);
     return cw.toByteArray();
   }
 
@@ -113,7 +113,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
         if (owner.equals(SRC_OWNER) && PRE_TAG.contains(name)) {
           String tag =
               new StackTraceElement(className, methodName, fileName, lineNumber).toString();
-          visitLdcInsn("PerfMark.taskStop");
+          visitLdcInsn("PerfMark.stopCallSite");
           visitLdcInsn(tag);
           super.visitMethodInsn(
               Opcodes.INVOKESTATIC,
@@ -128,7 +128,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
         if (owner.equals(SRC_OWNER) && POST_TAG.contains(name)) {
           String tag =
               new StackTraceElement(className, methodName, fileName, lineNumber).toString();
-          visitLdcInsn("PerfMark.taskStart");
+          visitLdcInsn("PerfMark.startCallSite");
           visitLdcInsn(tag);
           super.visitMethodInsn(
               Opcodes.INVOKESTATIC,

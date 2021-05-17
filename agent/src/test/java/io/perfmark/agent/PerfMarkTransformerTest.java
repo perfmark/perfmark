@@ -20,16 +20,15 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.truth.Truth;
-import io.perfmark.Link;
 import io.perfmark.PerfMark;
-import io.perfmark.Tag;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.Storage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.Map;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -66,14 +65,6 @@ public class PerfMarkTransformerTest {
     ctor.newInstance();
     List<Mark> marks = Storage.readForTest();
     assertThat(marks).hasSize(2);
-    for (Mark mark : marks) {
-      StackTraceElement element = null;
-      assertThat(element.getClassName()).isEqualTo(TransformerTestClasses.ClzAutoRecord.class.getName());
-      assertThat(element.getMethodName()).isEqualTo("recordMe");
-      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
-      // TODO: reenable.
-      // assertThat(element.getLineNumber()).isGreaterThan(0);
-    }
   }
 
   @Test
@@ -82,19 +73,22 @@ public class PerfMarkTransformerTest {
     Storage.resetForTest();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.SomeRecord.class);
-    Constructor<?> ctor = clz.getConstructor();
+    Constructor<?> ctor = clz.getConstructor(int.class);
     ctor.setAccessible(true);
-    ctor.newInstance();
+    ctor.newInstance(2);
     List<Mark> marks = Storage.readForTest();
-    assertThat(marks).hasSize(2);
-    for (Mark mark : marks) {
-      StackTraceElement element = null;
-      assertThat(element.getClassName()).isEqualTo(TransformerTestClasses.SomeRecord.class.getName());
-      assertThat(element.getMethodName()).isEqualTo("recordMe");
-      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
-      // TODO: reenable.
-      // assertThat(element.getLineNumber()).isGreaterThan(0);
-    }
+    assertThat(marks).hasSize(4);
+    assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
+
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("TransformerTestClasses$SomeRecord");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("<init>");
+
+    assertEquals(marks.get(2).getTagKey(), "PerfMark.stopCallSite");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("TransformerTestClasses$SomeRecord");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("<init>");
+
+    assertEquals(marks.get(3).withTaskName("task"), marks.get(3));
   }
 
   @Test
@@ -103,18 +97,22 @@ public class PerfMarkTransformerTest {
     Storage.resetForTest();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzCtorLambda.class);
-    Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
+    Constructor<?> ctor = clz.getConstructor();
     ctor.setAccessible(true);
-    ctor.newInstance(this);
+    ctor.newInstance();
     List<Mark> marks = Storage.readForTest();
-    assertThat(marks).hasSize(2);
-    for (Mark mark : marks) {
-      StackTraceElement element = null;
-      assertThat(element.getClassName()).isEqualTo(TransformerTestClasses.ClzCtorLambda.class.getName());
-      assertThat(element.getMethodName()).isEqualTo("lambda$new$0");
-      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
-      assertThat(element.getLineNumber()).isGreaterThan(0);
-    }
+    assertThat(marks).hasSize(4);
+    assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
+
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("TransformerTestClasses$ClzCtorLambda");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("lambda");
+
+    assertEquals(marks.get(2).getTagKey(), "PerfMark.stopCallSite");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("TransformerTestClasses$ClzCtorLambda");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("lambda");
+
+    assertEquals(marks.get(3).withTaskName("task"), marks.get(3));
   }
 
   @Test
@@ -122,31 +120,13 @@ public class PerfMarkTransformerTest {
     PerfMark.setEnabled(true);
     Storage.resetForTest();
 
-    final class ClzLocal {
-      public ClzLocal() {
-        @SuppressWarnings("unused")
-        Object o = execute(PerfMark::linkOut);
-      }
-
-      Link execute(Supplier<Link> supplier) {
-        return supplier.get();
-      }
-    }
-
-    Class<?> clz = transformAndLoad(ClzLocal.class);
-    Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
+    Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithMethodRefs.class);
+    Constructor<?> ctor = clz.getConstructor();
     ctor.setAccessible(true);
-    ctor.newInstance(this);
+    ctor.newInstance();
     List<Mark> marks = Storage.readForTest();
-    assertThat(marks).hasSize(1);
+    assertThat(marks).hasSize(2);
     // I'm not sure what to do with methodrefs, so just leave it alone for now.
-  }
-
-  public interface InterfaceWithDefaults {
-    default void record() {
-      PerfMark.startTask("task");
-      PerfMark.stopTask("task");
-    }
   }
 
   @Test
@@ -154,26 +134,42 @@ public class PerfMarkTransformerTest {
     PerfMark.setEnabled(true);
     Storage.resetForTest();
 
-    final class Bar implements InterfaceWithDefaults {
-      public Bar() {
-        record();
-      }
-    }
-
-    Class<?> clz = transformAndLoad(Bar.class);
-    Constructor<?> ctor = clz.getConstructor(PerfMarkTransformerTest.class);
+    Class<?> clz =
+        transformAndLoad(TransformerTestClasses.Bar.class, TransformerTestClasses.InterfaceWithDefaults.class);
+    Constructor<?> ctor = clz.getConstructor();
     ctor.setAccessible(true);
-    ctor.newInstance(this);
+    ctor.newInstance();
 
     List<Mark> marks = Storage.readForTest();
-    assertThat(marks).hasSize(2);
-    for (Mark mark : marks) {
-      StackTraceElement element = null;
-      assertThat(element.getClassName()).isEqualTo(InterfaceWithDefaults.class.getName());
-      assertThat(element.getMethodName()).isEqualTo("record");
-      assertThat(element.getFileName()).isEqualTo("PerfMarkTransformerTest.java");
-      assertThat(element.getLineNumber()).isGreaterThan(0);
-    }
+    assertThat(marks).hasSize(10);
+
+    assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
+
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("TransformerTestClasses$InterfaceWithDefaults");
+    Truth.assertThat(marks.get(1).getTagStringValue()).contains("record");
+
+    assertEquals(marks.get(2).getTagKey(), "PerfMark.stopCallSite");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("TransformerTestClasses$InterfaceWithDefaults");
+    Truth.assertThat(marks.get(2).getTagStringValue()).contains("record");
+
+    assertEquals(marks.get(3).withTaskName("task"), marks.get(3));
+
+    assertEquals(marks.get(4).withTaskName("task"), marks.get(4));
+
+    // Ignore the regular tag at 5
+
+    assertEquals(marks.get(6).getTagKey(), "PerfMark.startCallSite");
+    Truth.assertThat(marks.get(6).getTagStringValue()).contains("TransformerTestClasses$InterfaceWithDefaults");
+    Truth.assertThat(marks.get(6).getTagStringValue()).contains("record");
+
+    assertEquals(marks.get(7).getTagKey(), "PerfMark.stopCallSite");
+    Truth.assertThat(marks.get(7).getTagStringValue()).contains("TransformerTestClasses$InterfaceWithDefaults");
+    Truth.assertThat(marks.get(7).getTagStringValue()).contains("record");
+
+    // Ignore the regular tag at 8
+
+    assertEquals(marks.get(9).withTaskName("task"), marks.get(9));
   }
 
   @Test
@@ -190,13 +186,13 @@ public class PerfMarkTransformerTest {
 
     assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
 
-    assertEquals(marks.get(1).getTagKey(), "PerfMark.taskStart");
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("TransformerTestClasses$ClzWithLinks");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("init");
 
     // assume links have not been modified
 
-    assertEquals(marks.get(4).getTagKey(), "PerfMark.taskStop");
+    assertEquals(marks.get(4).getTagKey(), "PerfMark.stopCallSite");
     Truth.assertThat(marks.get(4).getTagStringValue()).contains("TransformerTestClasses$ClzWithLinks");
     Truth.assertThat(marks.get(4).getTagStringValue()).contains("init");
 
@@ -217,11 +213,11 @@ public class PerfMarkTransformerTest {
 
     assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
 
-    assertEquals(marks.get(1).getTagKey(), "PerfMark.taskStart");
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("TransformerTestClasses$ClzWithCtor");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("init");
 
-    assertEquals(marks.get(2).getTagKey(), "PerfMark.taskStop");
+    assertEquals(marks.get(2).getTagKey(), "PerfMark.stopCallSite");
     Truth.assertThat(marks.get(2).getTagStringValue()).contains("TransformerTestClasses$ClzWithCtor");
     Truth.assertThat(marks.get(2).getTagStringValue()).contains("init");
 
@@ -231,11 +227,11 @@ public class PerfMarkTransformerTest {
 
     // Ignore the regular tag at 5
 
-    assertEquals(marks.get(6).getTagKey(), "PerfMark.taskStart");
+    assertEquals(marks.get(6).getTagKey(), "PerfMark.startCallSite");
     Truth.assertThat(marks.get(6).getTagStringValue()).contains("TransformerTestClasses$ClzWithCtor");
     Truth.assertThat(marks.get(6).getTagStringValue()).contains("init");
 
-    assertEquals(marks.get(7).getTagKey(), "PerfMark.taskStop");
+    assertEquals(marks.get(7).getTagKey(), "PerfMark.stopCallSite");
     Truth.assertThat(marks.get(7).getTagStringValue()).contains("TransformerTestClasses$ClzWithCtor");
     Truth.assertThat(marks.get(7).getTagStringValue()).contains("init");
 
@@ -258,11 +254,11 @@ public class PerfMarkTransformerTest {
 
     assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
 
-    assertEquals(marks.get(1).getTagKey(), "PerfMark.taskStart");
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("TransformerTestClasses$ClzWithInit");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("init");
 
-    assertEquals(marks.get(2).getTagKey(), "PerfMark.taskStop");
+    assertEquals(marks.get(2).getTagKey(), "PerfMark.stopCallSite");
     Truth.assertThat(marks.get(2).getTagStringValue()).contains("TransformerTestClasses$ClzWithInit");
     Truth.assertThat(marks.get(2).getTagStringValue()).contains("init");
 
@@ -272,11 +268,11 @@ public class PerfMarkTransformerTest {
 
     // Ignore the regular tag at 5
 
-    assertEquals(marks.get(6).getTagKey(), "PerfMark.taskStart");
+    assertEquals(marks.get(6).getTagKey(), "PerfMark.startCallSite");
     Truth.assertThat(marks.get(6).getTagStringValue()).contains("TransformerTestClasses$ClzWithInit");
     Truth.assertThat(marks.get(6).getTagStringValue()).contains("init");
 
-    assertEquals(marks.get(7).getTagKey(), "PerfMark.taskStop");
+    assertEquals(marks.get(7).getTagKey(), "PerfMark.stopCallSite");
     Truth.assertThat(marks.get(7).getTagStringValue()).contains("TransformerTestClasses$ClzWithInit");
     Truth.assertThat(marks.get(7).getTagStringValue()).contains("init");
 
@@ -299,11 +295,11 @@ public class PerfMarkTransformerTest {
 
     assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
 
-    assertEquals(marks.get(1).getTagKey(), "PerfMark.taskStart");
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("TransformerTestClasses$ClzWithClinit");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("clinit");
 
-    assertEquals(marks.get(2).getTagKey(), "PerfMark.taskStop");
+    assertEquals(marks.get(2).getTagKey(), "PerfMark.stopCallSite");
     Truth.assertThat(marks.get(2).getTagStringValue()).contains("TransformerTestClasses$ClzWithClinit");
     Truth.assertThat(marks.get(2).getTagStringValue()).contains("clinit");
 
@@ -313,11 +309,11 @@ public class PerfMarkTransformerTest {
 
     // Ignore the regular tag at 5
 
-    assertEquals(marks.get(6).getTagKey(), "PerfMark.taskStart");
+    assertEquals(marks.get(6).getTagKey(), "PerfMark.startCallSite");
     Truth.assertThat(marks.get(6).getTagStringValue()).contains("TransformerTestClasses$ClzWithClinit");
     Truth.assertThat(marks.get(6).getTagStringValue()).contains("clinit");
 
-    assertEquals(marks.get(7).getTagKey(), "PerfMark.taskStop");
+    assertEquals(marks.get(7).getTagKey(), "PerfMark.stopCallSite");
     Truth.assertThat(marks.get(7).getTagStringValue()).contains("TransformerTestClasses$ClzWithClinit");
     Truth.assertThat(marks.get(7).getTagStringValue()).contains("clinit");
 
@@ -340,11 +336,11 @@ public class PerfMarkTransformerTest {
 
     assertEquals(marks.get(0).withTaskName("task"), marks.get(0));
 
-    assertEquals(marks.get(1).getTagKey(), "PerfMark.taskStart");
+    assertEquals(marks.get(1).getTagKey(), "PerfMark.startCallSite");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("ClzFooter");
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("init");
 
-    assertEquals(marks.get(2).getTagKey(), "PerfMark.taskStop");
+    assertEquals(marks.get(2).getTagKey(), "PerfMark.stopCallSite");
     Truth.assertThat(marks.get(2).getTagStringValue()).contains("ClzFooter");
     Truth.assertThat(marks.get(2).getTagStringValue()).contains("init");
 
@@ -354,11 +350,11 @@ public class PerfMarkTransformerTest {
 
     // Ignore the regular tag at 5
 
-    assertEquals(marks.get(6).getTagKey(), "PerfMark.taskStart");
+    assertEquals(marks.get(6).getTagKey(), "PerfMark.startCallSite");
     Truth.assertThat(marks.get(6).getTagStringValue()).contains("ClzFooter");
     Truth.assertThat(marks.get(6).getTagStringValue()).contains("init");
 
-    assertEquals(marks.get(7).getTagKey(), "PerfMark.taskStop");
+    assertEquals(marks.get(7).getTagKey(), "PerfMark.stopCallSite");
     Truth.assertThat(marks.get(7).getTagStringValue()).contains("ClzFooter");
     Truth.assertThat(marks.get(7).getTagStringValue()).contains("init");
 
@@ -367,76 +363,38 @@ public class PerfMarkTransformerTest {
     assertEquals(marks.get(9).withTaskName("task"), marks.get(9));
   }
 
-  private static byte[] getBytes(Class<?> clz) throws IOException {
-    String className = clz.getName().replace('.', '/') + ".class";
-    try (InputStream stream = clz.getClassLoader().getResourceAsStream(className)) {
-      return stream.readAllBytes();
+  private static Class<?> transformAndLoad(Class<?> toLoad, Class<?> ...extra) throws IOException {
+    Map<String, Class<?>> toTransform = new HashMap<>();
+    for (Class<?>  clz : extra) {
+      toTransform.put(clz.getName(), clz);
     }
-  }
-
-  private static final class TestClassLoader extends ClassLoader {
-    TestClassLoader() {
-      super(PerfMarkTransformerTest.class.getClassLoader());
-    }
-
-    Class<?> defineClass(String name, byte[] data) {
-      return defineClass(name, data, 0, data.length);
-    }
-
-    Class<?> findLoadedClz(String name) {
-      return findLoadedClass(name);
-    }
-  }
-
-  private static Class<?> transformAndLoad2(Class<?> clz) throws IOException {
-    byte[] data = getBytes(clz);
+    toTransform.put(toLoad.getName(), toLoad);
     try {
-      return new ClassLoader(clz.getClassLoader()) {
+      return new ClassLoader(toLoad.getClassLoader()) {
 
         @Override
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-          if (name.equals(clz.getName())) {
-           byte[] newClassBytes =  new PerfMarkTransformer().transform(this, name, clz, null, data);
-           Class<?> newClass = defineClass(name, newClassBytes, 0, newClassBytes.length);
-           if (resolve) {
-             resolveClass(newClass);
-           }
-            return newClass;
+          Class<?> existing = toTransform.get(name);
+          if (existing == null) {
+            return super.loadClass(name, resolve);
           }
-          return super.loadClass(name, resolve);
+          String resourceName = name.replace('.', '/') + ".class";
+          byte[] data;
+          try (InputStream stream = getResourceAsStream(resourceName)) {
+            data = stream.readAllBytes();
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+          byte[] newClassBytes = new PerfMarkTransformer().transform(this, name, existing, null, data);
+          Class<?> newClass = defineClass(name, newClassBytes, 0, newClassBytes.length);
+          if (resolve) {
+            resolveClass(newClass);
+          }
+          return newClass;
         }
-
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-          return super.findClass(name);
-        }
-      }.loadClass(clz.getName());
+      }.loadClass(toLoad.getName());
     } catch (ClassNotFoundException e) {
-      throw new IOException(e);
+      throw new RuntimeException(e);
     }
-  }
-
-  private static Class<?> transformAndLoad(Class<?> clz) throws IOException {
-    return transformAndLoad2(clz);
-  }
-
-  private static Class<?> transformAndLoad(Class<?> clz, TestClassLoader cl) throws IOException {
-    if (clz.getClassLoader() == null) {
-      return clz;
-    }
-    if (clz.getSuperclass() != Object.class && clz.getSuperclass() != null) {
-      transformAndLoad(clz.getSuperclass(), cl);
-    }
-    for (Class<?> iface : clz.getInterfaces()) {
-      transformAndLoad(iface, cl);
-    }
-    String name = clz.getName();
-    if (cl.findLoadedClz(name) != null) {
-      return cl.findLoadedClz(name);
-    }
-    byte[] bytes = getBytes(clz);
-    byte[] newBytes =
-        new PerfMarkTransformer().transform(cl, name, clz, /* protectionDomain= */ null, bytes);
-    return cl.defineClass(name, newBytes);
   }
 }

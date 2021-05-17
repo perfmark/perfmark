@@ -20,6 +20,7 @@ import io.perfmark.Link;
 import io.perfmark.PerfMark;
 import io.perfmark.Tag;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 final class TransformerTestClasses {
 
@@ -34,12 +35,13 @@ final class TransformerTestClasses {
   }
 
   record SomeRecord(int hi) {
-    SomeRecord {
-      PerfMark.attachTag("hi", hi);
+    public SomeRecord {
+      PerfMark.startTask("task");
+      PerfMark.stopTask("task");
     }
   }
 
-  final class ClzCtorLambda implements Executor {
+  static final class ClzCtorLambda implements Executor {
     public ClzCtorLambda() {
       execute(
           () -> {
@@ -90,6 +92,33 @@ final class TransformerTestClasses {
       Link link = PerfMark.linkOut();
       PerfMark.linkIn(link);
       PerfMark.stopTask("task");
+    }
+  }
+
+  public interface InterfaceWithDefaults {
+    default void record() {
+      Tag tag = PerfMark.createTag("tag", 1);
+      PerfMark.startTask("task");
+      PerfMark.stopTask("task");
+      PerfMark.startTask("task", tag);
+      PerfMark.stopTask("task", tag);
+    }
+  }
+
+  static final class Bar implements InterfaceWithDefaults {
+    public Bar() {
+      record();
+    }
+  }
+
+  static final class ClzWithMethodRefs {
+    public ClzWithMethodRefs() {
+      execute(PerfMark::startTask);
+      execute(PerfMark::stopTask);
+    }
+
+    void execute(Consumer<String> method) {
+      method.accept("task");
     }
   }
 
