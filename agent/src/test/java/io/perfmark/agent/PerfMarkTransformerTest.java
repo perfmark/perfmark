@@ -466,6 +466,9 @@ import org.junit.runners.JUnit4;
             throw new RuntimeException(e);
           }
           byte[] newClassBytes = new PerfMarkTransformer().transform(this, name, existing, null, data);
+          if (newClassBytes == null) {
+            newClassBytes = data;
+          }
           Class<?> newClass = defineClass(name, newClassBytes, 0, newClassBytes.length);
           if (resolve) {
             resolveClass(newClass);
