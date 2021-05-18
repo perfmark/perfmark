@@ -16,7 +16,6 @@
 
 package io.perfmark.agent;
 
-import io.perfmark.PerfMark;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
@@ -53,11 +52,6 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       Class<?> classBeingRedefined,
       ProtectionDomain protectionDomain,
       byte[] classfileBuffer) {
-    System.out.println("Intercepting " + className);
-    if (className.contains("ReflectionAccessor")) {
-      System.out.println("cool " + className);
-    }
-
     return transform(className, classfileBuffer);
   }
 
