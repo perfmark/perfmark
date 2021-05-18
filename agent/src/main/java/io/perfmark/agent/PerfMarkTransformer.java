@@ -16,7 +16,6 @@
 
 package io.perfmark.agent;
 
-import io.perfmark.PerfMark;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
 import java.util.Arrays;

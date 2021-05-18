@@ -38,7 +38,7 @@ public final class WebServer {
   public static void main(String[] args) throws IOException, InterruptedException {
     PerfMark.setEnabled(true);
 
-    HttpServer res = HttpServer.create(new InetSocketAddress("localhost", 0), 5);
+    HttpServer res = HttpServer.create(new InetSocketAddress("localhost", 1234), 5);
 
     res.createContext("/", new IndexHandler());
     res.createContext("/trace.json", new JsonHandler());
@@ -63,7 +63,7 @@ public final class WebServer {
       exchange.sendResponseHeaders(200, 0);
       try (TaskCloseable ignored = PerfMark.traceTask("IndexHandler.handle");
           InputStream is = getClass().getResourceAsStream("index.html");
-          OutputStream os = exchange.getResponseBody(); ) {
+          OutputStream os = exchange.getResponseBody()) {
         byte[] data = new byte[is.available()];
         int total = is.read(data);
         if (total != data.length) {
