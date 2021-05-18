@@ -52,11 +52,6 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       Class<?> classBeingRedefined,
       ProtectionDomain protectionDomain,
       byte[] classfileBuffer) {
-    System.out.println("Intercepting " + className);
-    if (className.contains("ReflectionAccessor")) {
-      System.out.println("cool " + className);
-    }
-
     return transform(className, classfileBuffer);
   }
 
