@@ -27,7 +27,8 @@ application {
 
     applicationDefaultJvmArgs = [
             "-javaagent:" + configurations.perfmarkAgent.resolve().iterator().next(),
-            "-Xlog:class+load=info"
+            "-Xlog:class+load=info",
+            "-Dio.perfmark.PerfMark.startEnabled=true"
     ]
 }
 

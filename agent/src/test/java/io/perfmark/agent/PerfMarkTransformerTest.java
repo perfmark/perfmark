@@ -465,7 +465,7 @@ import org.junit.runners.JUnit4;
           } catch (IOException e) {
             throw new RuntimeException(e);
           }
-          byte[] newClassBytes = new PerfMarkTransformer().transform(this, name, existing, null, data);
+          byte[] newClassBytes = new PerfMarkTransformer().transformInternal(this, name, existing, null, data);
           if (newClassBytes == null) {
             newClassBytes = data;
           }

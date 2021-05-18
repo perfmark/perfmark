@@ -16,6 +16,8 @@
 
 package io.perfmark.agent;
 
+import io.perfmark.PerfMark;
+import io.perfmark.TaskCloseable;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
@@ -47,6 +49,19 @@ final class PerfMarkTransformer implements ClassFileTransformer {
 
   @Override
   public byte[] transform(
+      ClassLoader loader,
+      final String className,
+      Class<?> classBeingRedefined,
+      ProtectionDomain protectionDomain,
+      byte[] classfileBuffer) {
+    try (TaskCloseable ignored = PerfMark.traceTask("PerfMarkTransformer.transform")) {
+      PerfMark.attachTag("classname", className);
+      PerfMark.attachTag("size", classfileBuffer.length);
+      return transformInternal(loader, className, classBeingRedefined, protectionDomain, classfileBuffer);
+    }
+  }
+
+  byte[] transformInternal(
       ClassLoader loader,
       final String className,
       Class<?> classBeingRedefined,

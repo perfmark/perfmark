@@ -38,7 +38,7 @@ public final class WebServer {
   public static void main(String[] args) throws IOException, InterruptedException {
     PerfMark.setEnabled(true);
 
-    HttpServer res = HttpServer.create(new InetSocketAddress("localhost", 1234), 5);
+    HttpServer res = HttpServer.create(new InetSocketAddress("localhost", 0), 5);
 
     res.createContext("/", new IndexHandler());
     res.createContext("/trace.json", new JsonHandler());
