@@ -80,7 +80,7 @@ import java.util.logging.Logger;
  *
  * <p>Links are created inside the scope of the current task and are linked into the scope of
  * another task.  PerfMark will represent the causal relationship between these two tasks.  Links
- * have a one-many relationship, and can be reused.  Like Tasks and Tags, when PerfMark is
+ * have a many-many relationship, and can be reused.  Like Tasks and Tags, when PerfMark is
  * disabled, the Links returned are no-op implementations.
  *
  * <p>Events are a special kind of Task, which do not have a duration.  In effect, they only have
