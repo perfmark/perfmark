@@ -63,7 +63,7 @@ public final class WebServer {
       exchange.sendResponseHeaders(200, 0);
       try (TaskCloseable ignored = PerfMark.traceTask("IndexHandler.handle");
           InputStream is = getClass().getResourceAsStream("index.html");
-          OutputStream os = exchange.getResponseBody(); ) {
+          OutputStream os = exchange.getResponseBody()) {
         byte[] data = new byte[is.available()];
         int total = is.read(data);
         if (total != data.length) {
