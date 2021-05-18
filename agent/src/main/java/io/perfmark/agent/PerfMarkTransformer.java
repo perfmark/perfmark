@@ -21,7 +21,6 @@ import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -53,29 +52,42 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       Class<?> classBeingRedefined,
       ProtectionDomain protectionDomain,
       byte[] classfileBuffer) {
-    List<String> meth1 =
-        Arrays.asList("io.perfmark.agent.PerfMarkTransformerTest$ClzAutoRecord", "recordMe");
-    return transform(className, Collections.singletonList(meth1), classfileBuffer);
+    return transform(className, classfileBuffer);
   }
 
-  private static byte[] transform(
-      String className, List<List<String>> methodsToAnnotate, byte[] classfileBuffer) {
+  private static byte[] transform(String className, byte[] classfileBuffer) {
     ClassReader cr = new ClassReader(classfileBuffer);
-    ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-    cr.accept(new PerfMarkRewriter(Opcodes.ASM8, cw, className), ClassReader.SKIP_FRAMES);
-    return cw.toByteArray();
+    ChangedState changed = new ChangedState();
+    int api = Opcodes.ASM8;
+    cr.accept(
+        new PerfMarkRewriter(changed, false, api, null, className),
+        ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+    if (changed.changed) {
+      ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS) {
+        @Override
+        protected String getCommonSuperClass(String type1, String type2) {
+          throw new UnsupportedOperationException("can't reflectively look up classes");
+        }
+      };
+      cr.accept(new PerfMarkRewriter(changed, true, api, cw, className), 0);
+      return cw.toByteArray();
+    }
+    return null;
   }
 
   static final class PerfMarkRewriter extends ClassVisitor {
 
     private final String className;
+    final ChangedState changed;
+    final boolean keepGoing;
     String fileName;
-    int fieldId;
 
-    PerfMarkRewriter(int api, ClassVisitor writer, String className) {
+    PerfMarkRewriter(ChangedState changed, boolean keepGoing, int api, ClassVisitor writer, String className) {
       super(api, writer);
       this.className = className;
       this.fileName = deriveFileName(className);
+      this.changed = changed;
+      this.keepGoing = keepGoing;
     }
 
     @Override
@@ -87,6 +99,9 @@ final class PerfMarkTransformer implements ClassFileTransformer {
     @Override
     public MethodVisitor visitMethod(
         int access, String name, String descriptor, String signature, String[] exceptions) {
+      if (changed.changed && !keepGoing) {
+        return null;
+      }
       return new PerfMarkMethodVisitor(
           name, super.visitMethod(access, name, descriptor, signature, exceptions));
     }
@@ -110,8 +125,11 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       @Override
       public void visitMethodInsn(
           int opcode, String owner, String name, String descriptor, boolean isInterface) {
+        if (changed.changed && !keepGoing) {
+          return;
+        }
         if ((owner.equals(SRC_OWNER) && PRE_TAG.contains(name))
-            || owner.equals("io/perfmark/TaskCloseable") && name.equals("close")) {
+              || (owner.equals("io/perfmark/TaskCloseable") && name.equals("close"))) {
           String tag =
               new StackTraceElement(className, methodName, fileName, lineNumber).toString();
           visitLdcInsn("PerfMark.stopCallSite");
@@ -122,6 +140,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
               "attachTag",
               "(Ljava/lang/String;Ljava/lang/String;)V",
               false);
+          changed.changed = true;
         }
 
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
@@ -137,6 +156,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
               "attachTag",
               "(Ljava/lang/String;Ljava/lang/String;)V",
               false);
+          changed.changed = true;
         }
       }
     }
@@ -164,6 +184,10 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       fileName = null;
     }
     return fileName;
+  }
+
+  private static final class ChangedState {
+    boolean changed;
   }
 
   PerfMarkTransformer() {}
