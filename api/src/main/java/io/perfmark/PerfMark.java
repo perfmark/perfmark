@@ -22,8 +22,70 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * PerfMark can be automatically enabled by setting the System property {@code
- * io.perfmark.PerfMark.startEnabled} to true.
+ * PerfMark is a very low overhead tracing library. To use PerfMark, annotate the code that needs to
+ * be traced using the start and stop methods. For example:
+ *
+ * <pre>{@code
+ * PerfMark.startTask("parseMessage");
+ * try {
+ *   message = parse(bytes);
+ * } finally {
+ *   PerfMark.stopTask("parseMessage");
+ * }
+ * }</pre>
+ *
+ * <p>When PerfMark is enabled, these tracing calls will record the start and stop times of the
+ * given task. When disabled, PerfMark disables these tracing calls, resulting in no additional
+ * tracing overhead. PerfMark can be enabled or disabled using the {@link #setEnabled(boolean)}. By
+ * default, PerfMark starts off disabled. PerfMark can be automatically enabled by setting the
+ * System property {@code io.perfmark.PerfMark.startEnabled} to true.
+ *
+ * <p>Tasks represent the span of work done by some code, starting and stopping in the same thread.
+ * Each task is started using one of the {@code startTask} methods, and ended using one of
+ * {@code stopTask} methods.  Each start must have a corresponding stop.    While not required,
+ * it is good practice for the start and stop calls have matching arguments for clarity.  Tasks
+ * form a "tree", with each child task starting after the parent has started, and stopping before
+ * the parent has stopped. The most recently started (and not yet stopped) task is used by the
+ * tagging and linking commands described below.
+ *
+ * <p>Tags are metadata about the task.  Each {@code Tag} contains a String and/or a long that
+ * describes the task, such as an RPC name, or request ID.  When PerfMark is disabled, the Tag
+ * objects are not created, avoiding overhead.  Tags are useful for keeping track of metadata
+ * about a task(s) that doesn't change frequently, or needs to be applied at multiple layers.
+ * In addition to Tag objects, named-tags can be added to the current task using the
+ * {@code attachTag} methods.  These allow including key-value like metadata with the task.
+ *
+ * <p>Links allow the code to represent relationships between different threads.  When one thread
+ * initiates work for another thread (such as a callback), Links express the control flow.  For
+ * example:
+ *
+ * <pre>{@code
+ * PerfMark.startTask("handleMessage");
+ * try {
+ *   Link link = PerfMark.linkOut();
+ *   message = parse(bytes);
+ *   executor.execute(() -> {
+ *     PerfMark.startTask("processMessage");
+ *     try {
+ *       PerfMark.linkIn(link);
+ *       handle(message);
+ *     } finally {
+ *       PerfMark.stopTask("processMessage");
+ *     }
+ *   });
+ * } finally {
+ *   PerfMark.stopTask("handleMessage");
+ * }
+ * }</pre>
+ *
+ * <p>Links are created inside the scope of the current task and are linked into the scope of
+ * another task.  PerfMark will represent the causal relationship between these two tasks.  Links
+ * have a many-many relationship, and can be reused.  Like Tasks and Tags, when PerfMark is
+ * disabled, the Links returned are no-op implementations.
+ *
+ * <p>Events are a special kind of Task, which do not have a duration.  In effect, they only have
+ * a single timestamp the represents a particular occurrence.  Events are slightly more efficient
+ * than tasks while PerfMark is enabled, but cannot be used with Links or named-tags.
  */
 public final class PerfMark {
   private static final Impl impl;
