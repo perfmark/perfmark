@@ -92,14 +92,10 @@ public final class PerfMark {
 
   static {
     Impl instance = null;
-    Level level = Level.WARNING;
     Throwable err = null;
     Class<?> clz = null;
     try {
       clz = Class.forName("io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
-    } catch (ClassNotFoundException e) {
-      level = Level.FINE;
-      err = e;
     } catch (Throwable t) {
       err = t;
     }
@@ -116,7 +112,13 @@ public final class PerfMark {
       impl = new Impl(Impl.NO_TAG);
     }
     if (err != null) {
-      Logger.getLogger(PerfMark.class.getName()).log(level, "Error during PerfMark.<clinit>", err);
+      try {
+        if (Boolean.getBoolean("io.perfmark.debug")) {
+          Logger.getLogger(PerfMark.class.getName()).log(Level.FINE, "Error during PerfMark.<clinit>", err);
+        }
+      } catch (Throwable e) {
+        // ignored.
+      }
     }
   }
 

@@ -20,17 +20,26 @@ import static io.perfmark.impl.Mark.NO_TAG_ID;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.truth.Truth;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.Storage;
-import java.lang.reflect.Field;
+import java.io.FilePermission;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.security.Permission;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Filter;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -38,44 +47,92 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class PerfMarkTest {
 
-  @BeforeClass
-  public static void beforeClass() throws Exception {
-    Class<?> implClz = Class.forName("io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
-    Field propertyField = implClz.getDeclaredField("START_ENABLED_PROPERTY");
-    propertyField.setAccessible(true);
-    String startEnabledProperty = (String) propertyField.get(null);
+  /**
+   * This test checks to see if PerfMark can be used from a Logger, which is used for recording if there is trouble
+   * turning on.  PerfMark should set a noop implementation before recording any problems with boot.
+   */
+  @Test
+  public void noBootCycle() throws Exception {
+    AtomicReference<LogRecord> ref = new AtomicReference<>();
+    ClassLoader loader =
+        new TestClassLoader(
+            getClass().getClassLoader(), "io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
+    Class<?> clz = Class.forName(PerfMark.class.getName(), false, loader);
+
+    Class<?> filterClz = Class.forName(TracingFilter.class.getName(), false, loader);
+    Constructor<? extends Filter> ctor = filterClz.asSubclass(Filter.class)
+        .getDeclaredConstructor(Class.class, AtomicReference.class);
+    ctor.setAccessible(true);
+    Filter filter = ctor.newInstance(clz, ref);
     Logger logger = Logger.getLogger(PerfMark.class.getName());
+    Level oldLevel = logger.getLevel();
     Filter oldFilter = logger.getFilter();
-    // This causes a cycle in case PerfMark tries to log during init.
-    // Also, it silences initial nagging about missing generators.
-    logger.setFilter(
-        new Filter() {
-          @Override
-          public boolean isLoggable(LogRecord record) {
-            PerfMark.startTask("isLoggable");
-            try {
-              return false;
-            } finally {
-              PerfMark.stopTask("isLoggable");
+    logger.setLevel(Level.ALL);
+    logger.setFilter(filter);
+    try {
+      System.setProperty("io.perfmark.debug", "true");
+      runWithProperty(System.getProperties(), "io.perfmark.debug", "true", () -> {
+        try {
+          // Force Initialization.
+          Class.forName(PerfMark.class.getName(), true, loader);
+        } finally{
+          logger.setFilter(oldFilter);
+        }
+        return null;
+      });
+    } finally{
+      logger.setFilter(oldFilter);
+      logger.setLevel(oldLevel);
+    }
+
+    // The actual SecretPerfMarkImpl is not part of the custom class loader above, so it will be a class mismatch when
+    // it tries to implement Impl.
+    // The message will be the default still, so check for that, to prove it did something.
+    Truth.assertThat(ref.get()).isNotNull();
+    Truth.assertThat(ref.get().getMessage()).contains("Error during PerfMark.<clinit>");
+  }
+
+  @Test
+  @Ignore // Disabled for now
+  public void worksWithSecurityManager() throws Exception {
+    final class NopeSecurityManager extends SecurityManager {
+      boolean unload;
+      @Override
+      public void checkPermission(Permission perm) {
+        System.out.println(perm);
+        if (unload && perm.getName().equals("setSecurityManager")) {
+          return;
+        }
+        if (perm instanceof FilePermission) {
+          FilePermission fp = (FilePermission) perm;
+          if ("read".equals(fp.getActions())) {
+            if (fp.getName().endsWith(".class") && fp.getName().contains("io/perfmark/")) {
+              return;
             }
           }
-        });
-    // Try to get PerfMark to accidentally log that it is enabled.  We are careful to not
-    // accidentally cause class initialization early here, as START_ENABLED_PROPERTY is a
-    // constant.
-    String oldProperty = System.getProperty(startEnabledProperty);
-    System.setProperty(startEnabledProperty, "true");
-    try {
-      Class.forName(PerfMark.class.getName());
-    } finally {
-      if (oldProperty == null) {
-        System.clearProperty(startEnabledProperty);
-      } else {
-        System.setProperty(startEnabledProperty, oldProperty);
+        }
+        super.checkPermission(perm);
+        //throw new SecurityException("nope");
       }
-      logger.setFilter(oldFilter);
+
+      @Override
+      public void checkPermission(Permission perm, Object context) {
+        //throw new SecurityException("nope");
+      }
+    }
+    ClassLoader loader = new TestClassLoader(getClass().getClassLoader());
+
+    SecurityManager oldMgr = System.getSecurityManager();
+    NopeSecurityManager newMgr = new NopeSecurityManager();
+    try {
+      System.setSecurityManager(newMgr);
+      Class.forName(PerfMark.class.getName(), true, loader);
+    } finally {
+      newMgr.unload = true;
+      System.setSecurityManager(oldMgr);
     }
   }
+
 
   @Test
   public void allMethodForward_taskName() {
@@ -231,6 +288,78 @@ public class PerfMarkTest {
       return (long) method.invoke(null);
     } catch (Exception e) {
       throw new AssertionError(e);
+    }
+  }
+
+  @CanIgnoreReturnValue
+  private static <T> T runWithProperty(Properties properties, String name, String value, Callable<T> runnable)
+      throws Exception {
+    if (properties.containsKey(name)) {
+      String oldProp = null;
+      oldProp = properties.getProperty(name);
+      try {
+        System.setProperty(name, value);
+        return runnable.call();
+      } finally{
+        properties.setProperty(name, oldProp);
+      }
+    } else {
+      try {
+        System.setProperty(name, value);
+        return runnable.call();
+      } finally{
+        properties.remove(name);
+      }
+    }
+  }
+
+  private static class TestClassLoader extends ClassLoader {
+
+    private final List<String> classesToExclude;
+
+    TestClassLoader(ClassLoader parent, String ... classesToExclude) {
+      super(parent);
+      this.classesToExclude = Arrays.asList(classesToExclude);
+    }
+
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+      if (!name.startsWith("io.perfmark.") || classesToExclude.contains(name)) {
+        return super.loadClass(name, resolve);
+      }
+      try (InputStream is = getParent().getResourceAsStream(name.replace('.', '/') + ".class")) {
+        if (is == null) {
+          throw new ClassNotFoundException(name);
+        }
+        byte[] data = is.readAllBytes();
+        Class<?> clz = defineClass(name, data, 0, data.length);
+        if (resolve) {
+          resolveClass(clz);
+        }
+        return clz;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private static final class TracingFilter implements Filter {
+    private final AtomicReference<LogRecord> ref;
+
+    TracingFilter(Class<?> clz, AtomicReference<LogRecord> ref) {
+      assertEquals(PerfMark.class, clz);
+      this.ref = ref;
+    }
+
+    @Override
+    public boolean isLoggable(LogRecord record) {
+      PerfMark.startTask("isLoggable");
+      try {
+        ref.compareAndExchange(null, record);
+        return false;
+      } finally {
+        PerfMark.stopTask("isLoggable");
+      }
     }
   }
 }
