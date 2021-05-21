@@ -387,4 +387,6 @@ final class SecretPerfMarkImpl {
       return ((gen >>> Generator.GEN_OFFSET) & 0x1L) != 0L;
     }
   }
+
+  private SecretPerfMarkImpl() {}
 }

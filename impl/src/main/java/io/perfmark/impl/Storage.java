@@ -261,7 +261,5 @@ public final class Storage {
     }
   }
 
-  private Storage() {
-    throw new AssertionError("nope");
-  }
+  private Storage() {}
 }
