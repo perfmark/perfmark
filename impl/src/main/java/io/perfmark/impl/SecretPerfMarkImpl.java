@@ -39,6 +39,7 @@ final class SecretPerfMarkImpl {
 
     private static final AtomicLong linkIdAlloc = new AtomicLong(1);
     private static final Generator generator;
+
     private static final Logger logger;
 
     private static long actualGeneration;
@@ -101,7 +102,7 @@ final class SecretPerfMarkImpl {
       }
       boolean startEnabled = false;
       try {
-        startEnabled = Boolean.parseBoolean(System.getProperty(START_ENABLED_PROPERTY, "false"));
+        startEnabled = Boolean.getBoolean(START_ENABLED_PROPERTY);
       } catch (Throwable t) {
         warnings.add(t);
       }
