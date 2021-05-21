@@ -18,11 +18,8 @@ package io.perfmark.impl;
 
 import io.perfmark.Impl;
 import io.perfmark.Link;
-import io.perfmark.PerfMark;
 import io.perfmark.StringFunction;
 import io.perfmark.Tag;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -94,7 +91,10 @@ final class SecretPerfMarkImpl {
           Logger localLogger = Logger.getLogger(PerfMarkImpl.class.getName());
           log = localLogger;
           for (Throwable problem : problems) {
-            localLogger.log(Level.FINE, "Error loading MarkHolderProvider", problem);
+            if (problem == null) {
+              continue;
+            }
+            localLogger.log(Level.FINE, "Error loading Generator", problem);
           }
           localLogger.log(Level.FINE, "Using {0}", new Object[] {generator.getClass().getName()});
           logEnabledChange(startEnabled, startEnabledSuccess);

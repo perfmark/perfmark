@@ -48,60 +48,46 @@ public final class Storage {
   static final MarkHolderProvider markHolderProvider;
 
   static {
-    List<MarkHolderProvider> providers = new ArrayList<MarkHolderProvider>();
-    List<Throwable> fines = new ArrayList<Throwable>();
-    List<Throwable> warnings = new ArrayList<Throwable>();
-    Class<?> clz = null;
-    try {
-      clz =
-          Class.forName(
-              "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider");
-    } catch (ClassNotFoundException e) {
-      fines.add(e);
-    } catch (Throwable t) {
-      warnings.add(t);
-    }
-    if (clz != null) {
+    MarkHolderProvider provider = null;
+    Throwable[] problems = new Throwable[2];
+    if (provider == null) {
       try {
-        providers.add(clz.asSubclass(MarkHolderProvider.class).getConstructor().newInstance());
+        Class<?> clz =
+            Class.forName(
+                "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider");
+        provider = clz.asSubclass(MarkHolderProvider.class).getConstructor().newInstance();
       } catch (Throwable t) {
-        warnings.add(t);
+        problems[0]  = t;
       }
-      clz = null;
     }
-    try {
-      clz =
-          Class.forName(
-              "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider");
-    } catch (ClassNotFoundException e) {
-      fines.add(e);
-    } catch (Throwable t) {
-      warnings.add(t);
-    }
-    if (clz != null) {
+    if (provider == null) {
       try {
-        providers.add(clz.asSubclass(MarkHolderProvider.class).getConstructor().newInstance());
+        Class<?> clz =
+            Class.forName(
+                "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider");
+        provider = clz.asSubclass(MarkHolderProvider.class).getConstructor().newInstance();
       } catch (Throwable t) {
-        warnings.add(t);
+        problems[1]  = t;
       }
-      clz = null;
     }
-
-    if (!providers.isEmpty()) {
-      markHolderProvider = providers.get(0);
-    } else {
+    if (provider == null) {
       markHolderProvider = new NoopMarkHolderProvider();
+    } else {
+      markHolderProvider = provider;
     }
-
-    if (!warnings.isEmpty() || !fines.isEmpty()) {
-      Logger logger = Logger.getLogger(Storage.class.getName());
-
-      for (Throwable error : warnings) {
-        logger.log(Level.WARNING, "Error loading MarkHolderProvider", error);
+    try {
+      if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
+        Logger localLogger = Logger.getLogger(Storage.class.getName());
+        for (Throwable problem : problems) {
+          if (problem == null) {
+            continue;
+          }
+          localLogger.log(Level.FINE, "Error loading MarkHolderProvider", problem);
+        }
+        localLogger.log(Level.FINE, "Using {0}", new Object[] {markHolderProvider.getClass().getName()});
       }
-      for (Throwable error : fines) {
-        logger.log(Level.FINE, "Error loading MarkHolderProvider", error);
-      }
+    } catch (Throwable t) {
+      // ignore
     }
   }
 
