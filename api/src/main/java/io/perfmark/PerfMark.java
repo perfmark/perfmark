@@ -113,7 +113,7 @@ public final class PerfMark {
     }
     if (err != null) {
       try {
-        if (Boolean.getBoolean("io.perfmark.debug")) {
+        if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
           Logger.getLogger(PerfMark.class.getName()).log(Level.FINE, "Error during PerfMark.<clinit>", err);
         }
       } catch (Throwable e) {
