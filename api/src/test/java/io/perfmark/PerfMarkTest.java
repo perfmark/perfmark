@@ -71,7 +71,7 @@ public class PerfMarkTest {
     logger.setFilter(filter);
     try {
       System.setProperty("io.perfmark.debug", "true");
-      runWithProperty(System.getProperties(), "io.perfmark.debug", "true", () -> {
+      runWithProperty(System.getProperties(), "io.perfmark.PerfMark.debug", "true", () -> {
         try {
           // Force Initialization.
           Class.forName(PerfMark.class.getName(), true, loader);
@@ -295,7 +295,7 @@ public class PerfMarkTest {
   private static <T> T runWithProperty(Properties properties, String name, String value, Callable<T> runnable)
       throws Exception {
     if (properties.containsKey(name)) {
-      String oldProp = null;
+      String oldProp;
       oldProp = properties.getProperty(name);
       try {
         System.setProperty(name, value);
@@ -315,16 +315,19 @@ public class PerfMarkTest {
 
   private static class TestClassLoader extends ClassLoader {
 
-    private final List<String> classesToExclude;
+    private final List<String> classesToDrop;
 
-    TestClassLoader(ClassLoader parent, String ... classesToExclude) {
+    TestClassLoader(ClassLoader parent, String ... classesToDrop) {
       super(parent);
-      this.classesToExclude = Arrays.asList(classesToExclude);
+      this.classesToDrop = Arrays.asList(classesToDrop);
     }
 
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-      if (!name.startsWith("io.perfmark.") || classesToExclude.contains(name)) {
+      if (classesToDrop.contains(name)) {
+        throw new ClassNotFoundException();
+      }
+      if (!name.startsWith("io.perfmark.")) {
         return super.loadClass(name, resolve);
       }
       try (InputStream is = getParent().getResourceAsStream(name.replace('.', '/') + ".class")) {

@@ -18,6 +18,7 @@ package io.perfmark.impl;
 
 import io.perfmark.Impl;
 import io.perfmark.Link;
+import io.perfmark.PerfMark;
 import io.perfmark.StringFunction;
 import io.perfmark.Tag;
 import java.util.ArrayList;
@@ -35,88 +36,73 @@ final class SecretPerfMarkImpl {
     private static final Link NO_LINK = packLink(Mark.NO_LINK_ID);
     private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
 
-    private static final String START_ENABLED_PROPERTY = "io.perfmark.PerfMark.startEnabled";
-
     private static final AtomicLong linkIdAlloc = new AtomicLong(1);
     private static final Generator generator;
 
-    private static final Logger logger;
+    // May be null if debugging is disabled.
+    private static final Object logger;
 
     private static long actualGeneration;
 
     static {
-      List<Generator> generators = new ArrayList<Generator>();
-      List<Throwable> fines = new ArrayList<Throwable>();
-      List<Throwable> warnings = new ArrayList<Throwable>();
-      Class<?> clz = null;
-      try {
-        clz = Class.forName("io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator");
-      } catch (ClassNotFoundException e) {
-        fines.add(e);
-      } catch (Throwable t) {
-        warnings.add(t);
-      }
-      if (clz != null) {
+      Generator gen = null;
+      Throwable[] problems = new Throwable[4];
+      // Avoid using a for-loop for this code, as it makes it easier for tools like Proguard to rewrite.
+      if (gen == null) {
         try {
-          generators.add(clz.asSubclass(Generator.class).getConstructor().newInstance());
+          Class<?> clz = Class.forName("io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator");
+          gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
         } catch (Throwable t) {
-          warnings.add(t);
+          problems[0] = t;
         }
-        clz = null;
       }
-      try {
-        clz = Class.forName("io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator");
-      } catch (ClassNotFoundException e) {
-        fines.add(e);
-      } catch (Throwable t) {
-        warnings.add(t);
-      }
-      if (clz != null) {
+      if (gen == null) {
         try {
-          generators.add(clz.asSubclass(Generator.class).getConstructor().newInstance());
+          Class<?> clz = Class.forName("io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator");
+          gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
         } catch (Throwable t) {
-          warnings.add(t);
+          problems[1] = t;
         }
-        clz = null;
       }
-      try {
-        clz = Class.forName("io.perfmark.java6.SecretVolatileGenerator$VolatileGenerator");
-      } catch (ClassNotFoundException e) {
-        fines.add(e);
-      } catch (Throwable t) {
-        warnings.add(t);
-      }
-      if (clz != null) {
+      if (gen == null) {
         try {
-          generators.add(clz.asSubclass(Generator.class).getConstructor().newInstance());
+          Class<?> clz = Class.forName("io.perfmark.java6.SecretVolatileGenerator$VolatileGenerator");
+          gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
         } catch (Throwable t) {
-          warnings.add(t);
+          problems[2] = t;
         }
-        clz = null;
       }
-
-      if (!generators.isEmpty()) {
-        generator = generators.get(0);
-      } else {
+      if (gen == null) {
         generator = new NoopGenerator();
+      } else {
+        generator = gen;
       }
-      boolean startEnabled = false;
-      try {
-        startEnabled = Boolean.getBoolean(START_ENABLED_PROPERTY);
-      } catch (Throwable t) {
-        warnings.add(t);
-      }
-      boolean success = setEnabledQuiet(startEnabled);
-      logger = Logger.getLogger(PerfMarkImpl.class.getName());
-      logger.log(Level.FINE, "Using {0}", new Object[] {generator.getClass().getName()});
 
-      for (Throwable error : warnings) {
-        logger.log(Level.WARNING, "Error loading MarkHolderProvider", error);
+      boolean startEnabled = false;
+      boolean startEnabledSuccess = false;
+      try {
+        if ((startEnabled = Boolean.getBoolean("io.perfmark.PerfMark.startEnabled"))) {
+          startEnabledSuccess = setEnabledQuiet(startEnabled);
+        }
+      } catch (Throwable t) {
+        problems[3] = t;
       }
-      for (Throwable error : fines) {
-        logger.log(Level.FINE, "Error loading MarkHolderProvider", error);
+
+      Object log = null;
+      try {
+        if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
+          Logger localLogger = Logger.getLogger(PerfMarkImpl.class.getName());
+          log = localLogger;
+          for (Throwable problem : problems) {
+            localLogger.log(Level.FINE, "Error loading MarkHolderProvider", problem);
+          }
+          localLogger.log(Level.FINE, "Using {0}", new Object[] {generator.getClass().getName()});
+          logEnabledChange(startEnabled, startEnabledSuccess);
+        }
+      } catch (Throwable t) {
+        // ignore
       }
-      logEnabledChange(startEnabled, success);
+      logger = log;
     }
 
     public PerfMarkImpl(Tag key) {
@@ -129,8 +115,11 @@ final class SecretPerfMarkImpl {
     }
 
     private static synchronized void logEnabledChange(boolean value, boolean success) {
-      if (success && logger.isLoggable(Level.FINE)) {
-        logger.fine((value ? "Enabling" : "Disabling") + " PerfMark recorder");
+      if (success && logger != null) {
+        Logger localLogger = (Logger) logger;
+        if (localLogger.isLoggable(Level.FINE)) {
+          localLogger.fine((value ? "Enabling" : "Disabling") + " PerfMark recorder");
+        }
       }
     }
 
@@ -296,22 +285,26 @@ final class SecretPerfMarkImpl {
 
     static <T> void handleTagValueFailure(
         String tagName, T tagObject, StringFunction<? super T> stringFunction, Throwable cause) {
+      if (logger == null) {
+        return;
+      }
+      Logger localLogger = (Logger) logger;
       try {
-        if (logger.isLoggable(Level.WARNING)) {
+        if (localLogger.isLoggable(Level.FINE)) {
           LogRecord lr =
               new LogRecord(
-                  Level.WARNING,
+                  Level.FINE,
                   "PerfMark.attachTag failed: tagName={0}, tagObject={1}, stringFunction={2}");
           lr.setParameters(new Object[] {tagName, tagObject, stringFunction});
           lr.setThrown(cause);
-          logger.log(lr);
+          localLogger.log(lr);
         }
       } catch (Throwable t) {
         // Need to be careful here.  It's possible that the Exception thrown may itself throw
         // while trying to convert it to a String.  Instead, only pass the class name, which is
         // safer than passing the whole object.
-        logger.log(
-            Level.WARNING,
+        localLogger.log(
+            Level.FINE,
             "PerfMark.attachTag failed for {0}: {1}",
             new Object[] {tagName, t.getClass()});
       }
@@ -319,20 +312,24 @@ final class SecretPerfMarkImpl {
 
     static <T> void handleTaskNameFailure(
         T taskNameObject, StringFunction<? super T> stringFunction, Throwable cause) {
+      if (logger == null) {
+        return;
+      }
+      Logger localLogger = (Logger) logger;
       try {
-        if (logger.isLoggable(Level.WARNING)) {
+        if (localLogger.isLoggable(Level.FINE)) {
           LogRecord lr =
               new LogRecord(
-                  Level.WARNING, "PerfMark.startTask failed: taskObject={0}, stringFunction={1}");
+                  Level.FINE, "PerfMark.startTask failed: taskObject={0}, stringFunction={1}");
           lr.setParameters(new Object[] {taskNameObject, stringFunction});
           lr.setThrown(cause);
-          logger.log(lr);
+          localLogger.log(lr);
         }
       } catch (Throwable t) {
         // Need to be careful here.  It's possible that the Exception thrown may itself throw
         // while trying to convert it to a String.  Instead, only pass the class name, which is
         // safer than passing the whole object.
-        logger.log(Level.WARNING, "PerfMark.startTask failed for {0}", new Object[] {t.getClass()});
+        localLogger.log(Level.FINE, "PerfMark.startTask failed for {0}", new Object[] {t.getClass()});
       }
     }
 
