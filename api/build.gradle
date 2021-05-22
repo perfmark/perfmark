@@ -12,6 +12,12 @@ java {
     }
 }
 
+
+sourceSets {
+    jmhTest {
+    }
+}
+
 compileJava {
     sourceCompatibility = jdkVersion
     targetCompatibility = jdkVersion
@@ -28,6 +34,13 @@ dependencies {
 
     jmh project(':perfmark-java9'),
             project(':perfmark-java7')
+
+    jmhTestImplementation project(':perfmark-api')
+    jmhTestRuntimeOnly project(':perfmark-java9'), project(':perfmark-java7')
+    jmhTestImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    jmhTestImplementation 'org.openjdk.jmh:jmh-core:1.31'
+    jmhTestAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.31'
+
 }
 
 compileTestJava {
