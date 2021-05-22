@@ -4,7 +4,7 @@ plugins {
 
 description = "PerfMark Examples"
 ext.moduleName = "io.perfmark.examples"
-ext.jdkVersion = JavaVersion.VERSION_1_8
+ext.jdkVersion = JavaVersion.VERSION_1_9
 
 compileJava {
     sourceCompatibility = jdkVersion
@@ -15,7 +15,7 @@ configurations {
 }
 dependencies {
     implementation project(':perfmark-api'), project(':perfmark-tracewriter')
-    runtimeOnly project(':perfmark-java7'), project(':perfmark-java6')
+    runtimeOnly project(':perfmark-java7'), project(':perfmark-java9')
 
     // Force this to be on the classpath, since it won't come in normally.
     runtimeOnly project(path: ':perfmark-agent')
@@ -26,9 +26,10 @@ application {
     mainClass = 'io.perfmark.examples.perfetto.WebServer'
 
     applicationDefaultJvmArgs = [
-            "-javaagent:" + configurations.perfmarkAgent.resolve().iterator().next(),
+            "-javaagent:" + configurations.perfmarkAgent.resolve().iterator().next() + "=hi mom",
             "-Xlog:class+load=info",
-            "-Dio.perfmark.PerfMark.startEnabled=true"
+            "-Dio.perfmark.PerfMark.startEnabled=true",
+            "-Djava.security.manager"
     ]
 }
 

@@ -54,6 +54,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       Class<?> classBeingRedefined,
       ProtectionDomain protectionDomain,
       byte[] classfileBuffer) {
+
     try (TaskCloseable ignored = PerfMark.traceTask("PerfMarkTransformer.transform")) {
       PerfMark.attachTag("classname", className);
       PerfMark.attachTag("size", classfileBuffer.length);

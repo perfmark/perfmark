@@ -25,6 +25,5 @@ public final class Main {
   }
 
   private Main() {
-    throw new AssertionError("nope");
   }
 }

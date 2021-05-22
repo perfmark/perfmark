@@ -1,6 +1,6 @@
 description = "PerfMark Agent"
 ext.moduleName = "io.perfmark.agent"
-ext.jdkVersion = JavaVersion.VERSION_1_7
+ext.jdkVersion = JavaVersion.VERSION_1_8
 
 java {
     toolchain {
