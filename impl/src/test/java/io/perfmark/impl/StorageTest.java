@@ -59,6 +59,8 @@ public class StorageTest {
     assertEquals(0, latch.getCount());
     List<MarkList> firstRead = Storage.read();
     assertEquals(1, firstRead.size());
+    // simulate an OOM
+    Storage.clearSoftRefsForTest();
     List<MarkList> secondRead = Storage.read();
     assertEquals(0, secondRead.size());
   }
