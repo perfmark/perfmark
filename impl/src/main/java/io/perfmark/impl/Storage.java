@@ -134,70 +134,70 @@ public final class Storage {
     return Collections.unmodifiableList(markLists);
   }
 
-  static void startAnyways(long gen, String taskName, @Nullable String tagName, long tagId) {
+  static void startAnyway(long gen, String taskName, @Nullable String tagName, long tagId) {
     localMarkHolder.get().start(gen, taskName, tagName, tagId, System.nanoTime());
   }
 
-  static void startAnyways(long gen, String taskName) {
+  static void startAnyway(long gen, String taskName) {
     localMarkHolder.get().start(gen, taskName, System.nanoTime());
   }
 
-  static void startAnyways(long gen, String taskName, String subTaskName) {
+  static void startAnyway(long gen, String taskName, String subTaskName) {
     localMarkHolder.get().start(gen, taskName, subTaskName, System.nanoTime());
   }
 
-  static void stopAnyways(long gen) {
+  static void stopAnyway(long gen) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().stop(gen, nanoTime);
   }
 
-  static void stopAnyways(long gen, String taskName, @Nullable String tagName, long tagId) {
+  static void stopAnyway(long gen, String taskName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().stop(gen, taskName, tagName, tagId, nanoTime);
   }
 
-  static void stopAnyways(long gen, String taskName) {
+  static void stopAnyway(long gen, String taskName) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().stop(gen, taskName, nanoTime);
   }
 
-  static void stopAnyways(long gen, String taskName, String subTaskName) {
+  static void stopAnyway(long gen, String taskName, String subTaskName) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().stop(gen, taskName, subTaskName, nanoTime);
   }
 
-  static void eventAnyways(long gen, String eventName, @Nullable String tagName, long tagId) {
+  static void eventAnyway(long gen, String eventName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().event(gen, eventName, tagName, tagId, nanoTime);
   }
 
-  static void eventAnyways(long gen, String eventName) {
+  static void eventAnyway(long gen, String eventName) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().event(gen, eventName, nanoTime);
   }
 
-  static void eventAnyways(long gen, String eventName, String subEventName) {
+  static void eventAnyway(long gen, String eventName, String subEventName) {
     long nanoTime = System.nanoTime();
     localMarkHolder.get().event(gen, eventName, subEventName, nanoTime);
   }
 
-  static void linkAnyways(long gen, long linkId) {
+  static void linkAnyway(long gen, long linkId) {
     localMarkHolder.get().link(gen, linkId);
   }
 
-  static void attachTagAnyways(long gen, @Nullable String tagName, long tagId) {
+  static void attachTagAnyway(long gen, @Nullable String tagName, long tagId) {
     localMarkHolder.get().attachTag(gen, tagName, tagId);
   }
 
-  static void attachKeyedTagAnyways(long gen, @Nullable String tagName, String tagValue) {
+  static void attachKeyedTagAnyway(long gen, @Nullable String tagName, String tagValue) {
     localMarkHolder.get().attachKeyedTag(gen, tagName, tagValue);
   }
 
-  static void attachKeyedTagAnyways(long gen, @Nullable String tagName, long tagValue) {
+  static void attachKeyedTagAnyway(long gen, @Nullable String tagName, long tagValue) {
     localMarkHolder.get().attachKeyedTag(gen, tagName, tagValue);
   }
 
-  static void attachKeyedTagAnyways(
+  static void attachKeyedTagAnyway(
       long gen, @Nullable String tagName, long tagValue0, long tagValue1) {
     localMarkHolder.get().attachKeyedTag(gen, tagName, tagValue0, tagValue1);
   }
@@ -212,7 +212,6 @@ public final class Storage {
       tuple.markHolderRef.enqueue();
     }
   }
-
 
   @Nullable
   public static MarkList readForTest() {

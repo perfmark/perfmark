@@ -44,7 +44,7 @@ public class StorageTest {
               @Override
               public void run() {
                 Storage.resetForTest();
-                Storage.linkAnyways(4096, 1234);
+                Storage.linkAnyway(4096, 1234);
                 latch.countDown();
               }
             })
