@@ -26,7 +26,13 @@ final class SecretSynchronizedMarkHolderProvider {
     public SynchronizedMarkHolderProvider() {}
 
     @Override
+    @SuppressWarnings("deprecation")
     public MarkHolder create() {
+      return new SynchronizedMarkHolder();
+    }
+
+    @Override
+    public MarkHolder create(long markHolderId) {
       return new SynchronizedMarkHolder();
     }
   }
