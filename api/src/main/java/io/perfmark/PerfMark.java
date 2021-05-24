@@ -170,6 +170,7 @@ public final class PerfMark {
    *
    * @param taskNameObject the name of the task.
    * @param taskNameFunction the function that will convert the taskNameObject to a taskName
+   * @param <T> the object type to be stringified
    * @since 0.22.0
    */
   public static <T> void startTask(T taskNameObject, StringFunction<? super T> taskNameFunction) {
@@ -197,10 +198,12 @@ public final class PerfMark {
    *
    * <p>The returned closeable is meant to be used in a try-with-resources block. Callers should not
    * allow the returned closeable to be used outside of the try block that initiated the call.
+   * Unlike other closeables, it is not safe to call close() more than once.
    *
    * <p>This method is <strong>NOT API STABLE</strong>.
    *
    * @param taskName the name of the task.
+   * @return a closeable that must be closed at the end of the task
    * @since 0.23.0
    */
   @MustBeClosed
@@ -216,12 +219,15 @@ public final class PerfMark {
    *
    * <p>This function has many more caveats than the {@link #traceTask(String)} that accept a
    * string. See the docs at {@link #attachTag(String, Object, StringFunction)} for a list of risks
-   * associated with passing a function.
+   * associated with passing a function.  Unlike other closeables, it is not safe to call close()
+   * more than once.
    *
    * <p>This method is <strong>NOT API STABLE</strong>.
    *
    * @param taskNameObject the name of the task.
    * @param taskNameFunction the function that will convert the taskNameObject to a taskName
+   * @param <T> the object type to be stringified
+   * @return a closeable that must be closed at the end of the task
    * @since 0.23.0
    */
   @MustBeClosed
@@ -571,6 +577,7 @@ public final class PerfMark {
    * @param tagName The name of the value being attached
    * @param tagObject The tag object which will passed to the stringFunction.
    * @param stringFunction The function that will convert the object to
+   * @param <T> the type of tag object to be stringified
    * @since 0.22.0
    */
   public static <T> void attachTag(
