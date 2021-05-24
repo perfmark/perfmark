@@ -22,6 +22,8 @@ public abstract class MarkHolderProvider {
 
   /**
    * To be removed in 0.26.0
+   *
+   * @return the new MarkHolder for the current thread.
    */
   @Deprecated
   public MarkHolder create() {
@@ -34,6 +36,8 @@ public abstract class MarkHolderProvider {
    *
    * @param markHolderId the Unique ID associated with the Mark Holder.   This exists as a work around to Java's
    *                     thread ID, which does not guarantee they will not be reused.
+   * @return the new MarkHolder for the current thread.
+   * @since 0.24.0
    */
   public MarkHolder create(long markHolderId) {
     return create();

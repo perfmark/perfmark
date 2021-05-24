@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * The Trace View package reads the PerfMark recorded tasks, and converts them into the
+ * Chrome Trace Viewer format, bundled into a self-contained HTML page.
+ */
 @javax.annotation.CheckReturnValue
 @javax.annotation.ParametersAreNonnullByDefault
 package io.perfmark.traceviewer;
