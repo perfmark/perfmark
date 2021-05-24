@@ -32,6 +32,7 @@ import org.junit.runners.JUnit4;
 public class AutoLoadTest {
   @Test
   public void autoLoad() {
+    Storage.resetForTest();
     PerfMark.setEnabled(true);
     PerfMark.startTask("hi");
     PerfMark.stopTask("hi");
