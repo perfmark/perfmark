@@ -74,7 +74,6 @@ To view the traces in your browser, generate the HTML:
   PerfMark.setEnabled(true);
   PerfMark.event("My Task");
   TraceEventViewer.writeTraceHtml();
-}
 ```
 
 The output looks like:
