@@ -200,8 +200,6 @@ public final class PerfMark {
    * allow the returned closeable to be used outside of the try block that initiated the call.
    * Unlike other closeables, it is not safe to call close() more than once.
    *
-   * <p>This method is <strong>NOT API STABLE</strong>.
-   *
    * @param taskName the name of the task.
    * @return a closeable that must be closed at the end of the task
    * @since 0.23.0
@@ -221,8 +219,6 @@ public final class PerfMark {
    * string. See the docs at {@link #attachTag(String, Object, StringFunction)} for a list of risks
    * associated with passing a function.  Unlike other closeables, it is not safe to call close()
    * more than once.
-   *
-   * <p>This method is <strong>NOT API STABLE</strong>.
    *
    * @param taskNameObject the name of the task.
    * @param taskNameFunction the function that will convert the taskNameObject to a taskName
