@@ -141,7 +141,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.startAnyways(gen, taskName, unpackTagName(tag), unpackTagId(tag));
+      Storage.startAnyway(gen, taskName, unpackTagName(tag), unpackTagId(tag));
     }
 
     @Override
@@ -150,7 +150,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.startAnyways(gen, taskName);
+      Storage.startAnyway(gen, taskName);
     }
 
     @Override
@@ -159,7 +159,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.startAnyways(gen, taskName, subTaskName);
+      Storage.startAnyway(gen, taskName, subTaskName);
     }
 
     @Override
@@ -169,7 +169,7 @@ final class SecretPerfMarkImpl {
         return;
       }
       String taskName = deriveTaskValue(taskNameObject, stringFunction);
-      Storage.startAnyways(gen, taskName);
+      Storage.startAnyway(gen, taskName);
     }
 
     @Override
@@ -178,7 +178,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.stopAnyways(gen);
+      Storage.stopAnyway(gen);
     }
 
     @Override
@@ -187,7 +187,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.stopAnyways(gen, taskName, unpackTagName(tag), unpackTagId(tag));
+      Storage.stopAnyway(gen, taskName, unpackTagName(tag), unpackTagId(tag));
     }
 
     @Override
@@ -196,7 +196,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.stopAnyways(gen, taskName);
+      Storage.stopAnyway(gen, taskName);
     }
 
     @Override
@@ -205,7 +205,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.stopAnyways(gen, taskName, subTaskName);
+      Storage.stopAnyway(gen, taskName, subTaskName);
     }
 
     @Override
@@ -214,7 +214,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.eventAnyways(gen, eventName, unpackTagName(tag), unpackTagId(tag));
+      Storage.eventAnyway(gen, eventName, unpackTagName(tag), unpackTagId(tag));
     }
 
     @Override
@@ -223,7 +223,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.eventAnyways(gen, eventName);
+      Storage.eventAnyway(gen, eventName);
     }
 
     @Override
@@ -232,7 +232,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.eventAnyways(gen, eventName, subEventName);
+      Storage.eventAnyway(gen, eventName, subEventName);
     }
 
     @Override
@@ -241,7 +241,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.attachTagAnyways(gen, unpackTagName(tag), unpackTagId(tag));
+      Storage.attachTagAnyway(gen, unpackTagName(tag), unpackTagId(tag));
     }
 
     @Override
@@ -250,7 +250,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.attachKeyedTagAnyways(gen, tagName, tagValue);
+      Storage.attachKeyedTagAnyway(gen, tagName, tagValue);
     }
 
     @Override
@@ -261,7 +261,7 @@ final class SecretPerfMarkImpl {
         return;
       }
       String tagValue = deriveTagValue(tagName, tagObject, stringFunction);
-      Storage.attachKeyedTagAnyways(gen, tagName, tagValue);
+      Storage.attachKeyedTagAnyway(gen, tagName, tagValue);
     }
 
     static <T> String deriveTagValue(
@@ -339,7 +339,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.attachKeyedTagAnyways(gen, tagName, tagValue);
+      Storage.attachKeyedTagAnyway(gen, tagName, tagValue);
     }
 
     @Override
@@ -348,7 +348,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.attachKeyedTagAnyways(gen, tagName, tagValue0, tagValue1);
+      Storage.attachKeyedTagAnyway(gen, tagName, tagValue0, tagValue1);
     }
 
     @Override
@@ -366,7 +366,7 @@ final class SecretPerfMarkImpl {
         return NO_LINK;
       }
       long linkId = linkIdAlloc.getAndIncrement();
-      Storage.linkAnyways(gen, linkId);
+      Storage.linkAnyway(gen, linkId);
       return packLink(linkId);
     }
 
@@ -376,7 +376,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      Storage.linkAnyways(gen, -unpackLinkId(link));
+      Storage.linkAnyway(gen, -unpackLinkId(link));
     }
 
     private static long getGen() {
