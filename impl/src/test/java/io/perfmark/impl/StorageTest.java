@@ -83,7 +83,7 @@ public class StorageTest {
 
   public static final class TestMarkHolderProvider extends MarkHolderProvider {
     @Override
-    public MarkHolder create() {
+    public MarkHolder create(long markHolderId) {
       throw new AssertionError();
     }
   }

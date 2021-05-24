@@ -23,9 +23,16 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
   NoopMarkHolderProvider() {}
 
   @Override
+  @SuppressWarnings("deprecation")
   public MarkHolder create() {
     return new NoopMarkHolder();
   }
+
+  @Override
+  public MarkHolder create(long markHolderId) {
+    return new NoopMarkHolder();
+  }
+
 
   private static final class NoopMarkHolder extends MarkHolder {
 

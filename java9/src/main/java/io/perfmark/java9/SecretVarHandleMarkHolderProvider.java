@@ -26,7 +26,7 @@ final class SecretVarHandleMarkHolderProvider {
 
     public VarHandleMarkHolderProvider() {
       // Do some basic operations to see if it works.
-      MarkHolder holder = create();
+      MarkHolder holder = create(12345);
       holder.start(1 << Generator.GEN_OFFSET, "bogus", 0);
       holder.stop(1 << Generator.GEN_OFFSET, "bogus", 0);
       int size = holder.read(false).size();
