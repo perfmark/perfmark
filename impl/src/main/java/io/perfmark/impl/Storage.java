@@ -232,15 +232,16 @@ public final class Storage {
 
     @Override
     protected MarkHolder initialValue() {
-      MarkHolder holder = markHolderProvider.create();
-      MarkHolderTuple ref = new MarkHolderTuple(Thread.currentThread(), holder);
+      long markHolderId = MarkHolderTuple.markHolderIdAllocator.getAndIncrement();
+      MarkHolder holder = markHolderProvider.create(markHolderId);
+      MarkHolderTuple ref = new MarkHolderTuple(Thread.currentThread(), holder, markHolderId);
       allMarkHolders.put(ref, Boolean.TRUE);
       return holder;
     }
   }
 
   private static final class MarkHolderTuple {
-    private static final AtomicLong markHolderIdAllocator = new AtomicLong();
+    static final AtomicLong markHolderIdAllocator = new AtomicLong(1);
 
     final Reference<Thread> threadRef;
     final Reference<MarkHolder> markHolderRef;
@@ -248,12 +249,12 @@ public final class Storage {
     final long threadId;
     final long markHolderId;
 
-    MarkHolderTuple(Thread thread, MarkHolder holder) {
+    MarkHolderTuple(Thread thread, MarkHolder holder, long markHolderId) {
       this.threadRef = new WeakReference<Thread>(thread);
       this.markHolderRef = new SoftReference<MarkHolder>(holder);
       this.threadName = new AtomicReference<String>(thread.getName());
       this.threadId = thread.getId();
-      this.markHolderId = markHolderIdAllocator.incrementAndGet();
+      this.markHolderId = markHolderId;
     }
 
     String getAndUpdateThreadName() {
