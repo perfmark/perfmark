@@ -49,7 +49,16 @@ public final class Storage {
 
   static {
     MarkHolderProvider provider = null;
-    Throwable[] problems = new Throwable[2];
+    Throwable[] problems = new Throwable[3];
+    try {
+      String markHolderOverride = System.getProperty("io.perfmark.PerfMark.markHolderProvider");
+      if (markHolderOverride != null && !markHolderOverride.isEmpty()) {
+        Class<?> clz = Class.forName(markHolderOverride);
+        provider = clz.asSubclass(MarkHolderProvider.class).getConstructor().newInstance();
+      }
+    } catch (Throwable t) {
+      problems[0] = t;
+    }
     if (provider == null) {
       try {
         Class<?> clz =
@@ -57,7 +66,7 @@ public final class Storage {
                 "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider");
         provider = clz.asSubclass(MarkHolderProvider.class).getConstructor().newInstance();
       } catch (Throwable t) {
-        problems[0]  = t;
+        problems[1] = t;
       }
     }
     if (provider == null) {
@@ -67,7 +76,7 @@ public final class Storage {
                 "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider");
         provider = clz.asSubclass(MarkHolderProvider.class).getConstructor().newInstance();
       } catch (Throwable t) {
-        problems[1]  = t;
+        problems[2] = t;
       }
     }
     if (provider == null) {
