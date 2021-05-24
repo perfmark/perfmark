@@ -46,7 +46,12 @@ subprojects {
     afterEvaluate {
         jar {
             manifest {
-                attributes  'Automatic-Module-Name': moduleName
+                attributes  'Automatic-Module-Name': moduleName,
+                    "Implementation-Version": archiveVersion,
+                    "Implementation-Title": "PerfMark",
+                    "Implementation-Vendor": "Carl Mastrangelo",
+                    "Implementation-URL": "https://www.perfmark.io/",
+                    "Carl-Is-Awesome": "true"
             }
 
         }
