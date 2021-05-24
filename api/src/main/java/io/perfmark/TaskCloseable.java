@@ -25,7 +25,6 @@ import java.io.Closeable;
  * <p>Implementation note: This would normally implement {@code AutoCloseable}, but that is not
  * available in Java 6. A future version of PerfMark may implement the parent interface instead.
  *
- * <p>This class is <strong>NOT API STABLE</strong>.
  *
  * @since 0.23.0
  */
@@ -33,6 +32,9 @@ public final class TaskCloseable implements Closeable {
 
   static final TaskCloseable INSTANCE = new TaskCloseable();
 
+  /**
+   * Stops the opened task.   See {@link PerfMark#traceTask(String)}.
+   */
   @Override
   public void close() {
     PerfMark.stopTask();
