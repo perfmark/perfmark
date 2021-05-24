@@ -16,7 +16,9 @@
 
 package io.perfmark.impl;
 
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,8 +44,8 @@ import javax.annotation.Nullable;
 public final class Storage {
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
   // and need to use these static variables.
-  static final ConcurrentMap<MarkHolderRef, Boolean> allMarkHolders =
-      new ConcurrentHashMap<MarkHolderRef, Boolean>();
+  static final ConcurrentMap<MarkHolderTuple, Boolean> allMarkHolders =
+      new ConcurrentHashMap<MarkHolderTuple, Boolean>();
   private static final ThreadLocal<MarkHolder> localMarkHolder = new MarkHolderThreadLocal();
   static final MarkHolderProvider markHolderProvider;
 
@@ -110,36 +112,26 @@ public final class Storage {
    * @return all reachable MarkLists.
    */
   public static List<MarkList> read() {
-    List<MarkHolderRef> markHolderRefs = new ArrayList<MarkHolderRef>();
-    MarkHolderRef.cleanQueue(markHolderRefs, allMarkHolders);
-    // Capture a snapshot of the index with as little skew as possible.  Don't pre-size the lists
-    // since it would mean scanning allMarkHolders twice.  Instead, try to get a strong ref to each
-    // of the MarkHolders before they could get GC'd.
-    markHolderRefs.addAll(allMarkHolders.keySet());
-    List<MarkList> markLists = new ArrayList<MarkList>(markHolderRefs.size());
-    readInto(markLists, markHolderRefs);
-    return Collections.unmodifiableList(markLists);
-  }
-
-  private static void readInto(
-      List<? super MarkList> markLists, List<? extends MarkHolderRef> markHolderRefs) {
-    for (MarkHolderRef ref : markHolderRefs) {
-      final String threadName;
-      @Nullable Thread writer = ref.get();
-      if (writer != null) {
-        ref.lastThreadName.set(threadName = writer.getName());
-      } else {
-        threadName = ref.lastThreadName.get();
+    List<MarkList> markLists = new ArrayList<MarkList>(allMarkHolders.size());
+    for (MarkHolderTuple tuple : allMarkHolders.keySet()) {
+      String threadName = tuple.getAndUpdateThreadName();
+      MarkHolder mh = tuple.markHolderRef.get();
+      if (mh == null) {
+        tuple.clean();
+        allMarkHolders.remove(tuple);
+        continue;
       }
+      Thread writer = tuple.threadRef.get();
       boolean concurrentWrites = !(Thread.currentThread() == writer || writer == null);
       markLists.add(
           MarkList.newBuilder()
-              .setMarks(ref.holder.read(concurrentWrites))
+              .setMarks(mh.read(concurrentWrites))
               .setThreadName(threadName)
-              .setThreadId(ref.threadId)
-              .setMarkListId(ref.markHolderId)
+              .setThreadId(tuple.threadId)
+              .setMarkListId(tuple.markHolderId)
               .build());
     }
+    return Collections.unmodifiableList(markLists);
   }
 
   static void startAnyways(long gen, String taskName, @Nullable String tagName, long tagId) {
@@ -212,16 +204,23 @@ public final class Storage {
 
   public static void resetForTest() {
     localMarkHolder.remove();
+    allMarkHolders.clear();
   }
+
+  static void clearSoftRefsForTest() {
+    for (MarkHolderTuple tuple : allMarkHolders.keySet()) {
+      tuple.markHolderRef.enqueue();
+    }
+  }
+
 
   @Nullable
   public static MarkList readForTest() {
-    MarkHolder mh = localMarkHolder.get();
-    for (MarkHolderRef ref : allMarkHolders.keySet()) {
-      if (ref.holder == mh) {
-        List<MarkList> markHolders = new ArrayList<MarkList>(1);
-        readInto(markHolders, Collections.singletonList(ref));
-        return markHolders.get(0);
+    List<MarkList> lists = read();
+    for (MarkList list : lists) {
+      // This is slightly wrong as the thread ID could be reused.
+      if (list.getThreadId() == Thread.currentThread().getId()) {
+        return list;
       }
     }
     return null;
@@ -233,40 +232,45 @@ public final class Storage {
 
     @Override
     protected MarkHolder initialValue() {
-      MarkHolderRef.cleanQueue(null, allMarkHolders);
       MarkHolder holder = markHolderProvider.create();
-      MarkHolderRef ref = new MarkHolderRef(Thread.currentThread(), holder);
+      MarkHolderTuple ref = new MarkHolderTuple(Thread.currentThread(), holder);
       allMarkHolders.put(ref, Boolean.TRUE);
       return holder;
     }
   }
 
-  private static final class MarkHolderRef extends WeakReference<Thread> {
-    private static final ReferenceQueue<Thread> markHolderRefQueue = new ReferenceQueue<Thread>();
+  private static final class MarkHolderTuple {
     private static final AtomicLong markHolderIdAllocator = new AtomicLong();
 
-    final MarkHolder holder;
-    final long markHolderId = markHolderIdAllocator.incrementAndGet();
+    final Reference<Thread> threadRef;
+    final Reference<MarkHolder> markHolderRef;
+    final AtomicReference<String> threadName;
     final long threadId;
-    final AtomicReference<String> lastThreadName;
+    final long markHolderId;
 
-    MarkHolderRef(Thread thread, MarkHolder holder) {
-      super(thread, markHolderRefQueue);
-      this.holder = holder;
+    MarkHolderTuple(Thread thread, MarkHolder holder) {
+      this.threadRef = new WeakReference<Thread>(thread);
+      this.markHolderRef = new SoftReference<MarkHolder>(holder);
+      this.threadName = new AtomicReference<String>(thread.getName());
       this.threadId = thread.getId();
-      this.lastThreadName = new AtomicReference<String>(thread.getName());
+      this.markHolderId = markHolderIdAllocator.incrementAndGet();
     }
 
-    static void cleanQueue(
-        @Nullable Collection<? super MarkHolderRef> deadRefs, Map<?, ?> allSpans) {
-      MarkHolderRef ref;
-      while ((ref = (MarkHolderRef) markHolderRefQueue.poll()) != null) {
-        ref.clear();
-        allSpans.remove(ref);
-        if (deadRefs != null) {
-          deadRefs.add(ref);
-        }
+    String getAndUpdateThreadName() {
+      Thread t = threadRef.get();
+      String name;
+      if (t != null) {
+        threadName.lazySet(name = t.getName());
+      } else {
+        name = threadName.get();
       }
+      return name;
+    }
+
+    void clean() {
+      threadRef.enqueue();
+      markHolderRef.enqueue();
+      threadName.set(null);
     }
   }
 
