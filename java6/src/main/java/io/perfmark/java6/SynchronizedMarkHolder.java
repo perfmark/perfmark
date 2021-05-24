@@ -178,17 +178,17 @@ final class SynchronizedMarkHolder extends MarkHolder {
   }
 
   @Override
-  public void attachKeyedTag(long gen, String name, long value0) {
+  public synchronized void attachKeyedTag(long gen, String name, long value0) {
     writeNs(gen + TAG_KEYED_N1S1_OP, value0, name);
   }
 
   @Override
-  public void attachKeyedTag(long gen, String name, String value) {
+  public synchronized void attachKeyedTag(long gen, String name, String value) {
     writeSs(gen + TAG_KEYED_N0S2_OP, name, value);
   }
 
   @Override
-  public void attachKeyedTag(long gen, String name, long value0, long value1) {
+  public synchronized void attachKeyedTag(long gen, String name, long value0, long value1) {
     writeNns(gen + TAG_KEYED_N2S1_OP, value0, value1, name);
   }
 
