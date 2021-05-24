@@ -147,7 +147,7 @@ subprojects {
     }
 
     group = "io.perfmark"
-    version = "0.24.0-SNAPSHOT"
+    version = "0.24.0"
 
     ext {
         libraries = [
