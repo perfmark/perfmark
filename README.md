@@ -33,23 +33,20 @@ tracing function calls to their code to see how long each part takes.
 ## Usage
 
 To use PerfMark, add the following dependencies to your `build.gradle`:
-- `io.perfmark:perfmark-api:0.23.0`
-- `io.perfmark:perfmark-traceviewer:0.23.0`
+- `io.perfmark:perfmark-api:0.24.0`
+- `io.perfmark:perfmark-traceviewer:0.24.0`
 
 In your code, add the PerfMark tracing calls like so:
 
 ```java
 Map<String, Header> parseHeaders(List<String> rawHeaders) {
-  PerfMark.startTask("Parse HTTP headers");
-  try {
+  try (TaskCloseable task = PerfMark.traceTask("Parse HTTP headers")) {
     Map<String, String> headers = new HashMap<>();
     for (String rawHeader : rawHeaders) {
       Header header = parseHeader(rawHeader);
       headers.put(header.name(), header);
     }
     return headers;
-  } finally {
-    PerfMark.stopTask("Parse HTTP headers");
   }
 }
 
@@ -59,20 +56,14 @@ PerfMark can also be used to record asynchronous work:
 
 ```java
 Future<Response> buildResponse() {
-  PerfMark.startTask("Build Response");
-  final Link link = PerfMark.linkOut();
-  try {
+  try (TaskCloseable task = PerfMark.traceTask("Build Response")) {
+    Link link = PerfMark.linkOut();
     return executor.submit(() -> {
-      PerfMark.startTask("Async Response");
-      PerfMark.linkIn(link);
-      try {
+      try (TaskCloseable task2 = PerfMark.traceTask("Async Response")) {
+        PerfMark.linkIn(link);
         return new Response(/* ... */);
-      } finally {
-        PerfMark.stopTask("Async Response");
       }
     });
-  } finally {
-    PerfMark.stopTask("Build Response");
   }
 }
 ```
@@ -81,10 +72,7 @@ To view the traces in your browser, generate the HTML:
 
 ```java
   PerfMark.setEnabled(true);
-  PerfMark.startTask("My Task");
-  } finally {
-    PerfMark.stopTask("My Task");
-  }
+  PerfMark.event("My Task");
   TraceEventViewer.writeTraceHtml();
 }
 ```
@@ -103,4 +91,5 @@ calls become No-ops.  In such cases, it will remain safe to call these functions
 
 ## Users
 
-PerfMark was designed originally for [gRPC](https://github.com/grpc/grpc-java).
+PerfMark was designed originally for [gRPC](https://github.com/grpc/grpc-java). It is also used
+by [Zuul](https://github.com/Netflix/zuul).
