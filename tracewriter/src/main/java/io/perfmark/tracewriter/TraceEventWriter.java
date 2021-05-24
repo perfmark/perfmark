@@ -119,7 +119,7 @@ public final class TraceEventWriter {
       throws IOException {
     List<TraceEvent> traceEvents = new ArrayList<>();
     new TraceEventWalker(traceEvents, pid, initNanoTime).walk(markLists, nowNanoTime);
-    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    Gson gson = new GsonBuilder().create();
     try {
       gson.toJson(new TraceEventObject(traceEvents), destination);
     } catch (JsonIOException e) {
