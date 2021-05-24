@@ -22,6 +22,8 @@ compileJava {
 dependencies {
     implementation project(':perfmark-impl')
     compileOnly libraries.jsr305
+
+    testImplementation(project(":perfmark-api"))
 }
 
 javadoc {

@@ -20,5 +20,22 @@ public abstract class MarkHolderProvider {
 
   protected MarkHolderProvider() {}
 
-  public abstract MarkHolder create();
+  /**
+   * To be removed in 0.26.0
+   */
+  @Deprecated
+  public MarkHolder create() {
+    throw new UnsupportedOperationException();
+  }
+
+  /**
+   * Creates a new MarkHolder.  Mark holders are always mutated by the thread that created them, (e.g. THIS thread),
+   * but may be read by other threads.
+   *
+   * @param markHolderId the Unique ID associated with the Mark Holder.   This exists as a work around to Java's
+   *                     thread ID, which does not guarantee they will not be reused.
+   */
+  public MarkHolder create(long markHolderId) {
+    return create();
+  }
 }

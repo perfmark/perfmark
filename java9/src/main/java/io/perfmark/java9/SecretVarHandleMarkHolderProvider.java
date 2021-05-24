@@ -36,7 +36,13 @@ final class SecretVarHandleMarkHolderProvider {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public MarkHolder create() {
+      return new VarHandleMarkHolder();
+    }
+
+    @Override
+    public MarkHolder create(long markHolderId) {
       return new VarHandleMarkHolder();
     }
   }
