@@ -3,7 +3,7 @@ plugins {
 }
 
 description = "PerfMark Java7 API"
-ext.moduleName = "io.perfmark.java7"
+ext.moduleName = "io.perfmark.javaseven"
 ext.jdkVersion = JavaVersion.VERSION_1_7
 
 compileJava {
