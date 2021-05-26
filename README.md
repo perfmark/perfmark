@@ -80,7 +80,26 @@ The output looks like:
 
 ![PerfMark Hummingbird](doc/screenshot.png "PerfMark")
 
+## Configuration 
+PerfMark provides some System Properties that allow controlling how it initializes.  These can be set
+by providing them as JVM arguments.  (e.g. `-Dio.perfmark.PerfMark.startEnabled=true`)
 
+* `io.perfmark.PerfMark.startEnabled` controls if PerfMark starts enabled.  This boolean property
+    makes it possible to start tracing calls immediately.  This is helpful when it's difficult
+    to invoke `setEnabled()` on PerfMark before task tracing calls have started.
+
+* `io.perfmark.PerfMark.debug` controls if PerfMark can log initializing steps.  This property 
+    exists to disable class loading of the logger package (currently `java.util.logging`).  If
+    the debug property is set, the logger settings still need to be configured to report the logs.
+    By default, all PerfMark logs use level `FINE` (SLF4J `DEBUG`) or lower, which means that they
+    usually need additional setup to print.
+  
+    In addition to initialization, the debug property controls if other tracing failures can be 
+    logged. When calls involving deferred execution are used (e.g. 
+    `startTask(T, StringFunction<T>)`), the String function provided may throw an exception.  In
+    these cases, the exception is silently ignored.  This makes it easy to ensure the start/stop
+    call parity is maintained.  To view these failures, the debug property can be set to log such
+    problems.  As above, the PerfMark logger should be configured as well to report these.
 
 ## Versioning and API Stability
 
