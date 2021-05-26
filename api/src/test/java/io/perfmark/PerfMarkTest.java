@@ -234,6 +234,7 @@ public class PerfMarkTest {
       try {
         System.setSecurityManager(newMgr);
         Class<?> clz2 = Class.forName(PerfMark.class.getName(), true, loader);
+        clz2.getMethod("setEnabled", boolean.class).invoke(null, true);
         clz2.getMethod("event", String.class).invoke(null, "event");
         return clz2;
       } finally {
