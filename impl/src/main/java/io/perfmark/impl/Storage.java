@@ -17,20 +17,16 @@
 package io.perfmark.impl;
 
 import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
 /**
@@ -88,14 +84,21 @@ public final class Storage {
     }
     try {
       if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
-        Logger localLogger = Logger.getLogger(Storage.class.getName());
+        // See the comment in io.perfmark.PerfMark for why this is invoked reflectively.
+        Class<?> logClass = Class.forName("java.util.logging.Logger");
+        Object logger = logClass.getMethod("getLogger", String.class).invoke(null, Storage.class.getName());
+        Class<?> levelClass = Class.forName("java.util.logging.Level");
+        Object level = levelClass.getField("FINE").get(null);
+        Method logProblemMethod = logClass.getMethod("log", levelClass, String.class, Throwable.class);
+
         for (Throwable problem : problems) {
           if (problem == null) {
             continue;
           }
-          localLogger.log(Level.FINE, "Error loading MarkHolderProvider", problem);
+          logProblemMethod.invoke(logger, level, "Error loading MarkHolderProvider", problem);
         }
-        localLogger.log(Level.FINE, "Using {0}", new Object[] {markHolderProvider.getClass().getName()});
+        Method logSuccessMethod = logClass.getMethod("log", levelClass, String.class, Object[].class);
+        logSuccessMethod.invoke(logger, level, "Using {0}", new Object[] {markHolderProvider.getClass().getName()});
       }
     } catch (Throwable t) {
       // ignore
