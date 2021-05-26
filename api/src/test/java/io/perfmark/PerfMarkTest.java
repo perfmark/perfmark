@@ -106,6 +106,9 @@ public class PerfMarkTest {
           if (fp.getName().endsWith(".class") && fp.getName().contains("io/perfmark/")) {
             return;
           }
+          if (fp.getName().endsWith(".jar") && fp.getName().contains("/perfmark/")) {
+            return;
+          }
         }
       }
       if (perm instanceof PropertyPermission) {
@@ -212,7 +215,7 @@ public class PerfMarkTest {
   }
 
   @Test
-  public void worksWithSecurityManager_startEnabled_debug() throws Exception {
+  public void worksWithSecurityManager_noStartEnabled_debug() throws Exception {
     ClassLoader loader = new TestClassLoader(getClass().getClassLoader());
 
     SecurityManager oldMgr = System.getSecurityManager();
