@@ -18,8 +18,7 @@ package io.perfmark;
 
 import com.google.errorprone.annotations.DoNotCall;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.reflect.Method;
 
 /**
  * PerfMark is a very low overhead tracing library. To use PerfMark, annotate the code that needs to
@@ -114,7 +113,15 @@ public final class PerfMark {
     if (err != null) {
       try {
         if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
-          Logger.getLogger(PerfMark.class.getName()).log(Level.FINE, "Error during PerfMark.<clinit>", err);
+          // We need to be careful here, as it's easy to accidentally cause a class load.  Logger is loaded
+          // reflectively to avoid accidentally pulling it in.
+          // TODO(carl-mastrangelo): Maybe make this load SLF4J instead?
+          Class<?> logClass = Class.forName("java.util.logging.Logger");
+          Object logger = logClass.getMethod("getLogger", String.class).invoke(null, PerfMark.class.getName());
+          Class<?> levelClass = Class.forName("java.util.logging.Level");
+          Object level = levelClass.getField("FINE").get(null);
+          Method logMethod = logClass.getMethod("log", levelClass, String.class, Throwable.class);
+          logMethod.invoke(logger, level, "Error during PerfMark.<clinit>", err);
         }
       } catch (Throwable e) {
         // ignored.
