@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.google.common.truth.Truth;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -163,6 +164,7 @@ public class StorageTest {
     }
   }
 
+  @CanIgnoreReturnValue
   private static <T> T runWithProperty(Properties properties, String name, String value, Callable<T> runnable)
       throws Exception {
     if (properties.containsKey(name)) {
