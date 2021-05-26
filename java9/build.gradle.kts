@@ -9,26 +9,26 @@ buildscript {
     extra.apply{
         set("moduleName", "io.perfmark.javanine")
     }
-    project.extra.set("libraries", extra.get("libraries"))
 }
 
 val jdkVersion = JavaVersion.VERSION_1_9
 
 description = "PerfMark Java9 API"
 
-tasks.named<JavaCompile>("compileJava") {
-    sourceCompatibility = jdkVersion.toString()
-    targetCompatibility = jdkVersion.toString()
-}
 
 dependencies {
-    val libraries = project.extra.get("libraries") as Map<String, String>
+    val libraries = project.ext.get("libraries") as Map<String, String>
 
     implementation(project(":perfmark-impl"))
     compileOnly(libraries["jsr305"]!!)
 
     testImplementation(project(":perfmark-api"))
     jcstressImplementation(project(":perfmark-impl"))
+}
+
+tasks.named<JavaCompile>("compileJava") {
+    sourceCompatibility = jdkVersion.toString()
+    targetCompatibility = jdkVersion.toString()
 }
 
 tasks.named<Jar>("jar") {
