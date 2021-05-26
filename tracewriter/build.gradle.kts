@@ -25,7 +25,5 @@ dependencies {
 tasks.getByName<JavaCompile>("compileJava") {
     sourceCompatibility = jdkVersion.toString()
     targetCompatibility = jdkVersion.toString()
-    System.err.println("compi")
-
     options.compilerArgs.add("-Xlint:-options")
 }

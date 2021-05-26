@@ -77,4 +77,3 @@ jmh {
 tasks.named<JavaCompile>("compileJcstressJava") {
     options.errorprone.excludedPaths.set(".*/build/generated/sources/annotationProcessor/.*")
 }
-
