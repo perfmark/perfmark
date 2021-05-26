@@ -23,6 +23,7 @@ dependencies {
     implementation project(':perfmark-api')
     compileOnly libraries.jsr305,
             libraries.errorprone
+    testImplementation libraries.truth
 }
 
 

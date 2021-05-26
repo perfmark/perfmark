@@ -17,10 +17,12 @@
 package io.perfmark.java9;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import io.perfmark.PerfMark;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.Storage;
+import java.lang.reflect.Field;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -31,7 +33,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class AutoLoadTest {
   @Test
-  public void autoLoad() {
+  public void autoLoad() throws Exception {
     Storage.resetForTest();
     PerfMark.setEnabled(true);
     PerfMark.startTask("hi");
@@ -39,5 +41,11 @@ public class AutoLoadTest {
     PerfMark.setEnabled(false);
     MarkList markList = Storage.readForTest();
     assertEquals(2, markList.size());
+
+    // Have to check after to ensure it loaded properly
+    Field field = Storage.class.getDeclaredField("markHolderProvider");
+    field.setAccessible(true);
+
+    assertTrue(field.get(null) instanceof SecretVarHandleMarkHolderProvider.VarHandleMarkHolderProvider);
   }
 }
