@@ -17,7 +17,6 @@ java_library(
         "//impl:generator",
         "//impl:mark",
         "//impl:mark-holder",
-        "//impl:marker",
     ],
 )
 
