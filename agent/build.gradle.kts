@@ -45,6 +45,7 @@ tasks.named<JavaCompile>("compileTestJava") {
 }
 
 tasks.named<Jar>("jar") {
+    // Make this not the default
     archiveClassifier.value("original")
     manifest {
         attributes(mapOf(
@@ -52,8 +53,6 @@ tasks.named<Jar>("jar") {
         ))
     }
 }
-
-
 
 tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
     // make sure this is THE jar, which removes the suffix.
@@ -65,15 +64,6 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
 publishing {
     publications {
         named<MavenPublication>("maven") {
-
-            //artifact(tasks["shadowJar"])
-            //artifact(tasks["sourcesJar"])
-            //artifact(tasks["javadocJar"])
-
-            for (art in artifacts) {
-                System.err.println(art)
-            }
-
             pom.withXml {
                 val root = asNode()
 
@@ -86,26 +76,5 @@ publishing {
                 }
             }
         }
-
-        /*
-        maven(MavenPublication) {
-            // Ideally swap to project.shadow.component(it) when it isn't broken for project deps
-            artifact shadowJar
-                    // Empty jars are not published via withJavadocJar() and withSourcesJar()
-                    artifact javadocJar
-                    artifact sourcesJar
-
-                    pom.withXml {
-                        def dependencies = asNode().appendNode('dependencies')
-                        project.configurations.shadow.allDependencies.each { dep ->
-                            def dependencyNode = dependencies.appendNode('dependency')
-                            dependencyNode.appendNode('groupId', dep.group)
-                            dependencyNode.appendNode('artifactId', dep.name)
-                            def version = (dep.name == 'grpc-core') ? '[' + dep.version + ']' : dep.version
-                            dependencyNode.appendNode('version', version)
-                            dependencyNode.appendNode('scope', 'compile')
-                        }
-                    }
-        }*/
     }
 }
