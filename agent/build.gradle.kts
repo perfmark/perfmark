@@ -4,7 +4,7 @@ buildscript {
     }
 }
 
-val jdkVersion = JavaVersion.VERSION_1_7
+val jdkVersion = JavaVersion.VERSION_1_6
 
 dependencies {
     val libraries = project.ext.get("libraries") as Map<String, String>
@@ -14,8 +14,8 @@ dependencies {
 
     implementation("org.ow2.asm:asm:9.1")
     implementation("org.ow2.asm:asm-commons:9.1")
-    implementation(project(":perfmark-api"))
 
+    testImplementation(project(":perfmark-api"))
     testImplementation(libraries["truth"]!!)
     testImplementation(project(":perfmark-impl"))
     testRuntimeOnly(project(":perfmark-java6"))
@@ -24,6 +24,11 @@ dependencies {
 tasks.named<JavaCompile>("compileJava") {
     sourceCompatibility = jdkVersion.toString()
     targetCompatibility = jdkVersion.toString()
+
+    javaCompiler.set(javaToolchains.compilerFor {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    })
+
     options.compilerArgs.add("-Xlint:-options")
 }
 

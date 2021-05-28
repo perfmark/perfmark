@@ -37,7 +37,7 @@ final class TransformerTestClasses {
     }
   }
 
-  record SomeRecord(int hi) {
+  record SomeRecord(@SuppressWarnings("unused") int hi) {
     public SomeRecord {
       PerfMark.startTask("task");
       PerfMark.stopTask("task");
