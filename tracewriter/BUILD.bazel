@@ -7,7 +7,6 @@ java_library(
     deps = [
         "//impl:mark",
         "//impl:mark-list",
-        "//impl:marker",
         "//impl:storage",
         "@maven//:com_google_code_findbugs_jsr305",
         "@maven//:com_google_code_gson_gson",

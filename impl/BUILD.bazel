@@ -7,7 +7,6 @@ java_library(
     deps = [
         ":generator",
         ":mark",
-        ":marker",
         ":storage",
         "//api:impl",
         "//api:link",
@@ -27,15 +26,6 @@ java_library(
 )
 
 java_library(
-    name = "marker",
-    srcs = ["src/main/java/io/perfmark/impl/Marker.java"],
-    visibility = ["//:__subpackages__"],
-    deps = [
-        "@maven//:com_google_code_findbugs_jsr305",
-    ],
-)
-
-java_library(
     name = "storage",
     srcs = [
         "src/main/java/io/perfmark/impl/NoopMarkHolderProvider.java",
@@ -48,7 +38,6 @@ java_library(
         ":mark-holder",
         ":mark-holder-provider",
         ":mark-list",
-        ":marker",
         "@maven//:com_google_code_findbugs_jsr305",
     ],
 )
@@ -59,7 +48,6 @@ java_library(
     visibility = ["//:__subpackages__"],
     deps = [
         ":mark",
-        ":marker",
     ],
 )
 
@@ -78,7 +66,6 @@ java_library(
     visibility = ["//:__subpackages__"],
     deps = [
         ":generator",
-        ":marker",
         "@maven//:com_google_code_findbugs_jsr305",
     ],
 )
@@ -89,15 +76,5 @@ java_library(
     visibility = ["//:__subpackages__"],
     deps = [
         ":mark",
-    ],
-)
-
-java_library(
-    name = "internal-accessor",
-    testonly = 1,
-    srcs = ["src/main/java/io/perfmark/impl/Internal.java"],
-    visibility = ["//:__subpackages__"],
-    deps = [
-        ":marker",
     ],
 )
