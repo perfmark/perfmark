@@ -16,14 +16,8 @@
 
 package io.perfmark.agent;
 
-import io.perfmark.PerfMark;
-import io.perfmark.TaskCloseable;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -38,14 +32,12 @@ final class PerfMarkTransformer implements ClassFileTransformer {
   /**
    * Methods that should be tagged with a marker after they have been invoked.
    */
-  private static final Set<String> POST_TAG =
-      Collections.unmodifiableSet(new HashSet<>(Arrays.asList("startTask", "traceTask")));
+  private static final String[] POST_TAG = new String [] {"startTask", "traceTask"};
 
   /**
    * Methods that should be tagged with a marker before they have been invoked.
    */
-  private static final Set<String> PRE_TAG =
-      Collections.unmodifiableSet(new HashSet<>(Collections.singletonList("stopTask")));
+  private static final String[] PRE_TAG = new String[] {"stopTask"};
 
   @Override
   public byte[] transform(
@@ -54,11 +46,11 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       Class<?> classBeingRedefined,
       ProtectionDomain protectionDomain,
       byte[] classfileBuffer) {
-    try (TaskCloseable ignored = PerfMark.traceTask("PerfMarkTransformer.transform")) {
-      PerfMark.attachTag("classname", className);
-      PerfMark.attachTag("size", classfileBuffer.length);
+    //try (TaskCloseable ignored = PerfMark.traceTask("PerfMarkTransformer.transform")) {
+    //  PerfMark.attachTag("classname", className);
+    //   PerfMark.attachTag("size", classfileBuffer.length);
       return transformInternal(loader, className, classBeingRedefined, protectionDomain, classfileBuffer);
-    }
+    //}
   }
 
   byte[] transformInternal(
@@ -143,7 +135,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
         if (changed.changed && !keepGoing) {
           return;
         }
-        if ((owner.equals(SRC_OWNER) && PRE_TAG.contains(name))
+        if ((owner.equals(SRC_OWNER) && contains(PRE_TAG, name))
               || (owner.equals("io/perfmark/TaskCloseable") && name.equals("close"))) {
           String tag =
               new StackTraceElement(className, methodName, fileName, lineNumber).toString();
@@ -160,7 +152,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
 
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
 
-        if (owner.equals(SRC_OWNER) && POST_TAG.contains(name)) {
+        if (owner.equals(SRC_OWNER) && contains(POST_TAG, name)) {
           String tag =
               new StackTraceElement(className, methodName, fileName, lineNumber).toString();
           visitLdcInsn("PerfMark.startCallSite");
@@ -203,6 +195,16 @@ final class PerfMarkTransformer implements ClassFileTransformer {
 
   private static final class ChangedState {
     boolean changed;
+  }
+
+  // Avoid pulling in Collections classes, which makes class transforms harder.
+  private static boolean contains(String[] haystack, String needle) {
+    for (String item : haystack) {
+      if (item.equals(needle)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   PerfMarkTransformer() {}
