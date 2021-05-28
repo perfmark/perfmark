@@ -1,7 +1,14 @@
+import groovy.util.Node
+
 buildscript {
     extra.apply {
         set("moduleName", "io.perfmark.agent")
     }
+}
+
+
+plugins {
+    id("com.github.johnrengelman.shadow") version "7.0.0"
 }
 
 val jdkVersion = JavaVersion.VERSION_1_6
@@ -38,9 +45,36 @@ tasks.named<JavaCompile>("compileTestJava") {
 }
 
 tasks.named<Jar>("jar") {
+    // Make this not the default
+    archiveClassifier.value("original")
     manifest {
         attributes(mapOf(
                 "Premain-Class" to "io.perfmark.agent.Main",
         ))
+    }
+}
+
+tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+    // make sure this is THE jar, which removes the suffix.
+    archiveClassifier.value(null as String?)
+
+    relocate("org.objectweb.asm", "io.perfmark.agent.shaded.org.objectweb.asm")
+}
+
+publishing {
+    publications {
+        named<MavenPublication>("maven") {
+            pom.withXml {
+                val root = asNode()
+
+                for (child in root.children()) {
+                    val c = child as Node
+                    if (c.name().toString().endsWith("dependencies")) {
+                        root.remove(c)
+                        break
+                    }
+                }
+            }
+        }
     }
 }

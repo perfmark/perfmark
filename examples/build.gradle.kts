@@ -10,11 +10,18 @@ buildscript {
 
 val jdkVersion = JavaVersion.VERSION_1_8
 
+
+configurations {
+    create("perfmarkAgent")
+}
+
 dependencies {
     implementation(project(":perfmark-api"))
     implementation(project(":perfmark-tracewriter"))
     runtimeOnly(project(":perfmark-java7"))
     runtimeOnly(project(":perfmark-java6"))
+
+    add("perfmarkAgent", project(":perfmark-agent", configuration = "shadow"))
 }
 
 tasks.named<JavaCompile>("compileJava") {
@@ -26,7 +33,7 @@ tasks.named<JavaCompile>("compileJava") {
 application {
     mainClass.set("io.perfmark.examples.perfetto.WebServer")
     applicationDefaultJvmArgs = mutableListOf(
-            // "-javaagent:" + configurations.perfmarkAgent.singleFile.path,
+            "-javaagent:" + configurations.getByName("perfmarkAgent").singleFile.path,
             "-Xlog:class+load=info",
             "-Dio.perfmark.PerfMark.startEnabled=true",
     )

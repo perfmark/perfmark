@@ -47,7 +47,7 @@ subprojects {
         jar {
             manifest {
                 attributes  'Automatic-Module-Name': moduleName,
-                    "Implementation-Version": archiveVersion,
+                    "Implementation-Version": archiveVersion.get(),
                     "Implementation-Title": "PerfMark",
                     "Implementation-Vendor": "Carl Mastrangelo",
                     "Implementation-URL": "https://www.perfmark.io/",
@@ -122,7 +122,7 @@ subprojects {
     }
 
     [publishMavenPublicationToMavenRepository, publishMavenPublicationToMavenLocal]*.onlyIf {
-        !name.contains("perfmark-agent") && !name.contains("perfmark-examples")
+        !name.contains("perfmark-examples")
     }
 
     [javadoc]*.onlyIf {
