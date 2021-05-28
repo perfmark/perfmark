@@ -53,6 +53,8 @@ tasks.named<Jar>("jar") {
     }
 }
 
+
+
 tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
     // make sure this is THE jar, which removes the suffix.
     archiveClassifier.value(null as String?)
@@ -60,19 +62,17 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
     relocate("org.objectweb.asm", "io.perfmark.agent.shaded.org.objectweb.asm")
 }
 
-val javaComponent = components["java"] as AdhocComponentWithVariants
-javaComponent.withVariantsFromConfiguration(configurations["sourcesElements"]) {
-    skip()
-}
-
 publishing {
     publications {
         named<MavenPublication>("maven") {
-            artifacts.removeIf {
-                it.classifier.toString().contains("original")
+
+            //artifact(tasks["shadowJar"])
+            //artifact(tasks["sourcesJar"])
+            //artifact(tasks["javadocJar"])
+
+            for (art in artifacts) {
+                System.err.println(art)
             }
-            artifact(tasks["shadowJar"])
-            artifact(tasks["sourcesJar"])
 
             pom.withXml {
                 val root = asNode()
