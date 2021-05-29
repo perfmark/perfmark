@@ -109,6 +109,9 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       if (changed.changed && !keepGoing) {
         return null;
       }
+      if (className.equals("io.perfmark.TaskCloseable") && name.equals("close") && descriptor.equals("()V")) {
+        return null;
+      }
       return new PerfMarkMethodVisitor(
           name, super.visitMethod(access, name, descriptor, signature, exceptions));
     }
@@ -135,8 +138,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
         if (changed.changed && !keepGoing) {
           return;
         }
-        if ((owner.equals(SRC_OWNER) && contains(PRE_TAG, name))
-              || (owner.equals("io/perfmark/TaskCloseable") && name.equals("close"))) {
+        if ((owner.equals(SRC_OWNER) && contains(PRE_TAG, name))) {
           String tag =
               new StackTraceElement(className, methodName, fileName, lineNumber).toString();
           visitLdcInsn("PerfMark.stopCallSite");
