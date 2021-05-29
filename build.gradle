@@ -46,12 +46,12 @@ subprojects {
     afterEvaluate {
         jar {
             manifest {
-                attributes  'Automatic-Module-Name': moduleName,
+                attributes  ('Automatic-Module-Name': moduleName,
                     "Implementation-Version": archiveVersion.get(),
                     "Implementation-Title": "PerfMark",
                     "Implementation-Vendor": "Carl Mastrangelo",
                     "Implementation-URL": "https://www.perfmark.io/",
-                    "Carl-Is-Awesome": "true"
+                    "Carl-Is-Awesome": "true")
             }
 
         }
@@ -122,13 +122,13 @@ subprojects {
     }
 
     [publishMavenPublicationToMavenRepository, publishMavenPublicationToMavenLocal]*.onlyIf {
-        !name.contains("perfmark-examples")
+        !name.contains("perfmark-examples") && !name.contains("perfmark-api-testing")
     }
 
     [javadoc]*.onlyIf {
         !name.contains("perfmark-java9") && !name.contains("perfmark-examples")
+                && !name.contains("perfmark-api-testing")
     }
-
 
     if (rootProject.properties.get('errorProne', true)) {
         dependencies {
