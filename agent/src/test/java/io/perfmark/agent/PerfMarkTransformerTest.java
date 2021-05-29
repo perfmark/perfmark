@@ -465,8 +465,6 @@ public class PerfMarkTransformerTest {
 
     assertEquals(marks.get(3).withTaskName("task"), marks.get(3));
   }
-  @Target({ElementType.TYPE, ElementType.TYPE_PARAMETER, ElementType.TYPE_USE})
-  @interface Foo {}
 
   private static Class<?> transformAndLoad(Class<?> toLoad, Class<?> ...extra) throws IOException {
     Map<String, Class<?>> toTransform = new HashMap<>();
@@ -487,10 +485,7 @@ public class PerfMarkTransformerTest {
           byte[] data;
           try (InputStream stream = getResourceAsStream(resourceName)) {
             data = stream.readAllBytes();
-          } catch (@Foo Exception e) {
-            if (e instanceof @Foo IOException) {
-              @Foo IOException z = (@Foo IOException) e;
-            }
+          } catch (IOException e) {
             throw new RuntimeException(e);
           }
           byte[] newClassBytes = new PerfMarkTransformer().transformInternal(this, name, existing, null, data);

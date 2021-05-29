@@ -9,7 +9,7 @@ import org.objectweb.asm.TypePath;
 /**
  * This class records the "header"
  */
-final class MethodVisitorRecorder extends MethodVisitor {
+class MethodVisitorRecorder extends MethodVisitor {
 
   private final int VISIT_PARAMETER = 1;
   private final int VISIT_ANNOTATION_DEFAULT = 2;
@@ -26,7 +26,7 @@ final class MethodVisitorRecorder extends MethodVisitor {
   private final int VISIT_TYPE_ANNOTATION = 11;
   private final int VISIT_ATTRIBUTE = 12;
 
-  private final AnnotationVisitorRecorder annotationVisitorRecorder = new AnnotationVisitorRecorder();
+  private final AnnotationVisitorRecorder annotationVisitorRecorder = new AnnotationVisitorRecorder(null);
 
   private int opsWidx;
   private int intsWidx;
@@ -40,10 +40,9 @@ final class MethodVisitorRecorder extends MethodVisitor {
   private Object[] objects = new Object[0];
   private boolean[] booleans = new boolean[0];
 
-
-  public MethodVisitorRecorder() {
+  public MethodVisitorRecorder(MethodVisitor delegate) {
     // Have to pin to a specific version, since the method invocations may be different in a later release
-    super(Opcodes.ASM9);
+    super(Opcodes.ASM9, delegate);
   }
 
   /*
@@ -69,59 +68,89 @@ final class MethodVisitorRecorder extends MethodVisitor {
    */
 
   @Override
-  public void visitParameter(String name, int access) {
+  public final void visitParameter(String name, int access) {
     addOp(VISIT_PARAMETER);
     addString(name);
     addInt(access);
+    super.visitParameter(name, access);
   }
 
   @Override
-  public AnnotationVisitor visitAnnotationDefault() {
+  public final AnnotationVisitor visitAnnotationDefault() {
     addOp(VISIT_ANNOTATION_DEFAULT);
-    return annotationVisitorRecorder;
+    if (mv == null) {
+      return annotationVisitorRecorder;
+    }
+    return new AnnotationVisitorRecorder(super.visitAnnotationDefault());
   }
 
   @Override
-  public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
+  public final AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
     addOp(VISIT_ANNOTATION);
     addString(descriptor);
     addBoolean(visible);
-    return annotationVisitorRecorder;
+    if (mv == null) {
+      return annotationVisitorRecorder;
+    }
+    return new AnnotationVisitorRecorder(super.visitAnnotation(descriptor, visible));
   }
 
   @Override
-  public void visitAnnotableParameterCount(int parameterCount, boolean visible) {
+  public final void visitAnnotableParameterCount(int parameterCount, boolean visible) {
     addOp(VISIT_ANNOTABLE_PARAMETER_COUNT);
     addInt(parameterCount);
     addBoolean(visible);
+    super.visitAnnotableParameterCount(parameterCount, visible);
   }
 
   @Override
-  public AnnotationVisitor visitParameterAnnotation(int parameter, String descriptor, boolean visible) {
+  public final AnnotationVisitor visitParameterAnnotation(int parameter, String descriptor, boolean visible) {
     addOp(VISIT_PARAMETER_ANNOTATION);
     addInt(parameter);
     addString(descriptor);
     addBoolean(visible);
-    return annotationVisitorRecorder;
+    if (mv == null) {
+      return annotationVisitorRecorder;
+    }
+    return new AnnotationVisitorRecorder(super.visitParameterAnnotation(parameter, descriptor, visible));
   }
 
   @Override
-  public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+  public final AnnotationVisitor visitTypeAnnotation(
+      int typeRef, TypePath typePath, String descriptor, boolean visible) {
     addOp(VISIT_TYPE_ANNOTATION);
     addInt(typeRef);
     addObject(typePath);
     addString(descriptor);
     addBoolean(visible);
-    return annotationVisitorRecorder;
+    if (mv == null) {
+      return annotationVisitorRecorder;
+    }
+    return new AnnotationVisitorRecorder(super.visitTypeAnnotation(typeRef, typePath, descriptor, visible));
   }
 
   @Override
-  public void visitAttribute(Attribute attribute) {
+  public final void visitAttribute(Attribute attribute) {
     addOp(VISIT_ATTRIBUTE);
     addObject(attribute);
+    super.visitAttribute(attribute);
   }
 
-  void replay(MethodVisitor delegate) {
+  @Override
+  public void visitCode() {
+    super.visitCode();
+  }
+
+  final void replay() {
+    if (mv != null) {
+      replay(mv);
+    }
+  }
+
+  final void replay(MethodVisitor delegate) {
+    if (delegate == null) {
+      return;
+    }
     int stringsRidx = 0;
     int intsRidx = 0;
     int objectsRidx = 0;
@@ -146,7 +175,9 @@ final class MethodVisitorRecorder extends MethodVisitor {
           AnnotationVisitor currentVisitor = visitorStack[annoWidx - 1];
           String name = getString(stringsRidx++);
           Object value = getObject(objectsRidx++);
-          currentVisitor.visit(name, value);
+          if (currentVisitor != null) {
+            currentVisitor.visit(name, value);
+          }
           break;
         }
         case ANNOTATION_VISIT_ENUM: {
@@ -154,28 +185,38 @@ final class MethodVisitorRecorder extends MethodVisitor {
           String name = getString(stringsRidx++);
           String descriptor = getString(stringsRidx++);
           String value = getString(stringsRidx++);
-          currentVisitor.visitEnum(name, descriptor, value);
+          if (currentVisitor != null) {
+            currentVisitor.visitEnum(name, descriptor, value);
+          }
           break;
         }
         case ANNOTATION_VISIT_ANNOTATION: {
           AnnotationVisitor currentVisitor = visitorStack[annoWidx - 1];
           String name = getString(stringsRidx++);
           String descriptor = getString(stringsRidx++);
-          AnnotationVisitor newVisitor = currentVisitor.visitAnnotation(name, descriptor);
+          AnnotationVisitor newVisitor = null;
+          if (currentVisitor != null) {
+            newVisitor = currentVisitor.visitAnnotation(name, descriptor);
+          }
           visitorStack = addAnnotationVisitor(visitorStack, annoWidx++, newVisitor);
           break;
         }
         case ANNOTATION_VISIT_ARRAY: {
           AnnotationVisitor currentVisitor = visitorStack[annoWidx - 1];
           String name = getString(stringsRidx++);
-          AnnotationVisitor newVisitor = currentVisitor.visitArray(name);
+          AnnotationVisitor newVisitor = null;
+          if (currentVisitor != null) {
+            newVisitor = currentVisitor.visitArray(name);
+          }
           visitorStack = addAnnotationVisitor(visitorStack, annoWidx++, newVisitor);
           break;
         }
         case ANNOTATION_VISIT_END: {
           AnnotationVisitor currentVisitor = visitorStack[annoWidx - 1];
           visitorStack[--annoWidx] = null;
-          currentVisitor.visitEnd();
+          if (currentVisitor != null) {
+            currentVisitor.visitEnd();
+          }
           break;
         }
         case VISIT_ANNOTATION: {
@@ -220,26 +261,12 @@ final class MethodVisitorRecorder extends MethodVisitor {
     }
   }
 
-
-
   private void addOp(int op) {
     ops = addInt(ops, opsWidx++, op);
   }
 
   private void addInt(int value) {
     ints = addInt(ints, intsWidx++, value);
-  }
-
-  private void addString(String value) {
-    strings = addString(strings, stringsWidx++, value);
-  }
-
-  private void addObject(Object value) {
-    objects = addObject(objects, objectsWidx++, value);
-  }
-
-  private void addBoolean(boolean value) {
-    booleans = addBoolean(booleans, booleansWidx++, value);
   }
 
   private static int[] addInt(int[] dest, int pos, int value) {
@@ -252,6 +279,10 @@ final class MethodVisitorRecorder extends MethodVisitor {
     return dest;
   }
 
+  private void addString(String value) {
+    strings = addString(strings, stringsWidx++, value);
+  }
+
   private static String[] addString(String[] dest, int pos, String value) {
     if (dest.length == pos){
       String[] newDest = new String[1 + dest.length * 2];
@@ -262,6 +293,10 @@ final class MethodVisitorRecorder extends MethodVisitor {
     return dest;
   }
 
+  private void addObject(Object value) {
+    objects = addObject(objects, objectsWidx++, value);
+  }
+
   private static Object[] addObject(Object[] dest, int pos, Object value) {
     if (dest.length == pos){
       Object[] newDest = new Object[1 + dest.length * 2];
@@ -270,6 +305,10 @@ final class MethodVisitorRecorder extends MethodVisitor {
     }
     dest[pos] = value;
     return dest;
+  }
+
+  private void addBoolean(boolean value) {
+    booleans = addBoolean(booleans, booleansWidx++, value);
   }
 
   private static boolean[] addBoolean(boolean[] dest, int pos, boolean value) {
@@ -312,11 +351,10 @@ final class MethodVisitorRecorder extends MethodVisitor {
     return booleans[ridx];
   }
 
-
   private final class AnnotationVisitorRecorder extends AnnotationVisitor {
 
-    AnnotationVisitorRecorder() {
-      super(MethodVisitorRecorder.this.api);
+    AnnotationVisitorRecorder(AnnotationVisitor delegate) {
+      super(MethodVisitorRecorder.this.api, delegate);
     }
 
     /*
@@ -331,6 +369,7 @@ final class MethodVisitorRecorder extends MethodVisitor {
       addOp(ANNOTATION_VISIT);
       addString(name);
       addObject(value);
+      super.visit(name, value);
     }
 
     @Override
@@ -339,6 +378,7 @@ final class MethodVisitorRecorder extends MethodVisitor {
       addString(name);
       addString(descriptor);
       addString(value);
+      super.visitEnum(name, descriptor, value);
     }
 
     @Override
@@ -346,19 +386,26 @@ final class MethodVisitorRecorder extends MethodVisitor {
       addOp(ANNOTATION_VISIT_ANNOTATION);
       addString(name);
       addString(descriptor);
-      return annotationVisitorRecorder;
+      if (av == null) {
+        return this;
+      }
+      return new AnnotationVisitorRecorder(super.visitAnnotation(name, descriptor));
     }
 
     @Override
     public AnnotationVisitor visitArray(String name) {
       addOp(ANNOTATION_VISIT_ARRAY);
       addString(name);
-      return annotationVisitorRecorder;
+      if (av == null) {
+        return this;
+      }
+      return new AnnotationVisitorRecorder(super.visitArray(name));
     }
 
     @Override
     public void visitEnd() {
       addOp(ANNOTATION_VISIT_END);
+      super.visitEnd();
     }
   }
 }
