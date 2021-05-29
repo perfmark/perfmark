@@ -109,6 +109,9 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       if (changed.changed && !keepGoing) {
         return null;
       }
+      if (className.equals("io.perfmark.TaskCloseable") && name.equals("close") && descriptor.equals("()V")) {
+        return null;
+      }
       return new PerfMarkMethodVisitor(
           name, super.visitMethod(access, name, descriptor, signature, exceptions));
     }

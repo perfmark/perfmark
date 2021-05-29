@@ -21,8 +21,10 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.common.truth.Truth;
 import io.perfmark.PerfMark;
+import io.perfmark.TaskCloseable;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.Storage;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
@@ -244,6 +246,24 @@ public class PerfMarkTransformerTest {
     Truth.assertThat(marks.get(1).getTagStringValue()).contains("init");
 
     assertEquals(Mark.Operation.TASK_END_N1S0, marks.get(2).getOperation());
+  }
+
+  @Test
+  public void transform_wrongCloseable_autoCloseable() throws Exception {
+    // If the wrong static type is used, the agent won't be able to instrument it.  Add a test to document this
+    // behavior.
+    PerfMark.setEnabled(true);
+    Storage.resetForTest();
+
+    Class<? extends Closeable> clz = transformAndLoad(TaskCloseable.class).asSubclass(Closeable.class);
+    Constructor<? extends Closeable> ctor = clz.getDeclaredConstructor();
+    ctor.setAccessible(true);
+    Closeable closeable = ctor.newInstance();
+    closeable.close();
+    List<Mark> marks = Storage.readForTest();
+    assertThat(marks).hasSize(1);
+
+    assertEquals(Mark.Operation.TASK_END_N1S0, marks.get(0).getOperation());
   }
 
   @Test
