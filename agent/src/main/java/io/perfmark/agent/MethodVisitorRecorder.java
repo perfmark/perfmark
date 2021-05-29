@@ -125,6 +125,7 @@ final class MethodVisitorRecorder extends MethodVisitor {
     int stringsRidx = 0;
     int intsRidx = 0;
     int objectsRidx = 0;
+    int booleansRidx = 0;
     int annoWidx = 0;
     AnnotationVisitor[] visitorStack = new AnnotationVisitor[0];
     for (int opsRidx = 0; opsRidx < opsWidx; opsRidx++) {
@@ -173,12 +174,46 @@ final class MethodVisitorRecorder extends MethodVisitor {
         }
         case ANNOTATION_VISIT_END: {
           AnnotationVisitor currentVisitor = visitorStack[annoWidx - 1];
-          visitorStack[annoWidx - 1] = null;
-          annoWidx--;
+          visitorStack[--annoWidx] = null;
           currentVisitor.visitEnd();
           break;
         }
-
+        case VISIT_ANNOTATION: {
+          String descriptor = getString(stringsRidx++);
+          boolean visible = getBoolean(booleansRidx++);
+          AnnotationVisitor newVisitor = delegate.visitAnnotation(descriptor, visible);
+          visitorStack = addAnnotationVisitor(visitorStack, annoWidx++, newVisitor);
+          break;
+        }
+        case VISIT_ANNOTABLE_PARAMETER_COUNT: {
+          int parameterCount = getInt(intsRidx++);
+          boolean visible = getBoolean(booleansRidx++);
+          delegate.visitAnnotableParameterCount(parameterCount, visible);
+          break;
+        }
+        case VISIT_PARAMETER_ANNOTATION: {
+          int parameter = getInt(intsRidx++);
+          String descriptor = getString(stringsRidx++);
+          boolean visible = getBoolean(booleansRidx++);
+          AnnotationVisitor newVisitor = delegate.visitParameterAnnotation(parameter, descriptor, visible);
+          visitorStack = addAnnotationVisitor(visitorStack, annoWidx++, newVisitor);
+          break;
+        }
+        case VISIT_TYPE_ANNOTATION: {
+          // (int typeRef, TypePath typePath, String descriptor, boolean visible)
+          int typeRef = getInt(intsRidx++);
+          TypePath typePath = (TypePath) getObject(objectsRidx++);
+          String descriptor = getString(stringsRidx++);
+          boolean visible = getBoolean(booleansRidx++);
+          AnnotationVisitor newVisitor = delegate.visitTypeAnnotation(typeRef, typePath, descriptor, visible);
+          visitorStack = addAnnotationVisitor(visitorStack, annoWidx++, newVisitor);
+          break;
+        }
+        case VISIT_ATTRIBUTE: {
+          Attribute attribute = (Attribute) getObject(objectsRidx++);
+          delegate.visitAttribute(attribute);
+          break;
+        }
         default:
           throw new AssertionError("Bad op " + op);
       }
