@@ -107,16 +107,82 @@ final class PerfMarkTransformer implements ClassFileTransformer {
 
     @Override
     public MethodVisitor visitMethod(
-        int access, String name, String descriptor, String signature, String[] exceptions) {
+        final int access, final String name, final String descriptor, final String signature,
+        final String[] exceptions) {
       if (changed.changed && !keepGoing) {
         return null;
       }
       if (className.equals("io.perfmark.TaskCloseable") && name.equals("close") && descriptor.equals("()V")) {
         return null;
       }
-      MethodVisitor superDelegate = super.visitMethod(access, name, descriptor, signature, exceptions);
+      final boolean intercept = !(name.equals("<clinit>") || name.equals("<init>")) && name.equals("execute");
+      final String bodyName = intercept ?  name + "$perfmark" : name;
+      final int bodyAccess = intercept
+          ? (access | Opcodes.ACC_PRIVATE) & ~(Opcodes.ACC_PROTECTED | Opcodes.ACC_PUBLIC)
+          : access;
+      MethodVisitor superDelegate = super.visitMethod(bodyAccess, bodyName, descriptor, signature, exceptions);
       PerfMarkMethodVisitor perfMarkVisitor = new PerfMarkMethodVisitor(name, superDelegate);
-      return new MethodVisitorRecorder(perfMarkVisitor);
+      final MethodVisitorRecorder recorder = new MethodVisitorRecorder(perfMarkVisitor);
+      return new MethodVisitor(api, recorder) {
+        @Override
+        public void visitEnd() {
+          super.visitEnd();
+          if (intercept) {
+            int argc = 1+1;
+            MethodVisitor writer = PerfMarkRewriter.super.visitMethod(access, name, descriptor, signature, exceptions);
+            PerfMarkMethodVisitor perfMarkVisitor2 = new PerfMarkMethodVisitor(name, writer);
+            recorder.replay(perfMarkVisitor2);
+            perfMarkVisitor2.visitCode();
+            Label start = new Label();
+            Label end = new Label();
+            //perfMarkVisitor2.visitTryCatchBlock(start, end, null, "java/lang/Throwable");
+            perfMarkVisitor2.visitLabel(start);
+            perfMarkVisitor2.visitLineNumber(recorder.firstLine, start);
+            perfMarkVisitor2.visitLdcInsn(className + ":::" + name);
+            perfMarkVisitor2.visitMethodInsn(Opcodes.INVOKESTATIC, SRC_OWNER, "startTask", "(Ljava/lang/String;)V", false);
+            perfMarkVisitor2.visitVarInsn(Opcodes.ALOAD, 0);
+            perfMarkVisitor2.visitVarInsn(Opcodes.ALOAD, 1);
+            //perfMarkVisitor2.visitInsn(42);
+            //Opcodes.ACC_STATIC
+            // FIXME: check if this is an interface
+            perfMarkVisitor2.visitMethodInsn(
+                ((bodyAccess & Opcodes.ACC_STATIC)  > 0) ? Opcodes.INVOKESTATIC : Opcodes.INVOKESPECIAL,
+                className.replace(".", "/"),
+                bodyName,
+                descriptor,
+                /*isInterface=*/ false);
+            perfMarkVisitor2.visitLabel(end);
+            perfMarkVisitor2.visitLineNumber(recorder.lastLine, end);
+            perfMarkVisitor2.visitLdcInsn(className + ":::" + name);
+            perfMarkVisitor2.visitMethodInsn(Opcodes.INVOKESTATIC, SRC_OWNER, "stopTask", "(Ljava/lang/String;)V", false);
+            perfMarkVisitor2.visitInsn(Opcodes.RETURN);
+            perfMarkVisitor2.visitMaxs(argc, argc + 3);
+            perfMarkVisitor2.visitEnd();
+          }
+
+        }
+      };
+    }
+
+    static final class Best {
+
+      public void hi (int a, String b, Object[] c, byte x, char y, short z) {
+        try {
+          bi(a, b, c, x, y, z);
+        } finally{
+          assert true;
+        }
+
+      }
+
+      public void bi (int a, String b, Object[] c, byte x, char y, short z) {
+        higer(a, b, c, x, y, z);
+      }
+
+      @SuppressWarnings("ArrayHashCode")
+      public void higer (int a, String b, Object[] c, byte x, char y, short z) {
+        assert  (a ^ b.hashCode() ^ c.hashCode() ^ x ^ y ^ z) > 0;
+      }
     }
 
     private final class PerfMarkMethodVisitor extends MethodVisitor {

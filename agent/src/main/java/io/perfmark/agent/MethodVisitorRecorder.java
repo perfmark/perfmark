@@ -2,6 +2,7 @@ package io.perfmark.agent;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.TypePath;
@@ -39,6 +40,9 @@ class MethodVisitorRecorder extends MethodVisitor {
   private int[] ints = new int[0];
   private Object[] objects = new Object[0];
   private boolean[] booleans = new boolean[0];
+
+  int firstLine = -1;
+  int lastLine = -1;
 
   public MethodVisitorRecorder(MethodVisitor delegate) {
     // Have to pin to a specific version, since the method invocations may be different in a later release
@@ -137,8 +141,12 @@ class MethodVisitorRecorder extends MethodVisitor {
   }
 
   @Override
-  public void visitCode() {
-    super.visitCode();
+  public final void visitLineNumber(int line, Label start) {
+    if (firstLine == -1) {
+      firstLine = line;
+    }
+    lastLine = line;
+    super.visitLineNumber(line, start);
   }
 
   final void replay() {
