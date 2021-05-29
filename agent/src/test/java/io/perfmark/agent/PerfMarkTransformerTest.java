@@ -27,6 +27,8 @@ import io.perfmark.impl.Storage;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.List;
@@ -463,6 +465,8 @@ public class PerfMarkTransformerTest {
 
     assertEquals(marks.get(3).withTaskName("task"), marks.get(3));
   }
+  @Target({ElementType.TYPE, ElementType.TYPE_PARAMETER, ElementType.TYPE_USE})
+  @interface Foo {}
 
   private static Class<?> transformAndLoad(Class<?> toLoad, Class<?> ...extra) throws IOException {
     Map<String, Class<?>> toTransform = new HashMap<>();
@@ -483,7 +487,10 @@ public class PerfMarkTransformerTest {
           byte[] data;
           try (InputStream stream = getResourceAsStream(resourceName)) {
             data = stream.readAllBytes();
-          } catch (IOException e) {
+          } catch (@Foo Exception e) {
+            if (e instanceof @Foo IOException) {
+              @Foo IOException z = (@Foo IOException) e;
+            }
             throw new RuntimeException(e);
           }
           byte[] newClassBytes = new PerfMarkTransformer().transformInternal(this, name, existing, null, data);

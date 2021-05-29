@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+
 package io.perfmark.agent;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -113,7 +115,72 @@ final class PerfMarkTransformer implements ClassFileTransformer {
         return null;
       }
       return new PerfMarkMethodVisitor(
-          name, super.visitMethod(access, name, descriptor, signature, exceptions));
+          name, super.visitMethod(access, name+"$perfmark", descriptor, signature, exceptions));
+    }
+
+    private final class PerfMarkInstrumentedMethodVisitor extends MethodVisitor {
+      private final String methodName;
+/*
+* A visitor to visit a Java method. The methods of this class must be called in the following order:
+* ( visitParameter )*
+* [ visitAnnotationDefault ]
+* ( visitAnnotation | visitAnnotableParameterCount | visitParameterAnnotation visitTypeAnnotation | visitAttribute )*
+* [ visitCode (
+*     visitFrame | visit<i>X</i>Insn | visitLabel | visitInsnAnnotation | visitTryCatchBlock
+*         | visitTryCatchAnnotation | visitLocalVariable | visitLocalVariableAnnotation | visitLineNumber )*
+*     visitMaxs ]
+* visitEnd.
+*
+*
+* In addition, the visit<i>X</i>Insn and visitLabel methods must be called in the sequential order of the bytecode
+* instructions of the visited code, visitInsnAnnotation must be called after the annotated instruction,
+*  visitTryCatchBlock must be called before the labels passed as arguments have been visited,
+* visitTryCatchBlockAnnotation must be called after the corresponding try catch block has been visited, and the
+* visitLocalVariable, visitLocalVariableAnnotation and visitLineNumber methods must be called after the labels passed
+* as arguments have been visited.
+*/
+      PerfMarkInstrumentedMethodVisitor(String methodName, MethodVisitor delegate) {
+        // This doesn't match the overall api level since it depends on the method order of MethodVisitor
+        super(Opcodes.ASM9, delegate);
+        this.methodName = methodName;
+      }
+
+      int parameters;
+      String[] parameterNames = new String[2];
+      int[] parameterAccesses = new int[2];
+
+      @Override
+      public void visitParameter(String name, int access) {
+        if (parameterNames.length == parameters) {
+          String[] parameterNames = new String[1 + this.parameterNames.length * 2];
+          System.arraycopy(this.parameterNames, 0, parameterNames, 0, parameters);
+          this.parameterNames = parameterNames;
+
+          int[] parameterAccesses = new int[1+this.parameterAccesses.length * 2];
+          System.arraycopy(this.parameterAccesses, 0, parameterAccesses, 0, parameters);
+          this.parameterAccesses = parameterAccesses;
+        }
+        parameterNames[parameters] = name;
+        parameterAccesses[parameters] = access;
+        parameters++;
+      }
+
+      @Override
+      public AnnotationVisitor visitAnnotationDefault() {
+        return new AnnotationVisitor(2) {
+
+        };
+      }
+
+      @Override
+      public void visitAnnotableParameterCount(int parameterCount, boolean visible) {
+        super.visitAnnotableParameterCount(parameterCount, visible);
+      }
+
+      @Override
+      public void visitCode() {
+        super.visitCode();
+      }
     }
 
     private final class PerfMarkMethodVisitor extends MethodVisitor {
