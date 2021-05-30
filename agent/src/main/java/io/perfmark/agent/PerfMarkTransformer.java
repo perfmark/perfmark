@@ -19,7 +19,6 @@ package io.perfmark.agent;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -73,12 +72,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
         new PerfMarkRewriter(changed, false, api, null, className),
         ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
     if (changed.changed) {
-      ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS) {
-        @Override
-        protected String getCommonSuperClass(String type1, String type2) {
-          throw new UnsupportedOperationException("can't reflectively look up classes");
-        }
-      };
+      ClassWriter cw = new NonMergingClassWriter(cr, ClassWriter.COMPUTE_MAXS);
       cr.accept(new PerfMarkRewriter(changed, true, api, cw, className), 0);
       return cw.toByteArray();
     }
@@ -165,6 +159,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       };
     }
 
+    // FIXME: remove
     static final class Best {
 
       public void hi (int a, String b, Object[] c, byte x, char y, short z) {
