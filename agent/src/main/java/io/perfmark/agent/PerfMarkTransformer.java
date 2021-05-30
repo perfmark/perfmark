@@ -59,6 +59,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       Class<?> classBeingRedefined,
       ProtectionDomain protectionDomain,
       byte[] classfileBuffer) {
+    assert !className.contains(".") : "Binary name with `.` detected rather than internal name";
     return transform(className, classfileBuffer);
   }
 
@@ -109,7 +110,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       if (changed.changed && !keepGoing) {
         return null;
       }
-      if (className.equals("io.perfmark.TaskCloseable") && name.equals("close") && descriptor.equals("()V")) {
+      if (className.equals("io/perfmark/TaskCloseable") && name.equals("close") && descriptor.equals("()V")) {
         return null;
       }
       return new PerfMarkMethodVisitor(
