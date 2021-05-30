@@ -476,23 +476,25 @@ public class PerfMarkTransformerTest {
       return new ClassLoader(toLoad.getClassLoader()) {
 
         @Override
-        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-          Class<?> existing = toTransform.get(name);
+        protected Class<?> loadClass(String binaryClassName, boolean resolve) throws ClassNotFoundException {
+          Class<?> existing = toTransform.get(binaryClassName);
           if (existing == null) {
-            return super.loadClass(name, resolve);
+            return super.loadClass(binaryClassName, resolve);
           }
-          String resourceName = name.replace('.', '/') + ".class";
+          String internalFullyQualifiedClassName = binaryClassName.replace('.', '/');
+          String resourceName = internalFullyQualifiedClassName + ".class";
           byte[] data;
           try (InputStream stream = getResourceAsStream(resourceName)) {
             data = stream.readAllBytes();
           } catch (IOException e) {
             throw new RuntimeException(e);
           }
-          byte[] newClassBytes = new PerfMarkTransformer().transformInternal(this, name, existing, null, data);
+          byte[] newClassBytes =
+              new PerfMarkTransformer().transformInternal(this, internalFullyQualifiedClassName, existing, null, data);
           if (newClassBytes == null) {
             newClassBytes = data;
           }
-          Class<?> newClass = defineClass(name, newClassBytes, 0, newClassBytes.length);
+          Class<?> newClass = defineClass(binaryClassName, newClassBytes, 0, newClassBytes.length);
           if (resolve) {
             resolveClass(newClass);
           }
