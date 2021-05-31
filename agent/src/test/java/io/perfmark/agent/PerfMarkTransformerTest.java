@@ -27,6 +27,8 @@ import io.perfmark.impl.Storage;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.List;

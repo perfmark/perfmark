@@ -24,6 +24,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 
 final class TransformerTestClasses {
 
@@ -54,7 +55,7 @@ final class TransformerTestClasses {
     }
 
     @Override
-    public void execute(Runnable command) {
+    public void execute(@Nullable final Runnable command) {
       command.run();
     }
   }

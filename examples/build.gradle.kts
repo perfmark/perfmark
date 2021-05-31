@@ -29,12 +29,16 @@ tasks.named<JavaCompile>("compileJava") {
     targetCompatibility = jdkVersion.toString()
 }
 
+tasks.named<JavaExec>("run") {
+    dependsOn(":perfmark-agent:shadowJar")
+}
 
 application {
     mainClass.set("io.perfmark.examples.perfetto.WebServer")
     applicationDefaultJvmArgs = mutableListOf(
             "-javaagent:" + configurations.getByName("perfmarkAgent").singleFile.path,
             "-Xlog:class+load=info",
+            "-XX:StartFlightRecording",
             "-Dio.perfmark.PerfMark.startEnabled=true",
     )
 }
