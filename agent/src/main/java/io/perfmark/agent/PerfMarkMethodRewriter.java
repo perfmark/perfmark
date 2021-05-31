@@ -38,6 +38,7 @@ final class PerfMarkMethodRewriter extends MethodVisitor {
    */
   private static final Constructor<? extends StackTraceElement> MODULE_CTOR = getStackTraceElementCtorSafe();
 
+  private final Runnable onChange;
   private final String classLoaderName;
   private final String moduleName;
   private final String moduleVersion;
@@ -57,11 +58,12 @@ final class PerfMarkMethodRewriter extends MethodVisitor {
    * @param className the class that contains this method.  Must be non-{@code null}.
    * @param methodName the method currently being visited.  Must be non-{@code null}.
    * @param fileName the class that contains this method.  May be {@code null}.
+   * @param onChange runnable to invoke if any changes are made to the class definition.  May be {@code null}.
    * @param methodVisitor the delegate to call.  May be {@code null}.
    */
   PerfMarkMethodRewriter(
       String classLoaderName, String moduleName, String moduleVersion, String className, String methodName,
-      String fileName, MethodVisitor methodVisitor) {
+      String fileName, Runnable onChange, MethodVisitor methodVisitor) {
     super(Opcodes.ASM9, methodVisitor);
     this.classLoaderName = classLoaderName;
     this.moduleName = moduleName;
@@ -69,6 +71,7 @@ final class PerfMarkMethodRewriter extends MethodVisitor {
     this.className = className;
     this.methodName = methodName;
     this.fileName = fileName;
+    this.onChange = onChange;
   }
 
   @Override
@@ -95,14 +98,22 @@ final class PerfMarkMethodRewriter extends MethodVisitor {
       visitLdcInsn("PerfMark.stopCallSite");
       visitLdcInsn(callSite());
       super.visitMethodInsn(INVOKESTATIC, PERFMARK_CLZ, "attachTag", "(Ljava/lang/String;Ljava/lang/String;)V", false);
+      if (onChange != null) {
+        onChange.run();
+      }
     }
 
     super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
 
-    if (opcode == INVOKESTATIC && PERFMARK_CLZ.equals(owner) && name.equals("startTask")) {
+    if (opcode == INVOKESTATIC
+        && PERFMARK_CLZ.equals(owner)
+        && (name.equals("startTask") || name.equals("traceTask"))) {
       visitLdcInsn("PerfMark.startCallSite");
       visitLdcInsn(callSite());
       super.visitMethodInsn(INVOKESTATIC, PERFMARK_CLZ, "attachTag", "(Ljava/lang/String;Ljava/lang/String;)V", false);
+      if (onChange != null) {
+        onChange.run();
+      }
     }
   }
 
