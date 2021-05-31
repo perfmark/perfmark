@@ -39,7 +39,15 @@ final class PerfMarkTransformer implements ClassFileTransformer {
     //try (TaskCloseable ignored = PerfMark.traceTask("PerfMarkTransformer.transform")) {
     //  PerfMark.attachTag("classname", className);
     //   PerfMark.attachTag("size", classfileBuffer.length);
+    System.err.println("  Attempting " + className);
+    try {
       return transformInternal(loader, className, classBeingRedefined, protectionDomain, classfileBuffer);
+    } catch (Exception e) {
+      System.err.println(e.toString());
+      e.printStackTrace(System.err);
+      throw new RuntimeException(e);
+    }
+
     //}
   }
 
@@ -61,7 +69,7 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       ClassWriter cw = new NonMergingClassWriter(cr, ClassWriter.COMPUTE_MAXS);
       PerfMarkClassVisitor perfMarkClassVisitor =
           new PerfMarkClassVisitor(
-              classLoaderName, className, PerfMarkClassVisitor.ALL_METHODS, new String[]{"record"}, cw);
+              classLoaderName, className, PerfMarkClassVisitor.ALL_METHODS, new String[0], cw);
       cr.accept(perfMarkClassVisitor, 0);
       return cw.toByteArray();
     }
@@ -99,6 +107,9 @@ final class PerfMarkTransformer implements ClassFileTransformer {
    * @return The name of the class loader, or {@code null} if unavailable
    */
   static String getClassLoaderName(ClassLoader loader) {
+    if (loader == null) {
+      return null;
+    }
     if (CLASS_LOADER_GET_NAME != null) {
       try {
         return (String) CLASS_LOADER_GET_NAME.invoke(loader);

@@ -49,7 +49,7 @@ tasks.named<Jar>("jar") {
     archiveClassifier.value("original")
     manifest {
         attributes(mapOf(
-                "Premain-Class" to "io.perfmark.agent.Main",
+                "Premain-Class" to "io.perfmark.agent.PerfMarkAgent",
         ))
     }
 }

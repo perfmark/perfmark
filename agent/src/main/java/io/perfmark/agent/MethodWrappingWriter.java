@@ -51,6 +51,10 @@ final class MethodWrappingWriter {
 
   void visit() {
     MethodVisitor mv = classVisitor.visitMethod(access, methodName, descriptor, signature, exceptions);
+    if (mv == null) {
+      return;
+    }
+    // TODO(carl-mastrangelo): add start / stop call tags here
     recorder.replay(mv);
 
     mv.visitCode();
@@ -97,21 +101,29 @@ final class MethodWrappingWriter {
           break;
         case '[':
           mv.visitVarInsn(Opcodes.ALOAD, params++);
-          while (descriptor.charAt(++i) != '[') {
+          while (descriptor.charAt(++i) == '[') {
             // empty body on purpose.
           }
+          if (descriptor.charAt(i) == 'L') {
+            i = descriptor.indexOf(';', i);
+          }
+
           break;
         default:
-          throw new RuntimeException("Bad descriptor " + c);
+          throw new RuntimeException("Bad descriptor " + c + " in " + descriptor);
       }
     }
 
-    mv.visitMethodInsn(
-        ((access & Opcodes.ACC_STATIC) != 0) ? Opcodes.INVOKESTATIC : Opcodes.INVOKESPECIAL,
-        className.replace(".", "/"),
-        bodyMethodName,
-        descriptor,
-        isInterface);
+    int invoke;
+    if ((access & Opcodes.ACC_STATIC) != 0) {
+      invoke = Opcodes.INVOKESTATIC;
+    } else if (isInterface) {
+      invoke = Opcodes.INVOKEINTERFACE;
+    } else {
+      invoke = Opcodes.INVOKESPECIAL;
+    }
+
+    mv.visitMethodInsn(invoke, className.replace(".", "/"), bodyMethodName, descriptor, isInterface);
 
     mv.visitLabel(end);
     mv.visitLineNumber(recorder.lastLine, end);

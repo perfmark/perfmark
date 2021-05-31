@@ -73,9 +73,18 @@ final class PerfMarkClassVisitor extends ClassVisitor {
       int access, String methodName, String descriptor, String signature, String[] exceptions) {
     final MethodVisitor superDelegate;
     final MethodWrappingWriter methodWrapper;
-    if (shouldWrap(methodName)) {
+    if (shouldWrap(methodName, access)) {
+      if (className.startsWith("io/perfmark/") || className.startsWith("jdk/")) {
+        // Avoid recursion for now.
+        return super.visitMethod(access, methodName, descriptor, signature, exceptions);
+      }
       String bodyMethodName = methodName + "$perfmark";
-      int newAccess = (access | Opcodes.ACC_PRIVATE) & ~(Opcodes.ACC_PROTECTED | Opcodes.ACC_PUBLIC);
+      int newAccess;
+      if (!isInterface) {
+        newAccess = (access | Opcodes.ACC_PRIVATE) & ~(Opcodes.ACC_PROTECTED | Opcodes.ACC_PUBLIC);
+      } else {
+        newAccess = access;
+      }
       MethodVisitor visitor = super.visitMethod(newAccess, bodyMethodName, descriptor, signature, exceptions);
       MethodVisitorRecorder recorder = new MethodVisitorRecorder(visitor);
       superDelegate = recorder;
@@ -99,8 +108,15 @@ final class PerfMarkClassVisitor extends ClassVisitor {
     return new MethodVisitorWrapper(methodWrapper, visitor);
   }
 
-  boolean shouldWrap(String methodName) {
+  boolean shouldWrap(String methodName, int access) {
+    if ((access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_NATIVE)) != 0) {
+      return false;
+    }
     if (methodsToWrap == ALL_METHODS) {
+      // not yet supported
+      if (methodName.equals("<init>") || methodName.equals("<clinit>")) {
+        return false;
+      }
       return true;
     }
     for (String method : methodsToWrap) {
