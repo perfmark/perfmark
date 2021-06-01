@@ -21,6 +21,7 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -82,19 +83,7 @@ final class PerfMarkMethodRewriter extends MethodVisitor {
 
   @Override
   public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
-    boolean pretag;
-    switch (opcode) {
-      case INVOKESTATIC:
-        pretag = PERFMARK_CLZ.equals(owner) && name.equals("stopTask") && !TASKCLOSEABLE_CLZ.equals(className);
-        break;
-      case INVOKEVIRTUAL:
-        pretag = TASKCLOSEABLE_CLZ.equals(owner) && name.equals("close");
-        break;
-      default:
-        pretag = false;
-        break;
-    }
-    if (pretag) {
+    if (shouldPreTag(opcode, owner, name)) {
       visitLdcInsn("PerfMark.stopCallSite");
       visitLdcInsn(callSite());
       super.visitMethodInsn(INVOKESTATIC, PERFMARK_CLZ, "attachTag", "(Ljava/lang/String;Ljava/lang/String;)V", false);
@@ -105,9 +94,7 @@ final class PerfMarkMethodRewriter extends MethodVisitor {
 
     super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
 
-    if (opcode == INVOKESTATIC
-        && PERFMARK_CLZ.equals(owner)
-        && (name.equals("startTask") || name.equals("traceTask"))) {
+    if (shouldPostTag(opcode, owner, name)) {
       visitLdcInsn("PerfMark.startCallSite");
       visitLdcInsn(callSite());
       super.visitMethodInsn(INVOKESTATIC, PERFMARK_CLZ, "attachTag", "(Ljava/lang/String;Ljava/lang/String;)V", false);
@@ -115,6 +102,23 @@ final class PerfMarkMethodRewriter extends MethodVisitor {
         onChange.run();
       }
     }
+  }
+
+  private boolean shouldPreTag(int opcode, String owner, String methodName) {
+    switch (opcode) {
+      case INVOKESTATIC:
+        return PERFMARK_CLZ.equals(owner) && methodName.equals("stopTask") && !TASKCLOSEABLE_CLZ.equals(className);
+      case INVOKEVIRTUAL:
+        return TASKCLOSEABLE_CLZ.equals(owner) && methodName.equals("close");
+      default:
+        return false;
+    }
+  }
+
+  private boolean shouldPostTag(int opcode, String owner, String methodName) {
+    return opcode == INVOKESTATIC
+        && PERFMARK_CLZ.equals(owner)
+        && (methodName.equals("startTask") || methodName.equals("traceTask"));
   }
 
   private String callSite() {
