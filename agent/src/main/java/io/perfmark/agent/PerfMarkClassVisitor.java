@@ -160,7 +160,6 @@ final class PerfMarkClassVisitor extends ClassVisitor {
         madeChanges = true;
         methodWrapper.visit();
       }
-
     }
   }
 
