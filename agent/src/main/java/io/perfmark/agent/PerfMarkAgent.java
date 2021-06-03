@@ -24,7 +24,7 @@ public final class PerfMarkAgent {
    * Entry point as an agent.
    */
   public static void premain(String agentArgs, Instrumentation inst) {
-    inst.addTransformer(new PerfMarkTransformer());
+    inst.addTransformer(new PerfMarkTransformer(inst));
   }
 
   private PerfMarkAgent() {}
