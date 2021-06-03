@@ -17,10 +17,14 @@
 
 package io.perfmark.agent;
 
+import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.security.ProtectionDomain;
+import java.util.jar.JarFile;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
@@ -29,6 +33,33 @@ final class PerfMarkTransformer implements ClassFileTransformer {
   /** May be {@code null}. */
   private static final Method CLASS_LOADER_GET_NAME = getClassLoaderNameMethodSafe();
 
+  @SuppressWarnings("unused")
+  private final Instrumentation instrumentation;
+
+  /**
+   * @param instrumentation may be {@code null}.
+   */
+  PerfMarkTransformer(Instrumentation instrumentation) {
+    this.instrumentation = instrumentation;
+    if (instrumentation != null) {
+      try {
+        URL url = getClass().getClassLoader().getResource("io/perfmark/PerfMark.class");
+        int index;
+        if (url != null && "jar".equals(url.getProtocol()) && (index = url.getFile().indexOf("!/")) != -1) {
+          // The "file" is what appendToBootstrapClassLoaderSearch uses, so we will too.  The jar format
+          // looks like "file:/home/jars/perfmark-api.jar:/io/perfmark/PerfMark.class", so we need to strip
+          // off the "file:" and the bangslash.
+          JarFile jf = new JarFile(url.getFile().substring(5, index));
+          jf.close();
+          instrumentation.appendToBootstrapClassLoaderSearch(jf);
+        }
+      } catch (IOException e ) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+
   @Override
   public byte[] transform(
       ClassLoader loader,
@@ -36,9 +67,6 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       Class<?> classBeingRedefined,
       ProtectionDomain protectionDomain,
       byte[] classfileBuffer) {
-    //try (TaskCloseable ignored = PerfMark.traceTask("PerfMarkTransformer.transform")) {
-    //  PerfMark.attachTag("classname", className);
-    //   PerfMark.attachTag("size", classfileBuffer.length);
     System.err.println("  Attempting " + className);
     try {
       return transformInternal(loader, className, classBeingRedefined, protectionDomain, classfileBuffer);
@@ -47,8 +75,6 @@ final class PerfMarkTransformer implements ClassFileTransformer {
       e.printStackTrace(System.err);
       throw new RuntimeException(e);
     }
-
-    //}
   }
 
   byte[] transformInternal(
@@ -64,7 +90,6 @@ final class PerfMarkTransformer implements ClassFileTransformer {
 
   private static byte[] transform(String classLoaderName, String className, byte[] classfileBuffer) {
     ClassReader cr = new ClassReader(classfileBuffer);
-    //cr.accept(perfMarkClassVisitor, ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
     if (true) {
       ClassWriter cw = new NonMergingClassWriter(cr, ClassWriter.COMPUTE_MAXS);
       PerfMarkClassVisitor perfMarkClassVisitor =
@@ -156,6 +181,4 @@ final class PerfMarkTransformer implements ClassFileTransformer {
   private static void safeLog(Throwable t, String message, Object... args) {
     // TODO(carl-mastrangelo): implement.
   }
-
-  PerfMarkTransformer() {}
 }

@@ -490,7 +490,8 @@ public class PerfMarkTransformerTest {
             throw new RuntimeException(e);
           }
           byte[] newClassBytes =
-              new PerfMarkTransformer().transformInternal(this, internalFullyQualifiedClassName, existing, null, data);
+              new PerfMarkTransformer(null).transformInternal(
+                  this, internalFullyQualifiedClassName, existing, null, data);
           if (newClassBytes == null) {
             newClassBytes = data;
           }
