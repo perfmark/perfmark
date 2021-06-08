@@ -23,6 +23,7 @@ dependencies {
     compileOnly(libraries["jsr305"]!!)
 
     testImplementation(project(":perfmark-api"))
+    testImplementation(project(":perfmark-testing"))
     jcstressImplementation(project(":perfmark-impl"))
 }
 
