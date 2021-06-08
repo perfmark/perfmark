@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google LLC
+ * Copyright 2021 Carl Mastrangelo
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.perfmark.java9;
+package io.perfmark.java15;
 
 import static org.junit.Assert.assertEquals;
 
@@ -28,13 +28,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class VarHandleMarkHolderTest extends MarkHolderTest {
+public class HiddenClassVarHandleMarkHolderTest extends MarkHolderTest {
 
   private final long gen = 1L << Generator.GEN_OFFSET;
 
   @Override
   protected MarkHolder getMarkHolder() {
-    return new VarHandleMarkHolder();
+    return new SecretHiddenClassMarkHolderProvider.HiddenClassMarkHolderProvider().create(1234);
   }
 
   @Test

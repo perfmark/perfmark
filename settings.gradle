@@ -1,4 +1,5 @@
 rootProject.name = 'perfmark'
+include ":perfmark-agent"
 include ":perfmark-api"
 include ":perfmark-api-testing"
 include ":perfmark-examples"
@@ -7,10 +8,11 @@ include ":perfmark-java6"
 include ":perfmark-java7"
 include ":perfmark-java9"
 include ":perfmark-java15"
+include ":perfmark-testing"
 include ":perfmark-tracewriter"
-include ":perfmark-agent"
 include ":perfmark-traceviewer"
 
+project(':perfmark-agent').projectDir = "$rootDir/agent" as File
 project(':perfmark-api').projectDir = "$rootDir/api" as File
 project(':perfmark-api-testing').projectDir = "$rootDir/api/testing" as File
 project(':perfmark-examples').projectDir = "$rootDir/examples" as File
@@ -19,6 +21,6 @@ project(':perfmark-java6').projectDir = "$rootDir/java6" as File
 project(':perfmark-java7').projectDir = "$rootDir/java7" as File
 project(':perfmark-java9').projectDir = "$rootDir/java9" as File
 project(':perfmark-java15').projectDir = "$rootDir/java15" as File
+project(':perfmark-testing').projectDir = "$rootDir/testing" as File
 project(':perfmark-tracewriter').projectDir = "$rootDir/tracewriter" as File
-project(':perfmark-agent').projectDir = "$rootDir/agent" as File
 project(':perfmark-traceviewer').projectDir = "$rootDir/traceviewer" as File
