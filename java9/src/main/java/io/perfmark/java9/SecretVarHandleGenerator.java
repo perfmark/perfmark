@@ -48,7 +48,7 @@ final class SecretVarHandleGenerator {
 
     @Override
     public void setGeneration(long generation) {
-      GEN.setOpaque(this, generation);
+      GEN.setRelease(this, generation);
     }
 
     @Override
@@ -67,7 +67,5 @@ final class SecretVarHandleGenerator {
     }
   }
 
-  private SecretVarHandleGenerator() {
-    throw new AssertionError("nope");
-  }
+  private SecretVarHandleGenerator() {}
 }
