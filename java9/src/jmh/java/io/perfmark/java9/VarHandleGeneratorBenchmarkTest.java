@@ -17,6 +17,7 @@
 package io.perfmark.java9;
 
 import io.perfmark.impl.Generator;
+import io.perfmark.testing.GarbageCollector;
 import io.perfmark.testing.GeneratorBenchmark;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;

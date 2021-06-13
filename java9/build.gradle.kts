@@ -50,12 +50,21 @@ tasks.named<JavaCompile>("compileJava") {
     targetCompatibility = jdkVersion.toString()
 }
 
+tasks.named<JavaCompile>("compileJmhJava") {
+    sourceCompatibility = JavaVersion.VERSION_11.toString()
+    targetCompatibility = JavaVersion.VERSION_11.toString()
+}
+
 tasks.register<Test>("jmh") {
     description = "Runs integration tests."
     group = "stress"
 
     testClassesDirs = sourceSets["jmh"].output.classesDirs
     classpath = sourceSets["jmh"].runtimeClasspath
+
+    javaLauncher.set(javaToolchains.launcherFor({
+        languageVersion.set(JavaLanguageVersion.of("11"))
+    }))
 }
 
 
