@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.perfmark.java7;
+package io.perfmark.testing;
 
 import io.perfmark.impl.Generator;
 import java.util.concurrent.TimeUnit;
@@ -30,14 +30,18 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
-public class MethodHandleGeneratorBenchmark {
+public class GeneratorBenchmark {
 
-  public static final SecretMethodHandleGenerator.MethodHandleGenerator generator =
-      new SecretMethodHandleGenerator.MethodHandleGenerator();
+  private Generator generator;
 
   @Setup(Level.Trial)
   public void setUp() {
+    generator = getGenerator();
     generator.setGeneration(Generator.FAILURE);
+  }
+
+  protected Generator getGenerator() {
+    throw new UnsupportedOperationException();
   }
 
   @Benchmark
@@ -75,7 +79,7 @@ public class MethodHandleGeneratorBenchmark {
     return generator.getGeneration();
   }
 
-  private static boolean isEnabled(long gen) {
+  protected static boolean isEnabled(long gen) {
     return ((gen >>> Generator.GEN_OFFSET) & 0x1L) != 0L;
   }
 }

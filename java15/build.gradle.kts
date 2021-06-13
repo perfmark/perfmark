@@ -1,13 +1,12 @@
 import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
-    id("me.champeau.jmh")
     id("io.github.reyerizo.gradle.jcstress")
 }
 
 buildscript {
     extra.apply{
-        set("moduleName", "io.perfmark.javanine")
+        set("moduleName", "io.perfmark.javafifteen")
     }
 }
 
@@ -15,6 +14,17 @@ val jdkVersion = JavaVersion.VERSION_15
 
 description = "PerfMark Java15 API"
 
+sourceSets {
+    create("jmh")
+}
+
+val jmhImplementation by configurations.getting {
+    extendsFrom(configurations.implementation.get())
+}
+
+val jmhAnnotationProcessor by configurations.getting {
+    extendsFrom(configurations.annotationProcessor.get())
+}
 
 dependencies {
     val libraries = project.ext.get("libraries") as Map<String, String>
@@ -25,6 +35,15 @@ dependencies {
     testImplementation(project(":perfmark-api"))
     testImplementation(project(":perfmark-testing"))
     jcstressImplementation(project(":perfmark-impl"))
+
+
+    jmhImplementation(project(":perfmark-api"))
+    jmhImplementation(project(":perfmark-impl"))
+    jmhImplementation(project(":perfmark-java15"))
+    jmhImplementation(project(":perfmark-testing"))
+    jmhImplementation(libraries["junit"]!!)
+    jmhImplementation("org.openjdk.jmh:jmh-core:1.32")
+    jmhAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.32")
 }
 
 tasks.named<JavaCompile>("compileJava") {
@@ -32,9 +51,16 @@ tasks.named<JavaCompile>("compileJava") {
     targetCompatibility = jdkVersion.toString()
 }
 
-
 tasks.named<Javadoc>("javadoc") {
     exclude("io/perfmark/java15/**")
+}
+
+tasks.register<Test>("jmh") {
+    description = "Runs integration tests."
+    group = "stress"
+
+    testClassesDirs = sourceSets["jmh"].output.classesDirs
+    classpath = sourceSets["jmh"].runtimeClasspath
 }
 
 //  ./gradlew --no-daemon clean :perfmark-java9:jcstress
@@ -42,36 +68,6 @@ jcstress {
     jcstressDependency = "org.openjdk.jcstress:jcstress-core:0.5"
     // mode "tough"
     deoptRatio = "2"
-}
-
-jmh {
-    timeOnIteration.set("1s")
-    warmup.set("1s")
-    fork.set(1)
-    warmupIterations.set(10)
-
-    jvmArgs.addAll("-XX:+UseZGC -Xms2g -Xmx2g -XX:+UnlockDiagnosticVMOptions -XX:PrintAssemblyOptions=syntax -XX:PrintAssemblyOptions=intel")
-
-    profilers.add("perfasm")
-    /*
-    *     jvmArgs = [
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+LogCompilation",
-            "-XX:LogFile=/tmp/blah.txt",
-            "-XX:+PrintAssembly",
-            "-XX:+PrintInterpreter",
-            "-XX:+PrintNMethods",
-            "-XX:+PrintNativeNMethods",
-            "-XX:+PrintSignatureHandlers",
-            "-XX:+PrintAdapterHandlers",
-            "-XX:+PrintStubCode",
-            "-XX:+PrintCompilation",
-            "-XX:+PrintInlining",
-            "-XX:+TraceClassLoading",
-            "-XX:PrintAssemblyOptions=syntax",
-            "-XX:PrintAssemblyOptions=intel"
-    ]
-    * */
 }
 
 tasks.named<JavaCompile>("compileJcstressJava") {

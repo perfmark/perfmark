@@ -13,6 +13,7 @@ dependencies {
 
     implementation(project(":perfmark-api"))
     implementation(project(":perfmark-impl"))
+    implementation("org.openjdk.jmh:jmh-core:1.32")
     implementation(libraries["junit"]!!)
 }
 
