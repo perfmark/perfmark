@@ -14,29 +14,58 @@
  * limitations under the License.
  */
 
-package io.perfmark.java6;
+package io.perfmark.testing;
 
 import io.perfmark.impl.Generator;
+import io.perfmark.impl.MarkHolder;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
 @State(Scope.Thread)
-public class SynchronizedMarkHolderBenchmark {
+public class MarkHolderBenchmark {
 
   private static final long gen = 1 << Generator.GEN_OFFSET;
-  private static final String taskName = "hi";
+  private static final String taskName = "hiya";
 
-  public final SynchronizedMarkHolder markHolder = new SynchronizedMarkHolder(16384);
+  public static final List<String> ASM_FLAGS = List.of(
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:+LogCompilation",
+      "-XX:LogFile=/tmp/blah.txt",
+      "-XX:+PrintAssembly",
+      "-XX:+PrintInterpreter",
+      "-XX:+PrintNMethods",
+      "-XX:+PrintNativeNMethods",
+      "-XX:+PrintSignatureHandlers",
+      "-XX:+PrintAdapterHandlers",
+      "-XX:+PrintStubCode",
+      "-XX:+PrintCompilation",
+      "-XX:+PrintInlining",
+      "-XX:+TraceClassLoading",
+      "-XX:PrintAssemblyOptions=syntax",
+      "-XX:PrintAssemblyOptions=intel");
+
+  protected MarkHolder markHolder;
 
   private String tagName = "tag";
   private long tagId = 0xf0f0;
   private long nanoTime = 0xf1f1;
   private long linkId = 0xf2f2;
+
+  public MarkHolder getMarkHolder() {
+    throw new UnsupportedOperationException("not implemented");
+  }
+
+  @Setup
+  public final void setUp() {
+    markHolder = getMarkHolder();
+  }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)

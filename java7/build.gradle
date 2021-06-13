@@ -1,6 +1,3 @@
-plugins {
-    id "me.champeau.jmh"
-}
 
 description = "PerfMark Java7 API"
 ext.moduleName = "io.perfmark.javaseven"
@@ -13,9 +10,30 @@ compileJava {
     options.compilerArgs.add("-Xlint:-options")
 }
 
+sourceSets {
+    jmh {}
+}
+
+
+compileJmhJava {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+    javaCompiler = javaToolchains.compilerFor({
+        languageVersion = JavaLanguageVersion.of("11")
+    })
+}
+
 dependencies {
     implementation project(':perfmark-impl')
     compileOnly libraries.jsr305
+
+    jmhImplementation project(':perfmark-api'),
+            project(':perfmark-impl'),
+            project(':perfmark-java7'),
+            project(':perfmark-testing')
+    jmhImplementation libraries.junit
+    jmhImplementation 'org.openjdk.jmh:jmh-core:1.32'
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.32'
 }
 
 javadoc {
@@ -26,32 +44,15 @@ jar {
     exclude 'io/perfmark/java7/Internal*'
 }
 
-jmh {
-    timeOnIteration = "1s"
-    warmup = "1s"
-    fork = 1
-    warmupIterations = 10
+tasks.register('jmh', Test) {
+    description = 'Runs integration tests.'
+    group = 'stress'
 
-    /*
-    profilers = ["perfasm"]
+    testClassesDirs = sourceSets.jmh.output.classesDirs
+    classpath = sourceSets.jmh.runtimeClasspath
 
-    jvmArgs = [
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+LogCompilation",
-            "-XX:LogFile=/tmp/blah.txt",
-            "-XX:+PrintAssembly",
-            "-XX:+PrintInterpreter",
-            "-XX:+PrintNMethods",
-            "-XX:+PrintNativeNMethods",
-            "-XX:+PrintSignatureHandlers",
-            "-XX:+PrintAdapterHandlers",
-            "-XX:+PrintStubCode",
-            "-XX:+PrintCompilation",
-            "-XX:+PrintInlining",
-            "-XX:+TraceClassLoading",
-            "-XX:PrintAssemblyOptions=syntax",
-            "-XX:PrintAssemblyOptions=intel"
-    ]
-    
-     */
+    javaLauncher = javaToolchains.launcherFor({
+        languageVersion = JavaLanguageVersion.of("16")
+    })
+    //shouldRunAfter test
 }
