@@ -1,5 +1,5 @@
 plugins {
-    id "net.ltgt.errorprone" version "2.0.1" apply false
+    id "net.ltgt.errorprone" version "2.0.2" apply false
     id "me.champeau.jmh" version "0.6.5" apply false
     id "io.github.reyerizo.gradle.jcstress" version "0.8.11" apply false
 }
