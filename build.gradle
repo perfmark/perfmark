@@ -152,7 +152,7 @@ subprojects {
 
     ext {
         libraries = [
-                errorprone: 'com.google.errorprone:error_prone_annotations:2.9.0',
+                errorprone: 'com.google.errorprone:error_prone_annotations:2.11.0',
                 gson: 'com.google.code.gson:gson:2.8.9',
                 jsr305: 'com.google.code.findbugs:jsr305:3.0.2',
                 junit: "junit:junit:4.13.2",
