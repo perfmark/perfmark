@@ -85,49 +85,10 @@ import java.lang.reflect.Method;
  * <p>Events are a special kind of Task, which do not have a duration.  In effect, they only have
  * a single timestamp the represents a particular occurrence.  Events are slightly more efficient
  * than tasks while PerfMark is enabled, but cannot be used with Links or named-tags.
+ *
+ * @author Carl Mastrangelo
  */
 public final class PerfMark {
-  private static final Impl impl;
-
-  static {
-    Impl instance = null;
-    Throwable err = null;
-    Class<?> clz = null;
-    try {
-      clz = Class.forName("io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
-    } catch (Throwable t) {
-      err = t;
-    }
-    if (clz != null) {
-      try {
-        instance = clz.asSubclass(Impl.class).getConstructor(Tag.class).newInstance(Impl.NO_TAG);
-      } catch (Throwable t) {
-        err = t;
-      }
-    }
-    if (instance != null) {
-      impl = instance;
-    } else {
-      impl = new Impl(Impl.NO_TAG);
-    }
-    if (err != null) {
-      try {
-        if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
-          // We need to be careful here, as it's easy to accidentally cause a class load.  Logger is loaded
-          // reflectively to avoid accidentally pulling it in.
-          // TODO(carl-mastrangelo): Maybe make this load SLF4J instead?
-          Class<?> logClass = Class.forName("java.util.logging.Logger");
-          Object logger = logClass.getMethod("getLogger", String.class).invoke(null, PerfMark.class.getName());
-          Class<?> levelClass = Class.forName("java.util.logging.Level");
-          Object level = levelClass.getField("FINE").get(null);
-          Method logMethod = logClass.getMethod("log", levelClass, String.class, Throwable.class);
-          logMethod.invoke(logger, level, "Error during PerfMark.<clinit>", err);
-        }
-      } catch (Throwable e) {
-        // ignored.
-      }
-    }
-  }
 
   /**
    * Turns on or off PerfMark recording. Don't call this method too frequently; while neither on nor
@@ -586,6 +547,48 @@ public final class PerfMark {
   public static <T> void attachTag(
       String tagName, T tagObject, StringFunction<? super T> stringFunction) {
     impl.attachTag(tagName, tagObject, stringFunction);
+  }
+
+  private static final Impl impl;
+
+  static {
+    Impl instance = null;
+    Throwable err = null;
+    Class<?> clz = null;
+    try {
+      clz = Class.forName("io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
+    } catch (Throwable t) {
+      err = t;
+    }
+    if (clz != null) {
+      try {
+        instance = clz.asSubclass(Impl.class).getConstructor(Tag.class).newInstance(Impl.NO_TAG);
+      } catch (Throwable t) {
+        err = t;
+      }
+    }
+    if (instance != null) {
+      impl = instance;
+    } else {
+      impl = new Impl(Impl.NO_TAG);
+    }
+    if (err != null) {
+      try {
+        if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
+          // We need to be careful here, as it's easy to accidentally cause a class load.  Logger is loaded
+          // reflectively to avoid accidentally pulling it in.
+          // TODO(carl-mastrangelo): Maybe make this load SLF4J instead?
+          Class<?> logClass = Class.forName("java.util.logging.Logger");
+          Object logger = logClass.getMethod("getLogger", String.class).invoke(null, PerfMark.class.getName());
+          Class<?> levelClass = Class.forName("java.util.logging.Level");
+          Object level = levelClass.getField("FINE").get(null);
+          Method logMethod = logClass.getMethod("log", levelClass, String.class, Throwable.class);
+          logMethod.invoke(logger, level, "Error during PerfMark.<clinit>", err);
+        }
+      } catch (Throwable e) {
+        // ignored.
+      }
+    }
   }
 
   private PerfMark() {}
