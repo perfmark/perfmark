@@ -53,7 +53,8 @@ public class CompatibilityTest {
           "0.21.0",
           "0.22.0",
           "0.23.0",
-          "0.24.0");
+          "0.24.0",
+          "0.25.0");
   
   @Parameterized.Parameters(name = "version v{0}")
   public static Iterable<Object[]> params() {
