@@ -33,8 +33,23 @@ tracing function calls to their code to see how long each part takes.
 ## Usage
 
 To use PerfMark, add the following dependencies to your `build.gradle`:
-- `io.perfmark:perfmark-api:0.24.0`
-- `io.perfmark:perfmark-traceviewer:0.24.0`
+```
+dependencies {
+    implementation 'io.perfmark:perfmark-api:0.25.0'
+    // Only needed for applications, not libraries.
+    implementation 'io.perfmark:perfmark-traceviewer:0.25.0'
+}
+```
+
+Or in your `pom.xml`:
+
+```
+    <dependency>
+      <groupId>io.perfmark</groupId>
+      <artifactId>perfmark-api</artifactId>
+      <version>0.25.0</version>
+    </dependency>
+```
 
 In your code, add the PerfMark tracing calls like so:
 
