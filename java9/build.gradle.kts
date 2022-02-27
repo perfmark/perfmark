@@ -39,8 +39,8 @@ dependencies {
     jmhImplementation(project(":perfmark-java9"))
     jmhImplementation(project(":perfmark-testing"))
     jmhImplementation(libs.junit)
-    jmhImplementation("org.openjdk.jmh:jmh-core:1.32")
-    jmhAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.32")
+    jmhImplementation(libs.jmhcore)
+    jmhAnnotationProcessor(libs.jmhanno)
 }
 
 tasks.named<JavaCompile>("compileJava") {

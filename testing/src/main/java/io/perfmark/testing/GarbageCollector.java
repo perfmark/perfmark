@@ -18,6 +18,7 @@ package io.perfmark.testing;
 
 import java.util.List;
 
+@SuppressWarnings("ImmutableEnumChecker")
 public enum GarbageCollector {
   G1("-XX:+UseG1GC"),
   ZGC("-XX:+UseZGC"),

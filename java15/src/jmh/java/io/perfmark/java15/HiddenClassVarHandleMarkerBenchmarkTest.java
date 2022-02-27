@@ -63,7 +63,6 @@ public class HiddenClassVarHandleMarkerBenchmarkTest {
             "-XX:+PrintStubCode",
             "-XX:+PrintCompilation",
             "-XX:+PrintInlining",
-            "-XX:+TraceClassLoading",
             "-XX:PrintAssemblyOptions=syntax",
             "-XX:PrintAssemblyOptions=intel")
         .build();

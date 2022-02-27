@@ -48,7 +48,6 @@ public class MarkHolderBenchmark {
       "-XX:+PrintStubCode",
       "-XX:+PrintCompilation",
       "-XX:+PrintInlining",
-      "-XX:+TraceClassLoading",
       "-XX:PrintAssemblyOptions=syntax",
       "-XX:PrintAssemblyOptions=intel");
 
@@ -68,7 +67,7 @@ public class MarkHolderBenchmark {
     markHolder = getMarkHolder();
   }
 
-  @Param({})
+  @Param({"G1"})
   GarbageCollector GC;
 
   @Benchmark

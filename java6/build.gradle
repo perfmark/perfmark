@@ -24,8 +24,9 @@ compileJmhJava {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
     javaCompiler = javaToolchains.compilerFor({
-        languageVersion = JavaLanguageVersion.of("16")
+        languageVersion = JavaLanguageVersion.of("17")
     })
+    options.errorprone.enabled = true
 }
 
 dependencies {
@@ -40,8 +41,8 @@ dependencies {
             project(':perfmark-java6'),
             project(':perfmark-testing')
     jmhImplementation libs.junit
-    jmhImplementation 'org.openjdk.jmh:jmh-core:1.32'
-    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.32'
+    jmhImplementation libs.jmhcore
+    jmhAnnotationProcessor libs.jmhanno
 }
 
 tasks.register('jmh', Test) {
@@ -52,7 +53,7 @@ tasks.register('jmh', Test) {
     classpath = sourceSets.jmh.runtimeClasspath
 
     javaLauncher = javaToolchains.launcherFor({
-        languageVersion = JavaLanguageVersion.of("16")
+        languageVersion = JavaLanguageVersion.of("17")
     })
     //shouldRunAfter test
 }
