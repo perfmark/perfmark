@@ -7,8 +7,7 @@ buildscript {
 description = "PerfMark API Tests"
 
 dependencies {
-    val libraries = project.ext.get("libraries") as Map<String, String>
-    testImplementation(libraries["truth"]!!)
+    testImplementation(libs.truth)
 
     testImplementation(project(":perfmark-api"))
     testImplementation(project(":perfmark-tracewriter"))
@@ -20,6 +19,6 @@ dependencies {
 }
 
 tasks.named<JavaCompile>("compileTestJava") {
-    sourceCompatibility = JavaVersion.VERSION_16.toString()
-    targetCompatibility = JavaVersion.VERSION_16.toString()
+    sourceCompatibility = JavaVersion.VERSION_17.toString()
+    targetCompatibility = JavaVersion.VERSION_17.toString()
 }

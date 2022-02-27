@@ -24,3 +24,14 @@ project(':perfmark-java15').projectDir = "$rootDir/java15" as File
 project(':perfmark-testing').projectDir = "$rootDir/testing" as File
 project(':perfmark-tracewriter').projectDir = "$rootDir/tracewriter" as File
 project(':perfmark-traceviewer').projectDir = "$rootDir/traceviewer" as File
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        libs {
+            library('junit', 'junit:junit:4.13.2')
+            library('jsr305', 'com.google.code.findbugs:jsr305:3.0.2')
+            library('errorprone', 'com.google.errorprone:error_prone_annotations:2.11.0')
+            library('truth', 'com.google.truth:truth:1.1.3')
+        }
+    }
+}

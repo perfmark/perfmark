@@ -27,10 +27,8 @@ val jmhAnnotationProcessor by configurations.getting {
 }
 
 dependencies {
-    val libraries = project.ext.get("libraries") as Map<String, String>
-
     implementation(project(":perfmark-impl"))
-    compileOnly(libraries["jsr305"]!!)
+    compileOnly(libs.jsr305)
 
     testImplementation(project(":perfmark-api"))
     testImplementation(project(":perfmark-testing"))
@@ -40,7 +38,7 @@ dependencies {
     jmhImplementation(project(":perfmark-impl"))
     jmhImplementation(project(":perfmark-java9"))
     jmhImplementation(project(":perfmark-testing"))
-    jmhImplementation(libraries["junit"]!!)
+    jmhImplementation(libs.junit)
     jmhImplementation("org.openjdk.jmh:jmh-core:1.32")
     jmhAnnotationProcessor("org.openjdk.jmh:jmh-generator-annprocess:1.32")
 }

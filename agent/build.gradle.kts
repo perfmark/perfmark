@@ -6,7 +6,6 @@ buildscript {
     }
 }
 
-
 plugins {
     id("com.github.johnrengelman.shadow") version "7.0.0"
 }
@@ -14,17 +13,15 @@ plugins {
 val jdkVersion = JavaVersion.VERSION_1_6
 
 dependencies {
-    val libraries = project.ext.get("libraries") as Map<String, String>
-
-    compileOnly(libraries["jsr305"]!!)
-    compileOnly(libraries["errorprone"]!!)
+    compileOnly(libs.jsr305)
+    compileOnly(libs.errorprone)
 
     implementation("org.ow2.asm:asm:9.1")
     implementation("org.ow2.asm:asm-commons:9.1")
 
     testImplementation(project(":perfmark-api"))
-    testImplementation(libraries["truth"]!!)
     testImplementation(project(":perfmark-impl"))
+    testImplementation(libs.truth)
     testRuntimeOnly(project(":perfmark-java6"))
 }
 
@@ -40,8 +37,8 @@ tasks.named<JavaCompile>("compileJava") {
 }
 
 tasks.named<JavaCompile>("compileTestJava") {
-    sourceCompatibility = JavaVersion.VERSION_16.toString()
-    targetCompatibility = JavaVersion.VERSION_16.toString()
+    sourceCompatibility = JavaVersion.VERSION_17.toString()
+    targetCompatibility = JavaVersion.VERSION_17.toString()
 }
 
 tasks.named<Jar>("jar") {

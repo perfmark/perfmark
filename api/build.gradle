@@ -20,10 +20,10 @@ compileJava {
 }
 
 dependencies {
-    compileOnly libraries.jsr305,
-            libraries.errorprone
+    compileOnly libs.jsr305,
+            libs.errorprone
     testImplementation project(':perfmark-impl'),
-            libraries.truth
+            libs.truth
     testRuntimeOnly project(':perfmark-java6')
 
     jmh project(':perfmark-java9'),

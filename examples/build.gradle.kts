@@ -44,5 +44,5 @@ application {
 }
 
 tasks.named<Javadoc>("javadoc") {
-    exclude("io/perfmark/java9/**")
+    exclude("io/perfmark/examples/**")
 }

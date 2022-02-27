@@ -9,17 +9,15 @@ description = "PerfMark Tracer Output"
 val jdkVersion = JavaVersion.VERSION_1_7
 
 dependencies {
-    val libraries = project.ext.get("libraries") as Map<String, String>
-
     api(project(":perfmark-impl"))
     // Included because it's easy to forget
     runtimeOnly(project(":perfmark-java6"))
 
     implementation(project(":perfmark-api"))
-    implementation(libraries["gson"]!!)
+    implementation("com.google.code.gson:gson:2.9.0")
 
-    compileOnly(libraries["jsr305"]!!)
-    compileOnly(libraries["errorprone"]!!)
+    compileOnly(libs.jsr305)
+    compileOnly(libs.errorprone)
 }
 
 tasks.getByName<JavaCompile>("compileJava") {

@@ -9,12 +9,10 @@ val jdkVersion = JavaVersion.VERSION_11
 description = "PerfMark Testing"
 
 dependencies {
-    val libraries = project.ext.get("libraries") as Map<String, String>
-
     implementation(project(":perfmark-api"))
     implementation(project(":perfmark-impl"))
     implementation("org.openjdk.jmh:jmh-core:1.32")
-    implementation(libraries["junit"]!!)
+    implementation(libs.junit)
 }
 
 tasks.named<JavaCompile>("compileJava") {

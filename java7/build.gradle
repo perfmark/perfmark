@@ -25,13 +25,13 @@ compileJmhJava {
 
 dependencies {
     implementation project(':perfmark-impl')
-    compileOnly libraries.jsr305
+    compileOnly libs.jsr305
 
     jmhImplementation project(':perfmark-api'),
             project(':perfmark-impl'),
             project(':perfmark-java7'),
             project(':perfmark-testing')
-    jmhImplementation libraries.junit
+    jmhImplementation libs.junit
     jmhImplementation 'org.openjdk.jmh:jmh-core:1.32'
     jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.32'
 }
