@@ -16,17 +16,16 @@
 
 package io.perfmark.impl;
 
-import javax.annotation.concurrent.NotThreadSafe;
-
 /**
  * A Generator keeps track of what generation the PerfMark library is on. A generation is a way to
  * group PerfMark recorded tasks and links together. This allows dynamically enabling and disabling
  * PerfMark. Each time the library is enabled, a new generation is started and associated with all
  * the recorded data.
  *
+ * <p>This class is not threadsafe.  Synchronization is handled externally.
+ *
  * <p>Normal users are not expected to use this class.
  */
-@NotThreadSafe
 public abstract class Generator {
   /**
    * This field is here as a hack. This class is a shared dependency of both {@link
@@ -36,6 +35,11 @@ public abstract class Generator {
    * than when the first PerfMark call happens.
    */
   static final long INIT_NANO_TIME = System.nanoTime();
+
+  /**
+   * This field is also here as a hack, capturing the time the program stated.
+   */
+  static final long INIT_CURRENT_TIME_MILLIS = System.currentTimeMillis();
 
   /**
    * The number of reserved bits at the bottom of the generation. All generations should be
