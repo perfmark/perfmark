@@ -24,11 +24,13 @@ import static org.junit.Assert.assertNotNull;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -101,6 +103,48 @@ public class CompatibilityTest {
   public void tearDown() throws Exception {
     if (storageClz != null) {
       storageClz.getMethod("resetForTest").invoke(null);
+    }
+  }
+
+  @Test
+  public void checkPublicMethods_disabledOnMissingImpl() throws Exception {
+    Assume.assumeTrue(minorVersion >= STABLE_VERSION);
+
+    ClassLoader loader = new ApiOverrideNoImplClassLoader();
+
+    Class<?> perfMarkClz = Class.forName("io.perfmark.PerfMark", false, loader);
+    assertNotEquals(currentPerfMarkClz, perfMarkClz);
+    assertNotEquals(this.perfMarkClz, perfMarkClz);
+
+    var tag = perfMarkClz.getMethod("createTag").invoke(null);
+    var link = perfMarkClz.getMethod("link").invoke(null);
+
+    for (Method method : perfMarkClz.getMethods()) {
+      if (!Modifier.isStatic(method.getModifiers())) {
+        continue;
+      }
+      var paramTypes =  method.getParameterTypes();
+      Object[] args = new Object[paramTypes.length];
+      for (int i = 0; i < paramTypes.length; i++) {
+        if (paramTypes[i].getName().startsWith("io.perfmark.")) {
+          paramTypes[i] = Class.forName(paramTypes[i].getName(), false, currentPerfMarkClz.getClassLoader());
+        }
+        if (paramTypes[i] == long.class) {
+          args[i] = 0L;
+        } else if (paramTypes[i] == boolean.class) {
+          args[i] = true;
+        } else if (paramTypes[i].getSimpleName().equals("Link")) {
+          args[i] = link;
+        } else if (paramTypes[i].getSimpleName().equals("Tag")) {
+          args[i] = tag;
+        } else if (Object.class.isAssignableFrom(paramTypes[i])) {
+          args[i] = null;
+        } else {
+          throw new AssertionError("unknown param");
+        }
+      }
+
+      method.invoke(null, args);
     }
   }
 
@@ -353,6 +397,34 @@ public class CompatibilityTest {
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
       if (name.startsWith("io.perfmark.")) {
+        for (var loader : List.of(new URLClassLoader(new URL[] {jarPath}, null), getClass().getClassLoader())) {
+          try (var stream = loader.getResourceAsStream(name.replace('.', '/') + ".class")) {
+            if (stream == null) {
+              continue;
+            }
+            var data = stream.readAllBytes();
+            var clz = defineClass(name, data, 0, data.length);
+            if (resolve) {
+              resolveClass(clz);
+            }
+            return clz;
+          } catch (IOException e) {
+            throw (ClassNotFoundException) new ClassNotFoundException().initCause(e);
+          }
+        }
+        throw new ClassNotFoundException("not in here: " + name);
+      }
+      return super.loadClass(name, resolve);
+    }
+  }
+
+  private final class ApiOverrideNoImplClassLoader extends ClassLoader {
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+      if (name.startsWith("io.perfmark.")) {
+        if (name.startsWith("io.perfmark.impl.")) {
+          throw new ClassNotFoundException(name);
+        }
         for (var loader : List.of(new URLClassLoader(new URL[] {jarPath}, null), getClass().getClassLoader())) {
           try (var stream = loader.getResourceAsStream(name.replace('.', '/') + ".class")) {
             if (stream == null) {
