@@ -28,7 +28,7 @@ project(':perfmark-traceviewer').projectDir = "$rootDir/traceviewer" as File
 dependencyResolutionManagement {
     versionCatalogs {
         libs {
-            version("jmh", "1.34")
+            version("jmh", "1.35")
 
             library('junit', 'junit:junit:4.13.2')
             library('jsr305', 'com.google.code.findbugs:jsr305:3.0.2')
