@@ -29,6 +29,8 @@ import javax.annotation.Nullable;
 final class SecretPerfMarkImpl {
 
   public static final class PerfMarkImpl extends Impl {
+    private static final int ENABLED_BIT_SPACE = 2;
+    private static final int GEN_TIMESTAMP_SPACE = 52;
     private static final Tag NO_TAG = packTag(Mark.NO_TAG_NAME, Mark.NO_TAG_ID);
     private static final Link NO_LINK = packLink(Mark.NO_LINK_ID);
     private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
@@ -39,19 +41,22 @@ final class SecretPerfMarkImpl {
     // May be null if debugging is disabled.
     private static final Object logger;
 
+    /**
+     * This is the generation of the recorded tasks.  The bottom 8 bits [0-7] are reserved for opcode packing.
+     * Bit 9 [8] is used for detecting if PerfMark is enabled or not.  the next
+     */
     private static long actualGeneration;
 
     static {
+      assert ENABLED_BIT_SPACE + Generator.GEN_OFFSET + GEN_TIMESTAMP_SPACE <= 64;
       Generator gen = null;
       Throwable[] problems = new Throwable[4];
       // Avoid using a for-loop for this code, as it makes it easier for tools like Proguard to rewrite.
-      if (gen == null) {
-        try {
-          Class<?> clz = Class.forName("io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator");
-          gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
-        } catch (Throwable t) {
-          problems[0] = t;
-        }
+      try {
+        Class<?> clz = Class.forName("io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator");
+        gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
+      } catch (Throwable t) {
+        problems[0] = t;
       }
       if (gen == null) {
         try {
@@ -79,7 +84,7 @@ final class SecretPerfMarkImpl {
       boolean startEnabledSuccess = false;
       try {
         if ((startEnabled = Boolean.getBoolean("io.perfmark.PerfMark.startEnabled"))) {
-          startEnabledSuccess = setEnabledQuiet(startEnabled);
+          startEnabledSuccess = setEnabledQuiet(startEnabled, Generator.INIT_NANO_TIME);
         }
       } catch (Throwable t) {
         problems[3] = t;
@@ -111,7 +116,7 @@ final class SecretPerfMarkImpl {
 
     @Override
     protected synchronized void setEnabled(boolean value) {
-      logEnabledChange(value, setEnabledQuiet(value));
+      logEnabledChange(value, setEnabledQuiet(value, System.nanoTime()));
     }
 
     private static synchronized void logEnabledChange(boolean value, boolean success) {
@@ -124,15 +129,44 @@ final class SecretPerfMarkImpl {
     }
 
     /** Returns true if successfully changed. */
-    private static synchronized boolean setEnabledQuiet(boolean value) {
+    private static synchronized boolean setEnabledQuiet(boolean value, long now) {
       if (isEnabled(actualGeneration) == value) {
         return false;
       }
       if (actualGeneration == Generator.FAILURE) {
         return false;
       }
-      generator.setGeneration(actualGeneration += INCREMENT);
+      long nanoDiff = now - Generator.INIT_NANO_TIME;
+      generator.setGeneration(actualGeneration = nextGeneration(actualGeneration, nanoDiff));
       return true;
+    }
+
+    // VisibleForTesting
+    static long nextGeneration(final long currentGeneration, final long nanosSinceInit) {
+      assert currentGeneration != Generator.FAILURE;
+      long currentQuadMicros = quadMicrosFromGeneration(currentGeneration);
+      long quadMicrosSinceInit = nanosSinceInit >>> (64 - GEN_TIMESTAMP_SPACE); // 52bits
+      boolean nextEnabled = !isEnabled(currentGeneration);
+      long nextQuadMicros;
+      if (quadMicrosSinceInit > currentQuadMicros) {
+        nextQuadMicros = quadMicrosSinceInit;
+      } else {
+        nextQuadMicros = currentQuadMicros + (nextEnabled ? 1 : 0);
+      }
+      if (nextQuadMicros >= (1L << GEN_TIMESTAMP_SPACE) || nextQuadMicros < 0) {
+        return Generator.FAILURE;
+      }
+      long enabledMask = nextEnabled ? INCREMENT : 0;
+      long quadMicroMask = (nextQuadMicros << (Generator.GEN_OFFSET + ENABLED_BIT_SPACE));
+      assert (enabledMask & quadMicroMask) == 0;
+      return quadMicroMask | enabledMask;
+    }
+
+    private static long quadMicrosFromGeneration(long currentGeneration) {
+      if (currentGeneration == Generator.FAILURE) {
+        throw new IllegalArgumentException();
+      }
+      return currentGeneration >>> (Generator.GEN_OFFSET + ENABLED_BIT_SPACE);
     }
 
     @Override

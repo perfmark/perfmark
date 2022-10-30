@@ -189,6 +189,9 @@ public class PerfMarkTest {
       @Override
       public void checkPermission(Permission perm) {
         if (perm instanceof PropertyPermission) {
+          if (perm.getName().equals("*")) {
+            return;
+          }
           if (perm.getName().equals("io.perfmark.PerfMark.startEnabled") && perm.getActions().equals("read")) {
             return;
           }
@@ -223,7 +226,10 @@ public class PerfMarkTest {
       @Override
       public void checkPermission(Permission perm) {
         if (perm instanceof PropertyPermission) {
-          if (perm.getName().equals("io.perfmark.PerfMark.debug") && perm.getActions().equals("read")) {
+          if (perm.getName().equals("*")) {
+            return;
+          }
+          if (perm.getName().equals("io.perfmark.PerfMark.debug") && perm.getActions().contains("read")) {
             return;
           }
         }
@@ -250,8 +256,6 @@ public class PerfMarkTest {
     List<Mark> marks = (List<Mark>) storageClass.getMethod("readForTest").invoke(null);
     Truth.assertThat(marks).hasSize(1);
   }
-
-
 
   @Test
   public void allMethodForward_taskName() {
