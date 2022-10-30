@@ -45,7 +45,7 @@ final class SecretPerfMarkImpl {
      * This is the generation of the recorded tasks.  The bottom 8 bits [0-7] are reserved for opcode packing.
      * Bit 9 [8] is used for detecting if PerfMark is enabled or not.  Bit 10 [9] is unused.  Bits 11-62 [10-62]
      * are used for storing the time since Perfmark Was last / enabled or disabled.  The units are in nanoseconds/4096,
-     * or (inaccruactely) called quadmicros.  
+     * or (inaccurately) called quadmicros.
      */
     private static long actualGeneration;
 
