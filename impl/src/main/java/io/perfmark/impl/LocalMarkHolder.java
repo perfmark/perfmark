@@ -16,6 +16,11 @@
 
 package io.perfmark.impl;
 
+/**
+ * A local MarkHolder is a class that gets the "current" MarkHolder based on context.  For example, a thread local
+ * MarkHolder could use this class to pull the local MarkHolder from the threadlocal variable.  Other implementations
+ * are possible as well.
+ */
 public abstract class LocalMarkHolder {
 
   /**
@@ -23,9 +28,13 @@ public abstract class LocalMarkHolder {
    */
   public abstract void clear();
 
+  /**
+   * Get's the current MarkHolder for mutation.  Only called from a tracing thread.
+   */
   public abstract MarkHolder acquire();
 
   /**
+   * Releases the MarkHolder from being written too.  Usually called very shortly after {@link #acquire()}.
    * This method is meant to be overridden and should not be called from subclasses.
    */
   public void release(MarkHolder markHolder) {}

@@ -48,11 +48,11 @@ final class MostlyThreadLocal extends ThreadLocal<MarkHolder> {
 
   private MarkHolder getAndSetSlow() {
     assert super.get() == null;
-    Thread thread = Thread.currentThread();
-    CopyOnWriteArrayList<Storage.MarkHolderHandle> handles = getHandles(thread);
     Storage.MarkHolderHandle markHolderHandle;
     MarkHolder markHolder;
     Storage.MarkHolderAndHandle markHolderAndHandle;
+    Thread thread = Thread.currentThread();
+    CopyOnWriteArrayList<Storage.MarkHolderHandle> handles = getHandles(thread);
     if (handles == null) {
       markHolderAndHandle = Storage.allocateMarkHolder();
       markHolder = markHolderAndHandle.markHolder();
