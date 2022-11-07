@@ -103,7 +103,7 @@ public class CompatibilityTest {
   @After
   public void tearDown() throws Exception {
     if (storageClz != null) {
-      storageClz.getMethod("resetForTest").invoke(null);
+      storageClz.getMethod("clearLocalStorage").invoke(null);
     }
   }
 

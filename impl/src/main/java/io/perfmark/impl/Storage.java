@@ -277,17 +277,8 @@ public final class Storage {
     }
   }
 
-  public static void resetForTest() {
-    clearLocalStorage();
-  }
-
-  static void clearSoftRefsForTest() {
-    clearGlobalIndex();
-  }
-
   @Nullable
   public static MarkList readForTest() {
-    // FIXME
     List<MarkList> lists = read();
     for (MarkList list : lists) {
       // This is slightly wrong as the thread ID could be reused.
@@ -318,7 +309,7 @@ public final class Storage {
     /**
      * Returns the MarkHolder.  May return {@code null} if the Thread is gone.  If {@code null} is returned,
      * then {@code getThreadRef().get() == null}.  If a non-{@code null} value is returned, the thread may be dead or
-     * alive.  Additionally, since the {@link #threadRef} may be externally clear, it is not certain that the Thread
+     * alive.  Additionally, since the {@link #threadRef} may be externally cleared, it is not certain that the Thread
      * is dead.
      */
     public MarkHolder markHolder() {

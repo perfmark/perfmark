@@ -45,13 +45,13 @@ public class StorageTest {
 
   @Test
   public void threadsCleanedUp() throws Exception {
-    Storage.resetForTest();
+    Storage.clearLocalStorage();
     final CountDownLatch latch = new CountDownLatch(1);
     new Thread(
             new Runnable() {
               @Override
               public void run() {
-                Storage.resetForTest();
+                Storage.clearLocalStorage();
                 Storage.linkAnyway(4096, 1234);
                 latch.countDown();
               }
@@ -68,7 +68,7 @@ public class StorageTest {
     List<MarkList> firstRead = Storage.read();
     assertEquals(1, firstRead.size());
     // simulate an OOM
-    Storage.clearSoftRefsForTest();
+    Storage.clearGlobalIndex();
     List<MarkList> secondRead = Storage.read();
     assertEquals(0, secondRead.size());
   }

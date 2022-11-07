@@ -259,7 +259,7 @@ public class PerfMarkTest {
 
   @Test
   public void allMethodForward_taskName() {
-    Storage.resetForTest();
+    Storage.clearLocalStorage();
     PerfMark.setEnabled(true);
 
     long gen = getGen();
@@ -319,7 +319,7 @@ public class PerfMarkTest {
 
   @Test
   public void attachTag_nullFunctionFailsSilently() {
-    Storage.resetForTest();
+    Storage.clearLocalStorage();
     PerfMark.setEnabled(true);
 
     PerfMark.attachTag("name", "extra2", null);
@@ -330,7 +330,7 @@ public class PerfMarkTest {
 
   @Test
   public void attachTag_functionFailureSucceeds() {
-    Storage.resetForTest();
+    Storage.clearLocalStorage();
     PerfMark.setEnabled(true);
 
     PerfMark.attachTag(
@@ -346,7 +346,7 @@ public class PerfMarkTest {
 
   @Test
   public void attachTag_functionFailureObjectFailureSucceeds() {
-    Storage.resetForTest();
+    Storage.clearLocalStorage();
     PerfMark.setEnabled(true);
     Object o =
         new Object() {
@@ -369,7 +369,7 @@ public class PerfMarkTest {
 
   @Test
   public void attachTag_doubleFunctionFailureSucceeds() {
-    Storage.resetForTest();
+    Storage.clearLocalStorage();
     PerfMark.setEnabled(true);
 
     PerfMark.attachTag(
