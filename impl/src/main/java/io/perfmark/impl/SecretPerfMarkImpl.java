@@ -30,7 +30,8 @@ final class SecretPerfMarkImpl {
 
   public static final class PerfMarkImpl extends Impl {
     private static final int ENABLED_BIT_SPACE = 2;
-    private static final int GEN_TIMESTAMP_SPACE = 52;
+    private static final int GEN_TIMESTAMP_SPACE = 54;
+    private static final long MAX_MIBROS = (1L << GEN_TIMESTAMP_SPACE) - 1;
     private static final Tag NO_TAG = packTag(Mark.NO_TAG_NAME, Mark.NO_TAG_ID);
     private static final Link NO_LINK = packLink(Mark.NO_LINK_ID);
     private static final long INCREMENT = 1L << Generator.GEN_OFFSET;
@@ -43,9 +44,9 @@ final class SecretPerfMarkImpl {
 
     /**
      * This is the generation of the recorded tasks.  The bottom 8 bits [0-7] are reserved for opcode packing.
-     * Bit 9 [8] is used for detecting if PerfMark is enabled or not.  Bit 10 [9] is unused.  Bits 11-62 [10-62]
-     * are used for storing the time since Perfmark Was last / enabled or disabled.  The units are in nanoseconds/4096,
-     * or (inaccurately) called quadmicros.
+     * Bit 9 [8] is used for detecting if PerfMark is enabled or not.  Bit 10 [9] is unused.  Bits 11-64 [10-647]
+     * are used for storing the time since Perfmark Was last / enabled or disabled.  The units are in nanoseconds/1024,
+     * or (inaccurately) called mibros (like micros, but power of 2 based).
      */
     private static long actualGeneration;
 
@@ -146,29 +147,35 @@ final class SecretPerfMarkImpl {
     // VisibleForTesting
     static long nextGeneration(final long currentGeneration, final long nanosSinceInit) {
       assert currentGeneration != Generator.FAILURE;
-      long currentQuadMicros = quadMicrosFromGeneration(currentGeneration);
-      long quadMicrosSinceInit = nanosSinceInit >>> (64 - GEN_TIMESTAMP_SPACE); // 52bits
+      long currentMibros = mibrosFromGeneration(currentGeneration);
+      long mibrosSinceInit = Math.min(mibrosFromNanos(nanosSinceInit), MAX_MIBROS); // 54bits
       boolean nextEnabled = !isEnabled(currentGeneration);
-      long nextQuadMicros;
-      if (quadMicrosSinceInit > currentQuadMicros) {
-        nextQuadMicros = quadMicrosSinceInit;
+      long nextMibros;
+      if (mibrosSinceInit > currentMibros) {
+        nextMibros = mibrosSinceInit;
       } else {
-        nextQuadMicros = currentQuadMicros + (nextEnabled ? 1 : 0);
+        nextMibros = currentMibros + (nextEnabled ? 1 : 0);
       }
-      if (nextQuadMicros >= (1L << GEN_TIMESTAMP_SPACE) || nextQuadMicros < 0) {
+      if (nextMibros > MAX_MIBROS || nextMibros < 0) {
         return Generator.FAILURE;
       }
       long enabledMask = nextEnabled ? INCREMENT : 0;
-      long quadMicroMask = (nextQuadMicros << (Generator.GEN_OFFSET + ENABLED_BIT_SPACE));
-      assert (enabledMask & quadMicroMask) == 0;
-      return quadMicroMask | enabledMask;
+      long mibroMask = (nextMibros << (Generator.GEN_OFFSET + ENABLED_BIT_SPACE));
+      assert (enabledMask & mibroMask) == 0;
+      return mibroMask | enabledMask;
     }
 
-    private static long quadMicrosFromGeneration(long currentGeneration) {
+    private static long mibrosFromGeneration(long currentGeneration) {
       if (currentGeneration == Generator.FAILURE) {
         throw new IllegalArgumentException();
       }
       return currentGeneration >>> (Generator.GEN_OFFSET + ENABLED_BIT_SPACE);
+    }
+
+    private static long mibrosFromNanos(long nanos) {
+      long remainder = ((1L<<(64 - GEN_TIMESTAMP_SPACE)) - 1) & nanos;
+      return (nanos >>> (64 - GEN_TIMESTAMP_SPACE))
+          + (remainder >= (1L<<(64 - GEN_TIMESTAMP_SPACE - 1)) ? 1 : 0);
     }
 
     @Override

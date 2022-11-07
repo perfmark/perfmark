@@ -28,13 +28,13 @@ public class PerfMarkImplTest {
 
   @Test
   public void nextGeneration_enable() {
-    var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(0, 3*4096);
+    var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(0, 3*1024);
     assertEquals((3L<<10) + (1<<8), gen);
   }
 
   @Test
   public void nextGeneration_disable() {
-    var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(1 << Generator.GEN_OFFSET, 3*4096);
+    var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(1 << Generator.GEN_OFFSET, 3*1024);
     assertEquals((3L<<10), gen);
   }
 
@@ -43,7 +43,7 @@ public class PerfMarkImplTest {
     var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(
         (3<< (Generator.GEN_OFFSET + 2))
             + (1 << Generator.GEN_OFFSET),
-        3*4096);
+        3*1024);
     assertEquals((3L<<10), gen);
   }
 
@@ -51,7 +51,7 @@ public class PerfMarkImplTest {
   public void nextGeneration_newStampDisabled() {
     var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(
         (3<< (Generator.GEN_OFFSET + 2)),
-        3*4096);
+        3*1024);
     assertEquals((4L<<10) + (1<<Generator.GEN_OFFSET), gen);
   }
 
@@ -63,13 +63,13 @@ public class PerfMarkImplTest {
 
   @Test
   public void nextGeneration_noOverflowOnDisable() {
-    var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(0x3FFF_FFFF_FFFF_FD00L, -1);
+    var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(0xFFFF_FFFF_FFFF_FD00L, -1);
     assertNotEquals(Generator.FAILURE, gen);
   }
 
   @Test
   public void nextGeneration_overflowOnEnable() {
-    var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(0x3FFF_FFFF_FFFF_FC00L, -1);
+    var gen = SecretPerfMarkImpl.PerfMarkImpl.nextGeneration(0xFFFF_FFFF_FFFF_FC00L, -1);
     assertEquals(Generator.FAILURE, gen);
   }
 }
