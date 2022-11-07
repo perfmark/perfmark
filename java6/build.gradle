@@ -27,6 +27,7 @@ compileJmhJava {
         languageVersion = JavaLanguageVersion.of("17")
     })
     options.errorprone.enabled = true
+    options.errorprone.excludedPaths.set(".*/build/generated/sources/annotationProcessor/.*")
 }
 
 dependencies {

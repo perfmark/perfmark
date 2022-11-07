@@ -51,6 +51,8 @@ tasks.named<JavaCompile>("compileJava") {
 tasks.named<JavaCompile>("compileJmhJava") {
     sourceCompatibility = JavaVersion.VERSION_11.toString()
     targetCompatibility = JavaVersion.VERSION_11.toString()
+    options.errorprone.excludedPaths.set(".*/build/generated/sources/annotationProcessor/.*")
+
 }
 
 tasks.register<Test>("jmh") {

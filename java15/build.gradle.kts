@@ -68,6 +68,12 @@ jcstress {
     deoptRatio = "2"
 }
 
+
+tasks.named<JavaCompile>("compileJmhJava") {
+    options.errorprone.excludedPaths.set(".*/build/generated/sources/annotationProcessor/.*")
+}
+
+
 tasks.named<JavaCompile>("compileJcstressJava") {
     options.errorprone.excludedPaths.set(".*/build/generated/sources/annotationProcessor/.*")
 }
