@@ -59,6 +59,7 @@ public class CompatibilityTest {
           "0.25.0");
   
   @Parameterized.Parameters(name = "version v{0}")
+  @SuppressWarnings("StringSplitter")
   public static Iterable<Object[]> params() {
     List<Object[]> params = new ArrayList<>();
     for (var version : VERSIONS) {
