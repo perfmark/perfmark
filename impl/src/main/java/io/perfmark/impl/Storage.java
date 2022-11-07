@@ -16,6 +16,8 @@
 
 package io.perfmark.impl;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -41,10 +43,11 @@ public final class Storage {
   static final AtomicLong markHolderIdAllocator = new AtomicLong(1);
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
   // and need to use these static variables.
-  static final ConcurrentMap<MarkHolderHandle, Boolean> allMarkHolders =
-      new ConcurrentHashMap<MarkHolderHandle, Boolean>();
+  static final ConcurrentMap<Reference<Thread>, MarkHolderHandle> allMarkHolders =
+      new ConcurrentHashMap<Reference<Thread>, MarkHolderHandle>();
   private static final LocalMarkHolder localMarkHolder = new MostlyThreadLocalMarkHolder();
   private static final MarkHolderProvider markHolderProvider;
+  private static final ReferenceQueue<Thread> threadReferenceQueue = new ReferenceQueue<Thread>();
   private static volatile long lastGlobalIndexClear = Generator.INIT_NANO_TIME - 1;
 
   static {
@@ -117,15 +120,19 @@ public final class Storage {
    * @return all reachable MarkLists.
    */
   public static List<MarkList> read() {
+    long lastReset = lastGlobalIndexClear;
+    drainThreadQueue();
     List<MarkList> markLists = new ArrayList<MarkList>(allMarkHolders.size());
-    for (MarkHolderHandle handle : allMarkHolders.keySet()) {
+    for (Iterator<MarkHolderHandle> it = allMarkHolders.values().iterator(); it.hasNext();) {
+      MarkHolderHandle handle = it.next();
       Thread writer = handle.threadRef().get();
       if (writer == null) {
         handle.softenMarkHolderReference();
       }
       MarkHolder markHolder = handle.markHolder();
       if (markHolder == null) {
-        allMarkHolders.remove(handle);
+        it.remove();
+        handle.clearSoftReference();
         continue;
       }
       String threadName = handle.getAndUpdateThreadName();
@@ -244,8 +251,7 @@ public final class Storage {
    * Removes all data for the calling Thread.  Other threads may Still have stored data.
    */
   public static void clearLocalStorage() {
-    Iterator<MarkHolderHandle> it = allMarkHolders.keySet().iterator();
-    while (it.hasNext())  {
+    for (Iterator<MarkHolderHandle> it = allMarkHolders.values().iterator(); it.hasNext();)  {
       MarkHolderHandle handle = it.next();
       if (handle.threadRef.get() == Thread.currentThread()) {
         it.remove();
@@ -265,14 +271,30 @@ public final class Storage {
    */
   public static void clearGlobalIndex() {
     lastGlobalIndexClear = System.nanoTime() - 1;
-    Iterator<MarkHolderHandle> it = allMarkHolders.keySet().iterator();
-    while (it.hasNext()) {
+    for (Iterator<MarkHolderHandle> it = allMarkHolders.values().iterator(); it.hasNext();) {
       MarkHolderHandle handle = it.next();
       handle.softenMarkHolderReference();
       Thread writer = handle.threadRef().get();
       if (writer == null) {
-        handle.clearSoftReference();
         it.remove();
+        handle.clearSoftReference();
+      }
+    }
+  }
+
+  private static void drainThreadQueue() {
+    while (true) {
+      Reference<?> ref = threadReferenceQueue.poll();
+      if (ref == null) {
+        return;
+      }
+      MarkHolderHandle handle = allMarkHolders.get(ref);
+      if (handle != null) {
+        handle.softenMarkHolderReference();
+        if (handle.markHolder() == null) {
+          allMarkHolders.remove(ref);
+          handle.clearSoftReference();
+        }
       }
     }
   }
@@ -290,6 +312,8 @@ public final class Storage {
   }
 
   public static final class MarkHolderHandle {
+    private static final SoftReference<MarkHolder> EMPTY = new SoftReference<MarkHolder>(null);
+
     private final UnmodifiableWeakReference<Thread> threadRef;
     private final AtomicReference<MarkHolder> markHolderRef;
     private volatile SoftReference<MarkHolder> softMarkHolderRef;
@@ -299,7 +323,7 @@ public final class Storage {
     private final long markHolderId;
 
     MarkHolderHandle(Thread thread, MarkHolder markHolder, long markHolderId) {
-      this.threadRef = new UnmodifiableWeakReference<Thread>(thread);
+      this.threadRef = new UnmodifiableWeakReference<Thread>(thread, threadReferenceQueue);
       this.markHolderRef = new AtomicReference<MarkHolder>(markHolder);
       this.threadName = thread.getName();
       this.threadId = thread.getId();
@@ -349,6 +373,9 @@ public final class Storage {
           throw new IllegalStateException("Handle not yet softened");
         }
         softMarkHolderRef.clear();
+        softMarkHolderRef = EMPTY;
+        threadName = null;
+        threadId = -255;
       }
     }
 
@@ -406,17 +433,18 @@ public final class Storage {
   }
 
   public static MarkHolderAndHandle allocateMarkHolder() {
+    drainThreadQueue();
     long markHolderId = markHolderIdAllocator.getAndIncrement();
     MarkHolder holder = markHolderProvider.create(markHolderId);
     MarkHolderHandle handle = new MarkHolderHandle(Thread.currentThread(), holder, markHolderId);
-    allMarkHolders.put(handle, Boolean.TRUE);
+    allMarkHolders.put(handle.threadRef, handle);
     return new MarkHolderAndHandle(holder, handle);
   }
 
   private static final class UnmodifiableWeakReference<T> extends WeakReference<T> {
 
-    UnmodifiableWeakReference(T referent) {
-      super(referent);
+    UnmodifiableWeakReference(T referent, ReferenceQueue<T> q) {
+      super(referent, q);
     }
 
     @Override
@@ -426,6 +454,7 @@ public final class Storage {
 
     @Override
     @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
     public boolean enqueue() {
       return false;
     }
