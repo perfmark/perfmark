@@ -16,12 +16,12 @@
 
 package io.perfmark.impl;
 
-import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -38,12 +38,14 @@ import javax.annotation.Nullable;
  * without notice.
  */
 public final class Storage {
+  static final AtomicLong markHolderIdAllocator = new AtomicLong(1);
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
   // and need to use these static variables.
-  static final ConcurrentMap<MarkHolderTuple, Boolean> allMarkHolders =
-      new ConcurrentHashMap<MarkHolderTuple, Boolean>();
-  private static final ThreadLocal<MarkHolder> localMarkHolder = new MarkHolderThreadLocal();
-  static final MarkHolderProvider markHolderProvider;
+  static final ConcurrentMap<MarkHolderHandle, Boolean> allMarkHolders =
+      new ConcurrentHashMap<MarkHolderHandle, Boolean>();
+  private static final LocalMarkHolder localMarkHolder = new MostlyThreadLocalMarkHolder();
+  private static final MarkHolderProvider markHolderProvider;
+  private static volatile long lastGlobalIndexClear = Generator.INIT_NANO_TIME - 1;
 
   static {
     MarkHolderProvider provider = null;
@@ -116,108 +118,176 @@ public final class Storage {
    */
   public static List<MarkList> read() {
     List<MarkList> markLists = new ArrayList<MarkList>(allMarkHolders.size());
-    for (MarkHolderTuple tuple : allMarkHolders.keySet()) {
-      String threadName = tuple.getAndUpdateThreadName();
-      MarkHolder mh = tuple.markHolderRef.get();
-      if (mh == null) {
-        tuple.clean();
-        allMarkHolders.remove(tuple);
+    for (MarkHolderHandle handle : allMarkHolders.keySet()) {
+      Thread writer = handle.threadRef().get();
+      if (writer == null) {
+        handle.softenMarkHolderReference();
+      }
+      MarkHolder markHolder = handle.markHolder();
+      if (markHolder == null) {
+        allMarkHolders.remove(handle);
         continue;
       }
-      Thread writer = tuple.threadRef.get();
+      String threadName = handle.getAndUpdateThreadName();
+      long threadId = handle.getAndUpdateThreadId();
       boolean concurrentWrites = !(Thread.currentThread() == writer || writer == null);
       markLists.add(
           MarkList.newBuilder()
-              .setMarks(mh.read(concurrentWrites))
+              .setMarks(markHolder.read(concurrentWrites))
               .setThreadName(threadName)
-              .setThreadId(tuple.threadId)
-              .setMarkListId(tuple.markHolderId)
+              .setThreadId(threadId)
+              .setMarkListId(handle.markHolderId)
               .build());
     }
     return Collections.unmodifiableList(markLists);
   }
 
   static void startAnyway(long gen, String taskName, @Nullable String tagName, long tagId) {
-    localMarkHolder.get().start(gen, taskName, tagName, tagId, System.nanoTime());
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.start(gen, taskName, tagName, tagId, System.nanoTime());
+    localMarkHolder.release(mh);
   }
 
   static void startAnyway(long gen, String taskName) {
-    localMarkHolder.get().start(gen, taskName, System.nanoTime());
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.start(gen, taskName, System.nanoTime());
+    localMarkHolder.release(mh);
   }
 
   static void startAnyway(long gen, String taskName, String subTaskName) {
-    localMarkHolder.get().start(gen, taskName, subTaskName, System.nanoTime());
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.start(gen, taskName, subTaskName, System.nanoTime());
+    localMarkHolder.release(mh);
   }
 
   static void stopAnyway(long gen) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().stop(gen, nanoTime);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.stop(gen, nanoTime);
+    localMarkHolder.release(mh);
   }
 
   static void stopAnyway(long gen, String taskName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().stop(gen, taskName, tagName, tagId, nanoTime);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.stop(gen, taskName, tagName, tagId, nanoTime);
+    localMarkHolder.release(mh);
   }
 
   static void stopAnyway(long gen, String taskName) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().stop(gen, taskName, nanoTime);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.stop(gen, taskName, nanoTime);
+    localMarkHolder.release(mh);
   }
 
   static void stopAnyway(long gen, String taskName, String subTaskName) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().stop(gen, taskName, subTaskName, nanoTime);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.stop(gen, taskName, subTaskName, nanoTime);
+    localMarkHolder.release(mh);
   }
 
   static void eventAnyway(long gen, String eventName, @Nullable String tagName, long tagId) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().event(gen, eventName, tagName, tagId, nanoTime);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.event(gen, eventName, tagName, tagId, nanoTime);
+    localMarkHolder.release(mh);
   }
 
   static void eventAnyway(long gen, String eventName) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().event(gen, eventName, nanoTime);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.event(gen, eventName, nanoTime);
+    localMarkHolder.release(mh);
   }
 
   static void eventAnyway(long gen, String eventName, String subEventName) {
     long nanoTime = System.nanoTime();
-    localMarkHolder.get().event(gen, eventName, subEventName, nanoTime);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.event(gen, eventName, subEventName, nanoTime);
+    localMarkHolder.release(mh);
   }
 
   static void linkAnyway(long gen, long linkId) {
-    localMarkHolder.get().link(gen, linkId);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.link(gen, linkId);
+    localMarkHolder.release(mh);
   }
 
   static void attachTagAnyway(long gen, @Nullable String tagName, long tagId) {
-    localMarkHolder.get().attachTag(gen, tagName, tagId);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.attachTag(gen, tagName, tagId);
+    localMarkHolder.release(mh);
   }
 
   static void attachKeyedTagAnyway(long gen, @Nullable String tagName, String tagValue) {
-    localMarkHolder.get().attachKeyedTag(gen, tagName, tagValue);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.attachKeyedTag(gen, tagName, tagValue);
+    localMarkHolder.release(mh);
   }
 
   static void attachKeyedTagAnyway(long gen, @Nullable String tagName, long tagValue) {
-    localMarkHolder.get().attachKeyedTag(gen, tagName, tagValue);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.attachKeyedTag(gen, tagName, tagValue);
+    localMarkHolder.release(mh);
   }
 
   static void attachKeyedTagAnyway(
       long gen, @Nullable String tagName, long tagValue0, long tagValue1) {
-    localMarkHolder.get().attachKeyedTag(gen, tagName, tagValue0, tagValue1);
+    MarkHolder mh = localMarkHolder.acquire();
+    mh.attachKeyedTag(gen, tagName, tagValue0, tagValue1);
+    localMarkHolder.release(mh);
+  }
+
+  /**
+   * Removes all data for the calling Thread.  Other threads may Still have stored data.
+   */
+  public static void clearLocalStorage() {
+    Iterator<MarkHolderHandle> it = allMarkHolders.keySet().iterator();
+    while (it.hasNext())  {
+      MarkHolderHandle handle = it.next();
+      if (handle.threadRef.get() == Thread.currentThread()) {
+        it.remove();
+        handle.threadRef.clearInternal();
+        handle.softenMarkHolderReference();
+        handle.clearSoftReference();
+      }
+    }
+    localMarkHolder.clear();
+  }
+
+  /**
+   * Removes the global Read index on all storage, but leaves local storage in place.  Because writer threads may still
+   * be writing to the same buffer (which they have a strong ref to), this function only removed data that is truly
+   * unwritable anymore.   In addition, it captures a timestamp to which marks to include when reading.  Thus, the data
+   * isn't fully removed.  To fully remove all data, each tracing thread must call {@link #clearLocalStorage}.
+   */
+  public static void clearGlobalIndex() {
+    lastGlobalIndexClear = System.nanoTime() - 1;
+    Iterator<MarkHolderHandle> it = allMarkHolders.keySet().iterator();
+    while (it.hasNext()) {
+      MarkHolderHandle handle = it.next();
+      handle.softenMarkHolderReference();
+      Thread writer = handle.threadRef().get();
+      if (writer == null) {
+        handle.clearSoftReference();
+        it.remove();
+      }
+    }
   }
 
   public static void resetForTest() {
-    localMarkHolder.remove();
-    allMarkHolders.clear();
+    clearLocalStorage();
   }
 
   static void clearSoftRefsForTest() {
-    for (MarkHolderTuple tuple : allMarkHolders.keySet()) {
-      tuple.markHolderRef.enqueue();
-    }
+    clearGlobalIndex();
   }
 
   @Nullable
   public static MarkList readForTest() {
+    // FIXME
     List<MarkList> lists = read();
     for (MarkList list : lists) {
       // This is slightly wrong as the thread ID could be reused.
@@ -228,52 +298,149 @@ public final class Storage {
     return null;
   }
 
-  private static final class MarkHolderThreadLocal extends ThreadLocal<MarkHolder> {
+  public static final class MarkHolderHandle {
+    private final UnmodifiableWeakReference<Thread> threadRef;
+    private final AtomicReference<MarkHolder> markHolderRef;
+    private volatile SoftReference<MarkHolder> softMarkHolderRef;
 
-    MarkHolderThreadLocal() {}
+    private volatile String threadName;
+    private volatile long threadId;
+    private final long markHolderId;
 
-    @Override
-    protected MarkHolder initialValue() {
-      long markHolderId = MarkHolderTuple.markHolderIdAllocator.getAndIncrement();
-      MarkHolder holder = markHolderProvider.create(markHolderId);
-      MarkHolderTuple ref = new MarkHolderTuple(Thread.currentThread(), holder, markHolderId);
-      allMarkHolders.put(ref, Boolean.TRUE);
-      return holder;
-    }
-  }
-
-  private static final class MarkHolderTuple {
-    static final AtomicLong markHolderIdAllocator = new AtomicLong(1);
-
-    final Reference<Thread> threadRef;
-    final Reference<MarkHolder> markHolderRef;
-    final AtomicReference<String> threadName;
-    final long threadId;
-    final long markHolderId;
-
-    MarkHolderTuple(Thread thread, MarkHolder holder, long markHolderId) {
-      this.threadRef = new WeakReference<Thread>(thread);
-      this.markHolderRef = new SoftReference<MarkHolder>(holder);
-      this.threadName = new AtomicReference<String>(thread.getName());
+    MarkHolderHandle(Thread thread, MarkHolder markHolder, long markHolderId) {
+      this.threadRef = new UnmodifiableWeakReference<Thread>(thread);
+      this.markHolderRef = new AtomicReference<MarkHolder>(markHolder);
+      this.threadName = thread.getName();
       this.threadId = thread.getId();
       this.markHolderId = markHolderId;
+    }
+
+    /**
+     * Returns the MarkHolder.  May return {@code null} if the Thread is gone.  If {@code null} is returned,
+     * then {@code getThreadRef().get() == null}.  If a non-{@code null} value is returned, the thread may be dead or
+     * alive.  Additionally, since the {@link #threadRef} may be externally clear, it is not certain that the Thread
+     * is dead.
+     */
+    public MarkHolder markHolder() {
+      MarkHolder markHolder = markHolderRef.get();
+      if (markHolder == null) {
+        markHolder = softMarkHolderRef.get();
+        assert markHolder != null || threadRef.get() == null;
+      }
+      return markHolder;
+    }
+
+    /**
+     * Returns a weak reference to the Thread that created the MarkHolder.
+     */
+    public WeakReference<? extends Thread> threadRef() {
+      return threadRef;
+    }
+
+    void softenMarkHolderReference() {
+      synchronized (markHolderRef) {
+        MarkHolder markHolder = markHolderRef.get();
+        if (markHolder != null) {
+          softMarkHolderRef = new SoftReference<MarkHolder>(markHolder);
+          markHolderRef.set(null);
+        }
+      }
+    }
+
+    void clearSoftReference() {
+      Thread thread = threadRef.get();
+      if (thread != null) {
+        throw new IllegalStateException("Thread still alive " + thread);
+      }
+      synchronized (markHolderRef) {
+        MarkHolder markHolder = markHolderRef.get();
+        if (markHolder != null) {
+          throw new IllegalStateException("Handle not yet softened");
+        }
+        softMarkHolderRef.clear();
+      }
     }
 
     String getAndUpdateThreadName() {
       Thread t = threadRef.get();
       String name;
       if (t != null) {
-        threadName.lazySet(name = t.getName());
+        threadName = (name = t.getName());
       } else {
-        name = threadName.get();
+        name = threadName;
       }
       return name;
     }
 
-    void clean() {
-      threadRef.enqueue();
-      markHolderRef.enqueue();
-      threadName.set(null);
+    /**
+     * Some threads change their id over time, so we need to sync it if available.
+     */
+    long getAndUpdateThreadId() {
+      Thread t = threadRef.get();
+      long id;
+      if (t != null) {
+        threadId = (id = t.getId());
+      } else {
+        id = threadId;
+      }
+      return id;
+    }
+  }
+
+  /**
+   * This class is needed to work around a race condition where a newly created MarkHolder could be GC'd before
+   * the caller of {@link #allocateMarkHolder} can consume the results.  The provided MarkHolder is strongly reachable.
+   */
+  public static final class MarkHolderAndHandle {
+    private final MarkHolder markHolder;
+    private final MarkHolderHandle handle;
+
+    MarkHolderAndHandle(MarkHolder markHolder, MarkHolderHandle handle) {
+      this.markHolder = markHolder;
+      this.handle = handle;
+
+      MarkHolder tmp = handle.markHolder();
+      if (markHolder != tmp && tmp != null) {
+        throw new IllegalArgumentException("Holder Handle mismatch");
+      }
+    }
+
+    public MarkHolder markHolder() {
+      return markHolder;
+    }
+
+    public MarkHolderHandle handle() {
+      return handle;
+    }
+  }
+
+  public static MarkHolderAndHandle allocateMarkHolder() {
+    long markHolderId = markHolderIdAllocator.getAndIncrement();
+    MarkHolder holder = markHolderProvider.create(markHolderId);
+    MarkHolderHandle handle = new MarkHolderHandle(Thread.currentThread(), holder, markHolderId);
+    allMarkHolders.put(handle, Boolean.TRUE);
+    return new MarkHolderAndHandle(holder, handle);
+  }
+
+  private static final class UnmodifiableWeakReference<T> extends WeakReference<T> {
+
+    UnmodifiableWeakReference(T referent) {
+      super(referent);
+    }
+
+    @Override
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public void clear() {}
+
+    @Override
+    @Deprecated
+    public boolean enqueue() {
+      return false;
+    }
+
+    void clearInternal() {
+      super.clear();
     }
   }
 
