@@ -16,6 +16,7 @@
 
 package io.perfmark;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.DoNotCall;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.lang.reflect.Method;
@@ -96,8 +97,9 @@ public final class PerfMark {
    *
    * @param value {@code true} to enable PerfMark recording, or {@code false} to disable it.
    */
-  public static void setEnabled(boolean value) {
-    impl.setEnabled(value);
+  @CanIgnoreReturnValue
+  public static boolean setEnabled(boolean value) {
+    return impl.setEnabled(value, false);
   }
 
   /**

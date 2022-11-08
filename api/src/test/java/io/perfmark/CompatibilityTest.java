@@ -166,6 +166,9 @@ public class CompatibilityTest {
 
       var m = currentPerfMarkClz.getMethod(method.getName(), paramTypes);
       assertNotNull(method.getName(), m);
+      if (returnType == void.class) {
+        return;
+      }
       assertEquals(m.getReturnType(), returnType);
     }
   }

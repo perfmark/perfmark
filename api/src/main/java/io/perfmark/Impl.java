@@ -39,6 +39,10 @@ public class Impl {
 
   protected void setEnabled(boolean value) {}
 
+  protected boolean setEnabled(boolean value, boolean overload) {
+    return false;
+  }
+
   protected <T> void startTask(T taskNameObject, StringFunction<? super T> taskNameFunc) {}
 
   protected void startTask(String taskName, Tag tag) {}
