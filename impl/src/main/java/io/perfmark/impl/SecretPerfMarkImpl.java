@@ -119,7 +119,15 @@ final class SecretPerfMarkImpl {
 
     @Override
     protected synchronized void setEnabled(boolean value) {
-      logEnabledChange(value, setEnabledQuiet(value, System.nanoTime()));
+      boolean changed = setEnabledQuiet(value, System.nanoTime());
+      logEnabledChange(value, changed);
+    }
+
+    @Override
+    protected synchronized boolean setEnabled(boolean value, boolean overload) {
+      boolean changed = setEnabledQuiet(value, System.nanoTime());
+      logEnabledChange(value, changed);
+      return changed;
     }
 
     private static synchronized void logEnabledChange(boolean value, boolean success) {
