@@ -386,6 +386,12 @@ public final class TraceEventWriter {
 
     @Override
     protected void onAttachTag(Mark mark) {
+      if (taskStack.isEmpty()) {
+        // In a mark list of only links (i.e. no starts or ends) it's possible there are no tasks
+        // to bind to.  This is probably due to not calling link() correctly.
+        logger.fine("Tag not associated with any task");
+        return;
+      }
       TaskStart taskStart = taskStack.peekLast();
       TraceEvent taskEvent = traceEvents.get(taskStart.traceEventIdx);
       TraceEvent.TagMap args = taskEvent.args();
@@ -490,7 +496,7 @@ public final class TraceEventWriter {
       if (taskStack.isEmpty()) {
         // In a mark list of only links (i.e. no starts or ends) it's possible there are no tasks
         // to bind to.  This is probably due to not calling link() correctly.
-        logger.warning("Link not associated with any task");
+        logger.fine("Link not associated with any task");
         return;
       }
       LinkTuple linkTuple =
