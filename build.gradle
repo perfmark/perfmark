@@ -148,7 +148,7 @@ subprojects {
     }
 
     group = "io.perfmark"
-    version = "0.26.0"
+    version = "0.26.1-SNAPSHOT"
 
     dependencies {
         testImplementation libs.junit
