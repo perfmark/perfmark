@@ -90,12 +90,12 @@ import java.lang.reflect.Method;
  * @author Carl Mastrangelo
  */
 public final class PerfMark {
-
   /**
    * Turns on or off PerfMark recording. Don't call this method too frequently; while neither on nor
    * off have very high overhead, transitioning between the two may be slow.
    *
    * @param value {@code true} to enable PerfMark recording, or {@code false} to disable it.
+   * @return If the enabled value was changed.
    */
   @CanIgnoreReturnValue
   public static boolean setEnabled(boolean value) {
