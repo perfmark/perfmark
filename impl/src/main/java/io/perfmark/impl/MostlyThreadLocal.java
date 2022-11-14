@@ -16,6 +16,7 @@
 
 package io.perfmark.impl;
 
+import io.perfmark.impl.Storage.MarkRecorderHandle;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -28,67 +29,67 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
  *   Note that this class avoids using {@link #initialValue()} because it may be called multiple times, in the
  *   case that ThreadLocals are unsettable.
  */
-final class MostlyThreadLocal extends ThreadLocal<MarkHolder> {
+final class MostlyThreadLocal extends ThreadLocal<MarkRecorder> {
   private static final int BITS = 11;
   private static final int SIZE = 1 << BITS;
   private static final int MASK = SIZE - 1;
-  private static final AtomicReferenceArray<CopyOnWriteArrayList<Storage.MarkHolderHandle>> threadToHandles =
-      new AtomicReferenceArray<CopyOnWriteArrayList<Storage.MarkHolderHandle>>(SIZE);
+  private static final AtomicReferenceArray<CopyOnWriteArrayList<MarkRecorderHandle>> threadToHandles =
+      new AtomicReferenceArray<CopyOnWriteArrayList<MarkRecorderHandle>>(SIZE);
 
   MostlyThreadLocal() {}
 
   @Override
-  public MarkHolder get() {
-    MarkHolder markHolder = super.get();
-    if (markHolder != null) {
-      return markHolder;
+  public MarkRecorder get() {
+    MarkRecorder markRecorder = super.get();
+    if (markRecorder != null) {
+      return markRecorder;
     }
     return getAndSetSlow();
   }
 
-  private MarkHolder getAndSetSlow() {
+  private MarkRecorder getAndSetSlow() {
     assert super.get() == null;
-    Storage.MarkHolderHandle markHolderHandle;
-    MarkHolder markHolder;
-    Storage.MarkHolderAndHandle markHolderAndHandle;
+    MarkRecorderHandle markRecorderHandle;
+    MarkRecorder markRecorder;
+    Storage.MarkRecorderAndHandle markRecorderAndHandle;
     Thread thread = Thread.currentThread();
-    CopyOnWriteArrayList<Storage.MarkHolderHandle> handles = getHandles(thread);
+    CopyOnWriteArrayList<MarkRecorderHandle> handles = getHandles(thread);
     if (handles == null) {
-      markHolderAndHandle = Storage.allocateMarkHolder();
-      markHolder = markHolderAndHandle.markHolder();
-      assert markHolder != null;
-      markHolderHandle = markHolderAndHandle.handle();
+      markRecorderAndHandle = Storage.allocateMarkRecorder();
+      markRecorder = markRecorderAndHandle.markRecorder();
+      assert markRecorder != null;
+      markRecorderHandle = markRecorderAndHandle.handle();
       try {
-        set(markHolder);
-        return markHolder;
+        set(markRecorder);
+        return markRecorder;
       } catch (UnsupportedOperationException e) {
         // ignore.
       }
       handles = getOrCreateHandles(thread);
     } else {
-      if ((markHolderHandle = getConcurrent(handles)) != null) {
-        if ((markHolder = markHolderHandle.markHolder()) != null) {
-          return markHolder;
+      if ((markRecorderHandle = getConcurrent(handles)) != null) {
+        if ((markRecorder = markRecorderHandle.markRecorder()) != null) {
+          return markRecorder;
         }
       }
-      markHolderAndHandle = Storage.allocateMarkHolder();
-      markHolder = markHolderAndHandle.markHolder();
-      assert markHolder != null;
-      markHolderHandle = markHolderAndHandle.handle();
+      markRecorderAndHandle = Storage.allocateMarkRecorder();
+      markRecorder = markRecorderAndHandle.markRecorder();
+      assert markRecorder != null;
+      markRecorderHandle = markRecorderAndHandle.handle();
     }
-    handles.add(markHolderHandle);
-    return markHolder;
+    handles.add(markRecorderHandle);
+    return markRecorder;
   }
 
   @Override
   public void remove() {
     Thread thread = Thread.currentThread();
-    CopyOnWriteArrayList<Storage.MarkHolderHandle> handles = getHandles(thread);
+    CopyOnWriteArrayList<MarkRecorderHandle> handles = getHandles(thread);
     if (handles == null) {
       super.remove();
     } else {
       assert super.get() == null;
-      for (Storage.MarkHolderHandle handle : handles) {
+      for (MarkRecorderHandle handle : handles) {
         Thread t = handle.threadRef().get();
         if (t == null || t == thread) {
           handles.remove(handle);
@@ -100,31 +101,30 @@ final class MostlyThreadLocal extends ThreadLocal<MarkHolder> {
   /**
    * Returns the handles for the given thread index bucket, or {@code null}.
    */
-  private static CopyOnWriteArrayList<Storage.MarkHolderHandle> getHandles(Thread thread) {
+  private static CopyOnWriteArrayList<MarkRecorderHandle> getHandles(Thread thread) {
     int hashCode = System.identityHashCode(thread);
     int index = hashCode & MASK;
     return threadToHandles.get(index);
   }
 
-  private static CopyOnWriteArrayList<Storage.MarkHolderHandle> getOrCreateHandles(Thread thread) {
+  private static CopyOnWriteArrayList<MarkRecorderHandle> getOrCreateHandles(Thread thread) {
     int hashCode = System.identityHashCode(thread);
     int index = hashCode & MASK;
-    CopyOnWriteArrayList<Storage.MarkHolderHandle> handles;
+    CopyOnWriteArrayList<MarkRecorderHandle> handles;
     do {
       if ((handles = threadToHandles.get(index)) != null) {
         break;
       }
-    } while (
-        !threadToHandles.compareAndSet(index, null, (handles = new CopyOnWriteArrayList<Storage.MarkHolderHandle>())));
+    } while (!threadToHandles.compareAndSet(index, null, (handles = new CopyOnWriteArrayList<MarkRecorderHandle>())));
     return handles;
   }
 
   /**
    * May return {@code null} if not found.
    */
-  private static Storage.MarkHolderHandle getConcurrent(CopyOnWriteArrayList<Storage.MarkHolderHandle> handles) {
+  private static MarkRecorderHandle getConcurrent(CopyOnWriteArrayList<MarkRecorderHandle> handles) {
     if (!handles.isEmpty()) {
-      Storage.MarkHolderHandle handle;
+      MarkRecorderHandle handle;
       try {
         handle = handles.get(0);
       } catch (IndexOutOfBoundsException e) {
@@ -141,8 +141,9 @@ final class MostlyThreadLocal extends ThreadLocal<MarkHolder> {
   /**
    * May return {@code null} if not found.
    */
-  private static Storage.MarkHolderHandle slowGetConcurrent(CopyOnWriteArrayList<Storage.MarkHolderHandle> handles) {
-    for (Storage.MarkHolderHandle handle : handles) {
+  private static MarkRecorderHandle slowGetConcurrent(
+      CopyOnWriteArrayList<MarkRecorderHandle> handles) {
+    for (MarkRecorderHandle handle : handles) {
       Thread thread = handle.threadRef().get();
       if (thread == null) {
         handles.remove(handle);

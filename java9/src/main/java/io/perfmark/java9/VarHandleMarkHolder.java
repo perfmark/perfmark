@@ -19,6 +19,7 @@ package io.perfmark.java9;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkRecorder;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayDeque;
@@ -30,7 +31,7 @@ import java.util.Deque;
 import java.util.List;
 
 /** VarHandleMarkHolder is a MarkHolder optimized for wait free writes and few reads. */
-final class VarHandleMarkHolder extends MarkHolder {
+final class VarHandleMarkHolder extends MarkRecorder {
   private static final long GEN_MASK = (1 << Generator.GEN_OFFSET) - 1;
   private static final long START_OP = 1; // Mark.Operation.TASK_START.ordinal();
   private static final long START_S_OP = 2;
@@ -266,6 +267,20 @@ final class VarHandleMarkHolder extends MarkHolder {
     LONGS.setOpaque(genOps, i, gen + ATTACH_SS_OP);
     IDX.setRelease(this, localIdx + 1);
     VarHandle.storeStoreFence();
+  }
+
+
+  final class MarkHolderForward extends MarkHolder {
+
+    @Override
+    public void resetForTest() {
+      VarHandleMarkHolder.this.resetForTest();
+    }
+
+    @Override
+    public List<Mark> read(boolean concurrentWrites) {
+      return null;
+    }
   }
 
   @Override

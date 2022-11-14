@@ -18,11 +18,11 @@ package io.perfmark.java9;
 
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.MarkHolderProvider;
+import io.perfmark.impl.MarkRecorderProvider;
 
 final class SecretVarHandleMarkHolderProvider {
 
-  public static final class VarHandleMarkHolderProvider extends MarkHolderProvider {
+  public static final class VarHandleMarkHolderProvider extends MarkRecorderProvider {
 
     public VarHandleMarkHolderProvider() {
       // Do some basic operations to see if it works.

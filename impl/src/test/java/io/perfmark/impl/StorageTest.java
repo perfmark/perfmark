@@ -124,7 +124,7 @@ public class StorageTest {
         .contains("Using io.perfmark.impl.NoopMarkHolderProvider");
   }
 
-  public static final class TestMarkHolderProvider extends MarkHolderProvider {
+  public static final class TestMarkHolderProvider extends MarkRecorderProvider {
     @Override
     public MarkHolder create(long markHolderId) {
       throw new AssertionError();

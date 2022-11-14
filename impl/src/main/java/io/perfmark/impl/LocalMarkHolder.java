@@ -31,7 +31,7 @@ public abstract class LocalMarkHolder {
   /**
    * Get's the current MarkHolder for mutation.  Only called from a tracing thread.
    */
-  public abstract MarkHolder acquire();
+  public abstract MarkRecorder acquire();
 
   /**
    * Releases the MarkHolder from being written too.  Usually called very shortly after {@link #acquire()}.

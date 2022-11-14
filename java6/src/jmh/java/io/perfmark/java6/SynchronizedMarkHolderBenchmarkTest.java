@@ -67,7 +67,7 @@ public class SynchronizedMarkHolderBenchmarkTest {
   public static class SynchronizedMarkHolderBenchmark extends MarkHolderBenchmark {
     @Override
     public MarkHolder getMarkHolder() {
-      return new SynchronizedMarkHolder(16384);
+      return new SynchronizedMarkHolderOld(16384);
     }
   }
 }

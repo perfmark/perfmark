@@ -17,7 +17,7 @@
 package io.perfmark.java15;
 
 import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.MarkHolderProvider;
+import io.perfmark.impl.MarkRecorderProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
@@ -26,7 +26,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 public final class SecretHiddenClassMarkHolderProvider {
-  public static final class HiddenClassMarkHolderProvider extends MarkHolderProvider {
+  public static final class HiddenClassMarkHolderProvider extends MarkRecorderProvider {
     private static final int DEFAULT_SIZE = 32768;
 
     private final int[] maxEventsOffsets;

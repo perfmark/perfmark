@@ -26,6 +26,6 @@ public class SynchronizedMarkHolderTest extends MarkHolderTest  {
 
   @Override
   protected MarkHolder getMarkHolder() {
-    return new SynchronizedMarkHolder();
+    return new SynchronizedMarkHolderOld();
   }
 }
