@@ -16,15 +16,11 @@
 
 package io.perfmark.impl;
 
-import java.lang.ref.WeakReference;
-import java.util.Collections;
-import java.util.List;
-
 final class NoopMarkRecorderProvider extends MarkRecorderProvider {
   NoopMarkRecorderProvider() {}
 
   @Override
-  public MarkRecorder createMarkRecorder(long markRecorderId, WeakReference<Thread> creatingThread) {
+  public MarkRecorder createMarkRecorder(long markRecorderId) {
     return new NoopMarkHolder();
   }
 

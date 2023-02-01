@@ -19,18 +19,17 @@ package io.perfmark.java6;
 import io.perfmark.impl.MarkRecorderProvider;
 import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.Storage;
-import java.lang.ref.WeakReference;
 
 final class SecretSynchronizedMarkHolderProvider {
 
-  public static final class SynchronizedMarkHolderProvider extends MarkRecorderProvider {
+  public static final class SynchronizedMarkRecorderProvider extends MarkRecorderProvider {
 
     // Used reflectively
-    public SynchronizedMarkHolderProvider() {}
+    public SynchronizedMarkRecorderProvider() {}
 
     @Override
-    public MarkRecorder createMarkRecorder(long markRecorderId, WeakReference<Thread> creatingThread) {
-      SynchronizedMarkRecorder markRecorder = new SynchronizedMarkRecorder(markRecorderId, creatingThread);
+    public MarkRecorder createMarkRecorder(long markRecorderId) {
+      SynchronizedMarkRecorder markRecorder = new SynchronizedMarkRecorder(markRecorderId);
       Storage.registerMarkHolder(markRecorder.markHolder);
       return markRecorder;
     }

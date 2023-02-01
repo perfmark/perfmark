@@ -19,9 +19,11 @@ package io.perfmark.java9;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorder;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +33,7 @@ import java.util.Deque;
 import java.util.List;
 
 /** VarHandleMarkHolder is a MarkHolder optimized for wait free writes and few reads. */
-final class VarHandleMarkHolder extends MarkRecorder {
+final class VarHandleMarkRecorder extends MarkRecorder {
   private static final long GEN_MASK = (1 << Generator.GEN_OFFSET) - 1;
   private static final long START_OP = 1; // Mark.Operation.TASK_START.ordinal();
   private static final long START_S_OP = 2;
@@ -55,7 +57,7 @@ final class VarHandleMarkHolder extends MarkRecorder {
 
   static {
     try {
-      IDX = MethodHandles.lookup().findVarHandle(VarHandleMarkHolder.class, "idx", long.class);
+      IDX = MethodHandles.lookup().findVarHandle(VarHandleMarkRecorder.class, "idx", long.class);
       STRINGS = MethodHandles.arrayElementVarHandle(String[].class);
       LONGS = MethodHandles.arrayElementVarHandle(long[].class);
     } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -63,6 +65,7 @@ final class VarHandleMarkHolder extends MarkRecorder {
     }
   }
 
+  final MarkHolder markHolder;
   private final int maxEvents;
   private final long maxEventsMax;
 
@@ -76,17 +79,18 @@ final class VarHandleMarkHolder extends MarkRecorder {
   private final long[] nanoTimes;
   private final long[] genOps;
 
-  VarHandleMarkHolder() {
-    this(32768);
+  VarHandleMarkRecorder(long markRecorderId) {
+    this(markRecorderId, 32768);
   }
 
-  VarHandleMarkHolder(int maxEvents) {
+  VarHandleMarkRecorder(long markRecorderId, int maxEvents) {
     if (((maxEvents - 1) & maxEvents) != 0) {
       throw new IllegalArgumentException(maxEvents + " is not a power of two");
     }
     if (maxEvents <= 0) {
       throw new IllegalArgumentException(maxEvents + " is not positive");
     }
+    this.markHolder = new MarkHolderForward(markRecorderId);
     this.maxEvents = maxEvents;
     this.maxEventsMax = maxEvents - 1L;
     this.taskNames = new String[maxEvents];
@@ -272,19 +276,70 @@ final class VarHandleMarkHolder extends MarkRecorder {
 
   final class MarkHolderForward extends MarkHolder {
 
-    @Override
-    public void resetForTest() {
-      VarHandleMarkHolder.this.resetForTest();
+    private final long markRecorderId;
+    private final WeakReference<Thread> threadRef;
+    private volatile String threadName;
+    private volatile long threadId;
+
+    MarkHolderForward(long markRecorderId) {
+      this.markRecorderId = markRecorderId;
+      Thread t = Thread.currentThread();
+      this.threadRef = new WeakReference<>(t);
+      this.threadName = t.getName();
+      this.threadId = t.getId();
     }
 
     @Override
-    public List<Mark> read(boolean concurrentWrites) {
-      return null;
+    public void resetForTest() {
+      VarHandleMarkRecorder.this.resetForTest();
+    }
+
+    @Override
+    public List<MarkList> read() {
+      Thread t = threadRef.get();
+      List<Mark> marks = VarHandleMarkRecorder.this.read(!(t == Thread.currentThread() || t == null));
+      return List.of(
+          MarkList.newBuilder()
+              .setMarks(marks)
+              .setThreadId(getAndUpdateThreadId())
+              .setThreadName(getAndUpdateThreadName())
+              .setMarkRecorderId(markRecorderId)
+              .build());
+    }
+
+
+    @Override
+    public int maxMarks() {
+      return maxEvents;
+    }
+
+    private String getAndUpdateThreadName() {
+      Thread t = threadRef.get();
+      String name;
+      if (t != null) {
+        threadName = (name = t.getName());
+      } else {
+        name = threadName;
+      }
+      return name;
+    }
+
+    /**
+     * Some threads change their id over time, so we need to sync it if available.
+     */
+    private long getAndUpdateThreadId() {
+      Thread t = threadRef.get();
+      long id;
+      if (t != null) {
+        threadId = (id = t.getId());
+      } else {
+        id = threadId;
+      }
+      return id;
     }
   }
 
-  @Override
-  public void resetForTest() {
+  void resetForTest() {
     Arrays.fill(taskNames, null);
     Arrays.fill(tagNames, null);
     Arrays.fill(tagIds, 0);
@@ -294,8 +349,7 @@ final class VarHandleMarkHolder extends MarkRecorder {
     VarHandle.storeStoreFence();
   }
 
-  @Override
-  public List<Mark> read(boolean concurrentWrites) {
+  List<Mark> read(boolean concurrentWrites) {
     final String[] localTaskNames = new String[maxEvents];
     final String[] localTagNames = new String[maxEvents];
     final long[] localTagIds = new long[maxEvents];
@@ -394,10 +448,5 @@ final class VarHandleMarkHolder extends MarkRecorder {
     }
 
     return Collections.unmodifiableList(new ArrayList<>(marks));
-  }
-
-  @Override
-  public int maxMarks() {
-    return maxEvents;
   }
 }

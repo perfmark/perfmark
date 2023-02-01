@@ -16,11 +16,11 @@
 
 package io.perfmark.impl;
 
-final class MostlyThreadLocalMarkHolder extends LocalMarkRecorder {
+final class MostlyThreadLocalMarkRecorder extends LocalMarkRecorder {
 
   private static final MostlyThreadLocal localMarkHolder = new MostlyThreadLocal();
 
-  MostlyThreadLocalMarkHolder() {}
+  MostlyThreadLocalMarkRecorder() {}
 
   @Override
   public MarkRecorder getOrCreate() {

@@ -17,23 +17,17 @@
 package io.perfmark.impl;
 
 import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Storage is responsible for storing and returning recorded marks. This is a low level class and
@@ -55,18 +49,11 @@ public final class Storage {
   static final AtomicLong markRecorderIdAllocator = new AtomicLong(1);
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
   // and need to use these static variables.
-  private static final ConcurrentMap<ThreadUnmodifiableWeakReference, MarkRecorderHandle> allMarkRecorders =
-      new ConcurrentHashMap<ThreadUnmodifiableWeakReference, MarkRecorderHandle>();
+
   private static final ConcurrentMap<Object, Reference<MarkHolder>> allMarkHolders =
       new ConcurrentHashMap<Object, Reference<MarkHolder>>();
   private static final MarkRecorderProvider markRecorderProvider;
-  private static final LocalMarkRecorder localMarkRecorder = new LocalMarkRecorder() {
-    @Override
-    protected MarkRecorder get() {
-      return null;
-    }
-  };
-  private static final ReferenceQueue<Thread> threadReferenceQueue = new ReferenceQueue<Thread>();
+  private static final LocalMarkRecorder localMarkRecorder = new MostlyThreadLocalMarkRecorder();
   private static volatile long lastGlobalIndexClear = Generator.INIT_NANO_TIME - 1;
 
   static {
@@ -95,7 +82,7 @@ public final class Storage {
       try {
         Class<?> clz =
             Class.forName(
-                "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider");
+                "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkRecorderProvider");
         provider = clz.asSubclass(MarkRecorderProvider.class).getConstructor().newInstance();
       } catch (Throwable t) {
         problems[2] = t;
@@ -140,7 +127,6 @@ public final class Storage {
    */
   public static List<MarkList> read() {
     long lastReset = lastGlobalIndexClear;
-    drainThreadQueue();
     List<MarkList> markLists = new ArrayList<MarkList>();
     for (Iterator<Reference<MarkHolder>> it = allMarkHolders.values().iterator(); it.hasNext();) {
       Reference<MarkHolder> markHolderReference = it.next();
@@ -233,15 +219,6 @@ public final class Storage {
    * Removes all data for the calling Thread.  Other threads may Still have stored data.
    */
   public static void clearLocalStorage() {
-    drainThreadQueue();
-    for (Iterator<MarkRecorderHandle> it = allMarkRecorders.values().iterator(); it.hasNext();)  {
-      MarkRecorderHandle handle = it.next();
-      if (handle.threadRef.get() == Thread.currentThread()) {
-        it.remove();
-        handle.threadRef.clearInternal();
-        handle.clearMarkRecorderReference();
-      }
-    }
     localMarkRecorder.clear();
   }
 
@@ -253,36 +230,7 @@ public final class Storage {
    */
   public static void clearGlobalIndex() {
     lastGlobalIndexClear = System.nanoTime() - 1;
-    for (Iterator<Map.Entry<Object, Reference<MarkHolder>>> it = allMarkHolders.entrySet().iterator(); it.hasNext();) {
-      Map.Entry<Object, Reference<MarkHolder>> entry = it.next();
-      do {
-        if ()
-      } while (true);
-    }
-
-    for (Iterator<MarkRecorderHandle> it = allMarkRecorders.values().iterator(); it.hasNext();) {
-      MarkRecorderHandle handle = it.next();
-      handle.c();
-      Thread writer = handle.threadRef().get();
-      if (writer == null) {
-        it.remove();
-        handle.clearSoftReference();
-      }
-    }
-  }
-
-  private static void drainThreadQueue() {
-    while (true) {
-      ThreadUnmodifiableWeakReference ref = (ThreadUnmodifiableWeakReference) threadReferenceQueue.poll();
-      if (ref == null) {
-        return;
-      }
-      assert ref.get() == null;
-      MarkRecorderHandle handle = allMarkRecorders.remove(ref);
-      if (handle != null) {
-        handle.clearMarkRecorderReference();
-      }
-    }
+    // FixMe
   }
 
   public static void registerMarkHolder(MarkHolder markHolder) {
@@ -294,7 +242,6 @@ public final class Storage {
 
   /**
    * May Return {@code null}.
-   * @return
    */
   public static MarkList readForTest() {
     List<MarkList> lists = read();
@@ -307,112 +254,9 @@ public final class Storage {
     return null;
   }
 
-  public static final class MarkRecorderHandle {
-    private final ThreadUnmodifiableWeakReference threadRef;
-    private final AtomicReference<MarkRecorder> markRecorderRef;
-
-    MarkRecorderHandle(ThreadUnmodifiableWeakReference threadReference, MarkRecorder markRecorder) {
-      this.threadRef = threadReference;
-      this.markRecorderRef = new AtomicReference<MarkRecorder>(markRecorder);
-    }
-
-    /**
-     * Returns the MarkRecorder.  May return {@code null} if the Thread is gone.  If {@code null} is returned,
-     * then {@code getThreadRef().get() == null}.  If a non-{@code null} value is returned, the thread may be dead or
-     * alive.  Additionally, since the {@link #threadRef} may be externally cleared, it is not certain that the Thread
-     * is dead.
-     */
-    public MarkRecorder markRecorder() {
-      Thread thread = threadRef.get();
-      MarkRecorder markRecorder = markRecorderRef.get();
-      assert markRecorder != null || thread == null;
-      if (thread == null && markRecorder != null) {
-        markRecorderRef.set(markRecorder = null);
-      }
-      return markRecorder;
-    }
-
-    /**
-     * Returns a weak reference to the Thread that created the MarkHolder.
-     */
-    public WeakReference<? extends Thread> threadRef() {
-      return threadRef;
-    }
-
-    void clearMarkRecorderReference() {
-      Thread thread = threadRef.get();
-      if (thread != null) {
-        throw new IllegalStateException("Thread still alive " + thread);
-      }
-      MarkRecorder markRecorder = markRecorderRef.get();
-      if (markRecorder != null) {
-        markRecorderRef.set(null);
-      }
-    }
-  }
-
-  /**
-   * This class is needed to work around a race condition where a newly created MarkRecorder could be GC'd before
-   * the caller of {@link #allocateMarkRecorder} can consume the results.  The provided MarkRecorder is strongly
-   * reachable.
-   */
-  public static final class MarkRecorderAndHandle {
-    private final MarkRecorder markRecorder;
-    private final MarkRecorderHandle handle;
-
-    MarkRecorderAndHandle(MarkRecorder markRecorder, MarkRecorderHandle handle) {
-      this.markRecorder = markRecorder;
-      this.handle = handle;
-
-      MarkRecorder tmp = handle.markRecorder();
-      if (markRecorder != tmp) {
-        throw new IllegalArgumentException("Holder Handle mismatch");
-      }
-    }
-
-    public MarkRecorder markRecorder() {
-      return markRecorder;
-    }
-
-    public MarkRecorderHandle handle() {
-      return handle;
-    }
-  }
-
-
-  public static MarkRecorderAndHandle allocateMarkRecorder() {
-    drainThreadQueue();
+  public static MarkRecorder allocateMarkRecorder() {
     long markRecorderId = markRecorderIdAllocator.getAndIncrement();
-    Thread thread = Thread.currentThread();
-    ThreadUnmodifiableWeakReference threadReference =
-        new ThreadUnmodifiableWeakReference(thread, threadReferenceQueue);
-    MarkRecorder markRecorder = markRecorderProvider.createMarkRecorder(markRecorderId, threadReference);
-    MarkRecorderHandle handle = new MarkRecorderHandle(threadReference, markRecorder);
-    allMarkRecorders.put(threadReference, handle);
-    return new MarkRecorderAndHandle(markRecorder, handle);
-  }
-
-  private static final class ThreadUnmodifiableWeakReference extends WeakReference<Thread> {
-
-    ThreadUnmodifiableWeakReference(Thread thread, ReferenceQueue<? super Thread> q) {
-      super(thread, q);
-    }
-
-    @Override
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public void clear() {}
-
-    @Override
-    @Deprecated
-    @SuppressWarnings("InlineMeSuggester")
-    public boolean enqueue() {
-      return false;
-    }
-
-    void clearInternal() {
-      super.clear();
-    }
+    return markRecorderProvider.createMarkRecorder(markRecorderId);
   }
 
   private Storage() {}

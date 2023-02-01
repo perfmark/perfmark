@@ -16,8 +16,6 @@
 
 package io.perfmark.impl;
 
-import java.lang.ref.WeakReference;
-
 /**
  * This class creates MarkRecorders.  Custom MarkRecorder providers can be set using
  * {@link Storage#MARK_RECORDER_PROVIDER_PROP "io.perfmark.PerfMark.markRecorderProvider"}.
@@ -33,5 +31,5 @@ public abstract class MarkRecorderProvider {
    * @return the new MarkHolder for the current thread.
    * @since 0.27.0
    */
-  public abstract MarkRecorder createMarkRecorder(long markRecorderId, WeakReference<Thread> creatingThread);
+  public abstract MarkRecorder createMarkRecorder(long markRecorderId);
 }

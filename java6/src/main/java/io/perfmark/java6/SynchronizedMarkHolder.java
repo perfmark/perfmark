@@ -31,7 +31,6 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.locks.LockSupport;
 
 final class SynchronizedMarkHolder extends MarkHolder {
 
@@ -52,7 +51,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
   private final long[] nums;
   private final String[] strings;
 
-  SynchronizedMarkHolder(int maxEvents, long markRecorderId, WeakReference<Thread> creatingThread) {
+  SynchronizedMarkHolder(int maxEvents, long markRecorderId) {
     if (((maxEvents - 1) & maxEvents) != 0) {
       throw new IllegalArgumentException(maxEvents + " is not a power of two");
     }
@@ -63,14 +62,8 @@ final class SynchronizedMarkHolder extends MarkHolder {
     this.maxEventsMask = maxEvents - 1L;
     this.nums = new long[maxEvents];
     this.strings = new String[maxEvents];
-    if (creatingThread == null) {
-      throw new NullPointerException("creatingThread");
-    }
-    Thread t;
-    if (Thread.currentThread() != (t = creatingThread.get())) {
-      throw new IllegalArgumentException("wrong thread " + t);
-    }
-    this.threadReference = creatingThread;
+    Thread t = Thread.currentThread();
+    this.threadReference = new WeakReference<Thread>(t);
     this.threadName = t.getName();
     this.threadId = t.getId();
     this.markRecorderId = markRecorderId;

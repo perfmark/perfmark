@@ -21,6 +21,8 @@ import static org.junit.Assert.assertEquals;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkList;
+import io.perfmark.impl.MarkRecorder;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,25 +42,36 @@ public abstract class MarkHolderTest {
     throw new UnsupportedOperationException("not implemented");
   }
 
+  protected MarkRecorder getMarkRecorder() {
+    throw new UnsupportedOperationException("not implemented");
+  }
+
   @Test
   public void taskTagStartStop() {
-    MarkHolder mh = getMarkHolder();
-    mh.start(gen, "task", 3);
-    mh.stop(gen, "task", 4);
+    var mr = getMarkRecorder();
+    mr.start(gen, "task", 3);
+    mr.stop(gen, "task", 4);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
     assertEquals(2, marks.size());
     List<Mark> expected = List.of(Mark.taskStart(gen, 3, "task"), Mark.taskEnd(gen, 4, "task"));
     assertEquals(expected, marks);
   }
 
+  private static MarkList getOnly(List<MarkList> markLists) {
+    if (markLists.size() != 1) {
+      throw new AssertionError("wrong number " + markLists);
+    }
+    return markLists.get(0);
+  }
+
   @Test
   public void taskTagStartStop_subTask() {
-    MarkHolder mh = getMarkHolder();
-    mh.start(gen, "task", "subtask", 3);
-    mh.stop(gen, "task", "subtask", 4);
+    var mr = getMarkRecorder();
+    mr.start(gen, "task", "subtask", 3);
+    mr.stop(gen, "task", "subtask", 4);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
     assertEquals(2, marks.size());
     List<Mark> expected = List.of(
             Mark.taskStart(gen, 3, "task", "subtask"), Mark.taskEnd(gen, 4, "task", "subtask"));
@@ -67,11 +80,11 @@ public abstract class MarkHolderTest {
 
   @Test
   public void taskTagStartStop_tag() {
-    MarkHolder mh = getMarkHolder();
-    mh.start(gen, "task", "tag", 9, 3);
-    mh.stop(gen, "task", "tag", 9, 4);
+    var mr = getMarkRecorder();
+    mr.start(gen, "task", "tag", 9, 3);
+    mr.stop(gen, "task", "tag", 9, 4);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
     assertEquals(4, marks.size());
     List<Mark> expected =
         List.of(
@@ -84,15 +97,15 @@ public abstract class MarkHolderTest {
 
   @Test
   public void taskStartStartStopStop() {
-    MarkHolder mh = getMarkHolder();
-    mh.start(gen, "task1", 3);
-    mh.start(gen, "task2", 4);
-    mh.start(gen, "task3", 5);
-    mh.stop(gen, 6);
-    mh.stop(gen, "task2", 7);
-    mh.stop(gen, "task1", 8);
+    var mr = getMarkRecorder();
+    mr.start(gen, "task1", 3);
+    mr.start(gen, "task2", 4);
+    mr.start(gen, "task3", 5);
+    mr.stop(gen, 6);
+    mr.stop(gen, "task2", 7);
+    mr.stop(gen, "task1", 8);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
 
     assertEquals(6, marks.size());
     List<Mark> expected =
@@ -108,12 +121,12 @@ public abstract class MarkHolderTest {
 
   @Test
   public void attachTag() {
-    MarkHolder mh = getMarkHolder();
-    mh.start(gen, "task", 3);
-    mh.attachTag(gen, "tag", 8);
-    mh.stop(gen, "task", 4);
+    var mr = getMarkRecorder();
+    mr.start(gen, "task", 3);
+    mr.attachTag(gen, "tag", 8);
+    mr.stop(gen, "task", 4);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
     assertEquals(3, marks.size());
     List<Mark> expected =
         List.of(
@@ -123,14 +136,14 @@ public abstract class MarkHolderTest {
 
   @Test
   public void attachKeyedTag() {
-    MarkHolder mh = getMarkHolder();
-    mh.start(gen, "task", 3);
-    mh.attachKeyedTag(gen, "key1", 8);
-    mh.attachKeyedTag(gen, "key2", 8, 9);
-    mh.attachKeyedTag(gen, "key3", "value");
-    mh.stop(gen, "task", 4);
+    var mr = getMarkRecorder();
+    mr.start(gen, "task", 3);
+    mr.attachKeyedTag(gen, "key1", 8);
+    mr.attachKeyedTag(gen, "key2", 8, 9);
+    mr.attachKeyedTag(gen, "key3", "value");
+    mr.stop(gen, "task", 4);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
     assertEquals(5, marks.size());
     List<Mark> expected =
         List.of(
@@ -144,11 +157,11 @@ public abstract class MarkHolderTest {
 
   @Test
   public void event() {
-    MarkHolder mh = getMarkHolder();
-    mh.event(gen, "task1", 8);
-    mh.event(gen, "task2", 5);
+    var mr = getMarkRecorder();
+    mr.event(gen, "task1", 8);
+    mr.event(gen, "task2", 5);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
 
     assertEquals(2, marks.size());
     List<Mark> expected = List.of(Mark.event(gen, 8, "task1"), Mark.event(gen, 5, "task2"));
@@ -157,11 +170,11 @@ public abstract class MarkHolderTest {
 
   @Test
   public void event_tag() {
-    MarkHolder mh = getMarkHolder();
-    mh.event(gen, "task1", "tag1", 7, 8);
-    mh.event(gen, "task2", "tag2", 6, 5);
+    var mr = getMarkRecorder();
+    mr.event(gen, "task1", "tag1", 7, 8);
+    mr.event(gen, "task2", "tag2", 6, 5);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
 
     assertEquals(2, marks.size());
     List<Mark> expected =
@@ -172,11 +185,11 @@ public abstract class MarkHolderTest {
 
   @Test
   public void event_subevent() {
-    MarkHolder mh = getMarkHolder();
-    mh.event(gen, "task1", "subtask3", 8);
-    mh.event(gen, "task2", "subtask4", 5);
+    var mr = getMarkRecorder();
+    mr.event(gen, "task1", "subtask3", 8);
+    mr.event(gen, "task2", "subtask4", 5);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
 
     assertEquals(2, marks.size());
     List<Mark> expected =
@@ -187,13 +200,13 @@ public abstract class MarkHolderTest {
 
   @Test
   public void linkInLinkOut() {
-    MarkHolder mh = getMarkHolder();
-    mh.start(gen, "task1", 3);
-    mh.link(gen, 9);
-    mh.link(gen, -9);
-    mh.stop(gen, "task1", 4);
+    var mr = getMarkRecorder();
+    mr.start(gen, "task1", 3);
+    mr.link(gen, 9);
+    mr.link(gen, -9);
+    mr.stop(gen, "task1", 4);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
 
     assertEquals(marks.size(), 4);
     List<Mark> expected =
@@ -207,10 +220,10 @@ public abstract class MarkHolderTest {
 
   @Test
   public void read_getsAllIfWriter() {
-    MarkHolder mh = getMarkHolder();
-    mh.start(gen, "task", 3);
+    var mr = getMarkRecorder();
+    mr.start(gen, "task", 3);
 
-    List<Mark> marks = mh.read(false);
+    List<Mark> marks = getOnly(getMarkHolder().read());
 
     assertEquals(marks.size(), 1);
   }

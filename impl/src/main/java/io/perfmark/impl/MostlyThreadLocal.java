@@ -16,12 +16,15 @@
 
 package io.perfmark.impl;
 
-import io.perfmark.impl.Storage.MarkRecorderHandle;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
- * This class tries to access the mark holder in a thread local.  If the class is unable to store the created
+ * This class tries to access the mark recorder in a thread local.  If the class is unable to store the created
  * MarkHolder in the thread local, a concurrent map of Thread to MarkHolders is used for lookup.  In Java 19
  * Thread Locals can be disabled due to use of Virtual threads.
  *
@@ -33,7 +36,10 @@ final class MostlyThreadLocal extends ThreadLocal<MarkRecorder> {
   private static final int BITS = 11;
   private static final int SIZE = 1 << BITS;
   private static final int MASK = SIZE - 1;
-  private static final AtomicReferenceArray<CopyOnWriteArrayList<MarkRecorderHandle>> threadToHandles =
+  private final ReferenceQueue<Thread> referenceQueue = new ReferenceQueue<Thread>();
+  private final ConcurrentHashMap<MarkRecorderHandle, MarkRecorderHandle> allHandles =
+      new ConcurrentHashMap<MarkRecorderHandle, MarkRecorderHandle>();
+  private final AtomicReferenceArray<CopyOnWriteArrayList<MarkRecorderHandle>> threadToHandles =
       new AtomicReferenceArray<CopyOnWriteArrayList<MarkRecorderHandle>>(SIZE);
 
   MostlyThreadLocal() {}
@@ -49,67 +55,65 @@ final class MostlyThreadLocal extends ThreadLocal<MarkRecorder> {
 
   private MarkRecorder getAndSetSlow() {
     assert super.get() == null;
-    MarkRecorderHandle markRecorderHandle;
     MarkRecorder markRecorder;
-    Storage.MarkRecorderAndHandle markRecorderAndHandle;
     Thread thread = Thread.currentThread();
-    CopyOnWriteArrayList<MarkRecorderHandle> handles = getHandles(thread);
+    int index = indexOf(thread);
+    CopyOnWriteArrayList<MarkRecorderHandle> handles = threadToHandles.get(index);
     if (handles == null) {
-      markRecorderAndHandle = Storage.allocateMarkRecorder();
-      markRecorder = markRecorderAndHandle.markRecorder();
-      assert markRecorder != null;
-      markRecorderHandle = markRecorderAndHandle.handle();
+      markRecorder = Storage.allocateMarkRecorder();
       try {
         set(markRecorder);
         return markRecorder;
       } catch (UnsupportedOperationException e) {
         // ignore.
       }
-      handles = getOrCreateHandles(thread);
+      handles = getOrCreateHandles(index);
     } else {
+      MarkRecorderHandle markRecorderHandle;
       if ((markRecorderHandle = getConcurrent(handles)) != null) {
-        if ((markRecorder = markRecorderHandle.markRecorder()) != null) {
-          return markRecorder;
-        }
+        return markRecorderHandle.markRecorder;
       }
-      markRecorderAndHandle = Storage.allocateMarkRecorder();
-      markRecorder = markRecorderAndHandle.markRecorder();
-      assert markRecorder != null;
-      markRecorderHandle = markRecorderAndHandle.handle();
+      markRecorder = Storage.allocateMarkRecorder();
     }
-    handles.add(markRecorderHandle);
+    handles.add(0, new MarkRecorderHandle(markRecorder, thread, referenceQueue));
     return markRecorder;
   }
 
   @Override
   public void remove() {
+    drainQueue();
     Thread thread = Thread.currentThread();
-    CopyOnWriteArrayList<MarkRecorderHandle> handles = getHandles(thread);
+    CopyOnWriteArrayList<MarkRecorderHandle> handles = threadToHandles.get(indexOf(thread));
     if (handles == null) {
       super.remove();
     } else {
       assert super.get() == null;
       for (MarkRecorderHandle handle : handles) {
-        Thread t = handle.threadRef().get();
+        Thread t = handle.get();
         if (t == null || t == thread) {
           handles.remove(handle);
+          handle.clear();
         }
       }
     }
   }
 
-  /**
-   * Returns the handles for the given thread index bucket, or {@code null}.
-   */
-  private static CopyOnWriteArrayList<MarkRecorderHandle> getHandles(Thread thread) {
-    int hashCode = System.identityHashCode(thread);
-    int index = hashCode & MASK;
-    return threadToHandles.get(index);
+  private void drainQueue() {
+    while (true) {
+      MarkRecorderHandle handle = (MarkRecorderHandle) referenceQueue.poll();
+      if (handle == null) {
+        break;
+      }
+      CopyOnWriteArrayList<MarkRecorderHandle> handles = threadToHandles.get(handle.index);
+      handles.remove(handle);
+    }
   }
 
-  private static CopyOnWriteArrayList<MarkRecorderHandle> getOrCreateHandles(Thread thread) {
-    int hashCode = System.identityHashCode(thread);
-    int index = hashCode & MASK;
+  private static int indexOf(Thread thread) {
+    return System.identityHashCode(thread) & MASK;
+  }
+
+  private CopyOnWriteArrayList<MarkRecorderHandle> getOrCreateHandles(int index) {
     CopyOnWriteArrayList<MarkRecorderHandle> handles;
     do {
       if ((handles = threadToHandles.get(index)) != null) {
@@ -130,7 +134,7 @@ final class MostlyThreadLocal extends ThreadLocal<MarkRecorder> {
       } catch (IndexOutOfBoundsException e) {
         return null;
       }
-      if (handle.threadRef().get() == Thread.currentThread()) {
+      if (handle.get() == Thread.currentThread()) {
         return handle;
       }
       return slowGetConcurrent(handles);
@@ -141,10 +145,9 @@ final class MostlyThreadLocal extends ThreadLocal<MarkRecorder> {
   /**
    * May return {@code null} if not found.
    */
-  private static MarkRecorderHandle slowGetConcurrent(
-      CopyOnWriteArrayList<MarkRecorderHandle> handles) {
+  private static MarkRecorderHandle slowGetConcurrent(CopyOnWriteArrayList<MarkRecorderHandle> handles) {
     for (MarkRecorderHandle handle : handles) {
-      Thread thread = handle.threadRef().get();
+      Thread thread = handle.get();
       if (thread == null) {
         handles.remove(handle);
       } else if (thread == Thread.currentThread()) {
@@ -152,5 +155,17 @@ final class MostlyThreadLocal extends ThreadLocal<MarkRecorder> {
       }
     }
     return null;
+  }
+
+  private static final class MarkRecorderHandle extends WeakReference<Thread> {
+    private final int index;
+    private final MarkRecorder markRecorder;
+
+    public MarkRecorderHandle(
+        MarkRecorder markRecorder, Thread referent, ReferenceQueue<? super Thread> referenceQueue) {
+      super(referent, referenceQueue);
+      this.index = indexOf(referent);
+      this.markRecorder = markRecorder;
+    }
   }
 }

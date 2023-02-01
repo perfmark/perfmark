@@ -40,7 +40,7 @@ class MarkListWalker {
     for (Map.Entry<Long, List<MarkList>> entry : generationToMarkLists.entrySet()) {
       enterGeneration(entry.getKey());
       for (MarkList markList : entry.getValue()) {
-        enterMarkList(markList.getThreadName(), markList.getThreadId(), markList.getMarkListId());
+        enterMarkList(markList.getThreadName(), markList.getThreadId(), markList.getMarkRecorderId());
         Deque<Mark> fakeStarts = new ArrayDeque<>();
         Deque<Mark> fakeEnds = new ArrayDeque<>();
         Set<Mark> unmatchedPairMarks =
@@ -65,7 +65,7 @@ class MarkListWalker {
 
   protected void exitGeneration() {}
 
-  protected void enterMarkList(String threadName, long threadId, long markListId) {}
+  protected void enterMarkList(String threadName, long threadId, long markRecorderId) {}
 
   protected void exitMarkList() {}
 

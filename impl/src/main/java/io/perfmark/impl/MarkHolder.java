@@ -19,6 +19,9 @@ package io.perfmark.impl;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * A MarkHolder records Marks for later retrieval.
+ */
 public abstract class MarkHolder {
 
   public static final int NO_MAX_MARKS = -1;
