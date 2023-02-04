@@ -1,43 +1,52 @@
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-    id "me.champeau.jmh"
+    alias(libs.plugins.jmh)
 }
 
-description = "PerfMark Implementation API"
-ext.moduleName =  "io.perfmark.impl"
-ext.jdkVersion = JavaVersion.VERSION_1_6
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+buildscript {
+    extra.apply{
+        set("moduleName", "io.perfmark.impl")
     }
 }
 
-compileJava {
-    sourceCompatibility = jdkVersion
-    targetCompatibility = jdkVersion
+val jdkVersion = JavaVersion.VERSION_1_6
+
+description = "PerfMark Implementation API"
+
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
+tasks.named<JavaCompile>("compileJava") {
+    sourceCompatibility = jdkVersion.toString()
+    targetCompatibility = jdkVersion.toString()
 
     options.compilerArgs.add("-Xlint:-options")
 }
 
+
 dependencies {
-    implementation project(':perfmark-api')
-    compileOnly libs.jsr305,
-            libs.errorprone
-    testImplementation libs.truth
-    testCompileOnly libs.errorprone
+    implementation(project(":perfmark-api"))
+    compileOnly(libs.jsr305)
+    compileOnly(libs.errorprone)
+    testImplementation(libs.truth)
+    testCompileOnly(libs.errorprone)
 }
 
 
 jmh {
 
-    timeOnIteration = "1s"
-    warmup = "1s"
-    fork = 400
-    warmupIterations = 0
+    timeOnIteration.set("1s")
+    warmup.set("1s")
+    fork.set(400)
+    warmupIterations.set(0)
 
-    includes = ["ClassInit"]
-    profilers = ["cl"]
-    jvmArgs = ["-Dio.perfmark.PerfMark.debug=true"]
+    includes.add("ClassInit")
+    profilers.add("cl")
+    jvmArgs.add("-Dio.perfmark.PerfMark.debug=true")
 
     /*
     profilers = ["perfasm"]
