@@ -1,5 +1,6 @@
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-    id("me.champeau.jmh")
+    alias(libs.plugins.jmh)
 }
 
 buildscript {
