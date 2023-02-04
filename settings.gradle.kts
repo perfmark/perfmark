@@ -38,6 +38,10 @@ dependencyResolutionManagement {
             library("jmhcore", "org.openjdk.jmh", "jmh-core").versionRef("jmh")
             library("jmhanno", "org.openjdk.jmh", "jmh-generator-annprocess").versionRef("jmh")
 
+            plugin("errorprone", "net.ltgt.errorprone").version("3.0.1")
+            plugin("jmh", "me.champeau.jmh").version("0.6.8")
+            plugin("jcstress", "io.github.reyerizo.gradle.jcstress").version("0.8.14")
+
         }
     }
 }
