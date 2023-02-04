@@ -28,7 +28,6 @@ tasks.named<JavaCompile>("compileJava") {
 }
 
 dependencies {
-    compileOnly(libs.jsr305)
     compileOnly(libs.errorprone)
 
     testImplementation(project(":perfmark-impl"))
