@@ -1,7 +1,8 @@
 import net.ltgt.gradle.errorprone.errorprone
 
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-    id("io.github.reyerizo.gradle.jcstress")
+    alias(libs.plugins.jcstress)
 }
 
 buildscript {
