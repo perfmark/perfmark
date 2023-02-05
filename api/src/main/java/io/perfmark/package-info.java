@@ -14,6 +14,5 @@
  * limitations under the License.
  */
 
-@javax.annotation.CheckReturnValue
-@javax.annotation.ParametersAreNonnullByDefault
+@com.google.errorprone.annotations.CheckReturnValue
 package io.perfmark;
