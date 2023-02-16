@@ -30,7 +30,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -58,7 +57,7 @@ public class CompatibilityTest {
           "0.24.0",
           "0.25.0",
           "0.26.0");
-  
+
   @Parameterized.Parameters(name = "version v{0}")
   @SuppressWarnings("StringSplitter")
   public static Iterable<Object[]> params() {
@@ -69,7 +68,7 @@ public class CompatibilityTest {
       if (jarPath == null) {
         throw new AssertionError("Can't load version " + version);
       }
-      params.add(new Object[]{version, Integer.valueOf(version.split("\\.")[1]), jarPath});
+      params.add(new Object[] {version, Integer.valueOf(version.split("\\.")[1]), jarPath});
     }
 
     return params;
@@ -125,11 +124,12 @@ public class CompatibilityTest {
       if (!Modifier.isStatic(method.getModifiers())) {
         continue;
       }
-      var paramTypes =  method.getParameterTypes();
+      var paramTypes = method.getParameterTypes();
       Object[] args = new Object[paramTypes.length];
       for (int i = 0; i < paramTypes.length; i++) {
         if (paramTypes[i].getName().startsWith("io.perfmark.")) {
-          paramTypes[i] = Class.forName(paramTypes[i].getName(), false, currentPerfMarkClz.getClassLoader());
+          paramTypes[i] =
+              Class.forName(paramTypes[i].getName(), false, currentPerfMarkClz.getClassLoader());
         }
         if (paramTypes[i] == long.class) {
           args[i] = 0L;
@@ -154,15 +154,17 @@ public class CompatibilityTest {
   public void checkPublicMethods() throws Exception {
     Assume.assumeTrue(minorVersion >= STABLE_VERSION);
     for (Method method : perfMarkClz.getMethods()) {
-      var paramTypes =  method.getParameterTypes();
+      var paramTypes = method.getParameterTypes();
       for (int i = 0; i < paramTypes.length; i++) {
         if (paramTypes[i].getName().startsWith("io.perfmark.")) {
-          paramTypes[i] = Class.forName(paramTypes[i].getName(), false, currentPerfMarkClz.getClassLoader());
+          paramTypes[i] =
+              Class.forName(paramTypes[i].getName(), false, currentPerfMarkClz.getClassLoader());
         }
       }
       Class<?> returnType = method.getReturnType();
       if (returnType.getName().startsWith("io.perfmark.")) {
-        returnType = Class.forName(returnType.getName(), false, currentPerfMarkClz.getClassLoader());
+        returnType =
+            Class.forName(returnType.getName(), false, currentPerfMarkClz.getClassLoader());
       }
 
       var m = currentPerfMarkClz.getMethod(method.getName(), paramTypes);
@@ -212,9 +214,11 @@ public class CompatibilityTest {
   @Test
   public void startStopTaskWorks_namedFunction() throws Exception {
     Assume.assumeTrue(minorVersion >= 22);
-    Class<?> fnClz = Class.forName("io.perfmark.StringFunction", false, perfMarkClz.getClassLoader());
+    Class<?> fnClz =
+        Class.forName("io.perfmark.StringFunction", false, perfMarkClz.getClassLoader());
     Object fn =
-        Proxy.newProxyInstance(perfMarkClz.getClassLoader(), new Class<?>[]{fnClz}, (proxy, method, args) -> "hi");
+        Proxy.newProxyInstance(
+            perfMarkClz.getClassLoader(), new Class<?>[] {fnClz}, (proxy, method, args) -> "hi");
 
     perfMarkClz.getMethod("setEnabled", boolean.class).invoke(null, true);
     perfMarkClz.getMethod("startTask", Object.class, fnClz).invoke(null, new Object(), fn);
@@ -242,7 +246,8 @@ public class CompatibilityTest {
     Assume.assumeTrue(minorVersion >= 23);
 
     perfMarkClz.getMethod("setEnabled", boolean.class).invoke(null, true);
-    try (var c = (Closeable) perfMarkClz.getMethod("traceTask", String.class).invoke(null, "task1")) {}
+    try (var c =
+        (Closeable) perfMarkClz.getMethod("traceTask", String.class).invoke(null, "task1")) {}
 
     List marks = (List) storageClz.getMethod("readForTest").invoke(null);
 
@@ -253,12 +258,18 @@ public class CompatibilityTest {
   public void traceTask_namedFunction() throws Exception {
     Assume.assumeTrue(minorVersion >= 23);
 
-    Class<?> fnClz = Class.forName("io.perfmark.StringFunction", false, perfMarkClz.getClassLoader());
+    Class<?> fnClz =
+        Class.forName("io.perfmark.StringFunction", false, perfMarkClz.getClassLoader());
     Object fn =
-        Proxy.newProxyInstance(perfMarkClz.getClassLoader(), new Class<?>[]{fnClz}, (proxy, method, args) -> "hi");
+        Proxy.newProxyInstance(
+            perfMarkClz.getClassLoader(), new Class<?>[] {fnClz}, (proxy, method, args) -> "hi");
 
     perfMarkClz.getMethod("setEnabled", boolean.class).invoke(null, true);
-    try (var c = (Closeable) perfMarkClz.getMethod("traceTask", Object.class, fnClz).invoke(null, new Object(), fn)) {}
+    try (var c =
+        (Closeable)
+            perfMarkClz
+                .getMethod("traceTask", Object.class, fnClz)
+                .invoke(null, new Object(), fn)) {}
 
     List marks = (List) storageClz.getMethod("readForTest").invoke(null);
 
@@ -267,8 +278,10 @@ public class CompatibilityTest {
 
   @Test
   public void event_tag() throws Exception {
-    // Versions Prior to 15 Had a duration associated with an event that was removed before stability.  This means
-    // Classloading in PerfMark init can't find the MarkHolder.event() incompatibility between older and later versions.
+    // Versions Prior to 15 Had a duration associated with an event that was removed before
+    // stability.  This means
+    // Classloading in PerfMark init can't find the MarkHolder.event() incompatibility between older
+    // and later versions.
     Assume.assumeTrue(minorVersion >= STABLE_VERSION);
 
     Class<?> tagClz = Class.forName("io.perfmark.Tag", false, perfMarkClz.getClassLoader());
@@ -371,7 +384,9 @@ public class CompatibilityTest {
     perfMarkClz.getMethod("startTask", String.class).invoke(null, "task1");
     perfMarkClz.getMethod("attachTag", String.class, String.class).invoke(null, "name1", "val");
     perfMarkClz.getMethod("attachTag", String.class, long.class).invoke(null, "name2", 22L);
-    perfMarkClz.getMethod("attachTag", String.class, long.class, long.class).invoke(null, "uuid", 22L, 55L);
+    perfMarkClz
+        .getMethod("attachTag", String.class, long.class, long.class)
+        .invoke(null, "uuid", 22L, 55L);
     perfMarkClz.getMethod("stopTask", String.class).invoke(null, "task1");
 
     List marks = (List) storageClz.getMethod("readForTest").invoke(null);
@@ -383,26 +398,31 @@ public class CompatibilityTest {
   public void attachTag_namedFunction() throws Exception {
     Assume.assumeTrue(minorVersion >= 22);
 
-    Class<?> fnClz = Class.forName("io.perfmark.StringFunction", false, perfMarkClz.getClassLoader());
+    Class<?> fnClz =
+        Class.forName("io.perfmark.StringFunction", false, perfMarkClz.getClassLoader());
     Object fn =
-        Proxy.newProxyInstance(perfMarkClz.getClassLoader(), new Class<?>[]{fnClz}, (proxy, method, args) -> "hi");
+        Proxy.newProxyInstance(
+            perfMarkClz.getClassLoader(), new Class<?>[] {fnClz}, (proxy, method, args) -> "hi");
 
     perfMarkClz.getMethod("setEnabled", boolean.class).invoke(null, true);
 
     perfMarkClz.getMethod("startTask", String.class).invoke(null, "task1");
-    perfMarkClz.getMethod("attachTag", String.class, Object.class, fnClz).invoke(null, "name1", new Object(), fn);
+    perfMarkClz
+        .getMethod("attachTag", String.class, Object.class, fnClz)
+        .invoke(null, "name1", new Object(), fn);
     perfMarkClz.getMethod("stopTask", String.class).invoke(null, "task1");
 
     List marks = (List) storageClz.getMethod("readForTest").invoke(null);
 
     assertThat(marks).hasSize(3);
   }
-  
+
   private final class ApiOverrideClassLoader extends ClassLoader {
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
       if (name.startsWith("io.perfmark.")) {
-        for (var loader : List.of(new URLClassLoader(new URL[] {jarPath}, null), getClass().getClassLoader())) {
+        for (var loader :
+            List.of(new URLClassLoader(new URL[] {jarPath}, null), getClass().getClassLoader())) {
           try (var stream = loader.getResourceAsStream(name.replace('.', '/') + ".class")) {
             if (stream == null) {
               continue;
@@ -430,7 +450,8 @@ public class CompatibilityTest {
         if (name.startsWith("io.perfmark.impl.")) {
           throw new ClassNotFoundException(name);
         }
-        for (var loader : List.of(new URLClassLoader(new URL[] {jarPath}, null), getClass().getClassLoader())) {
+        for (var loader :
+            List.of(new URLClassLoader(new URL[] {jarPath}, null), getClass().getClassLoader())) {
           try (var stream = loader.getResourceAsStream(name.replace('.', '/') + ".class")) {
             if (stream == null) {
               continue;
