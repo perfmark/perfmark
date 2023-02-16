@@ -16,7 +16,6 @@
 
 package io.perfmark.tracewriter;
 
-import com.google.gson.annotations.SerializedName;
 import io.perfmark.impl.Mark;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -37,48 +36,39 @@ final class TraceEvent implements Cloneable {
 
   static final TraceEvent EVENT = new TraceEvent();
 
-  @SerializedName("ph")
   @SuppressWarnings("unused")
-  private String phase;
+  String phase;
 
-  @SerializedName("name")
   @SuppressWarnings("unused")
-  private String name;
+  String name;
 
   @Nullable
-  @SerializedName("cat")
   @SuppressWarnings("unused")
-  private String categories;
+  String categories;
 
   @Nullable
-  @SerializedName("ts")
   @SuppressWarnings("unused")
-  private Double traceClockMicros;
+  Double traceClockMicros;
 
   @Nullable
-  @SerializedName("pid")
   @SuppressWarnings("unused")
-  private Long pid;
-
-  @SerializedName("tid")
-  @Nullable
-  @SuppressWarnings("unused")
-  private Long tid;
+  Long pid;
 
   @Nullable
-  @SerializedName("id")
   @SuppressWarnings("unused")
-  private Long id;
+  Long tid;
 
   @Nullable
-  @SerializedName("args")
   @SuppressWarnings("unused")
-  private TagMap args = null;
+  Long id;
 
   @Nullable
-  @SerializedName("cname")
   @SuppressWarnings("unused")
-  private String colorName = null;
+  TagMap args = null;
+
+  @Nullable
+  @SuppressWarnings("unused")
+  String colorName = null;
 
   TraceEvent name(String name) {
     if (name == null) {

@@ -42,7 +42,9 @@ public class ClassInitBenchmark {
 
   @Setup
   public void setup() {
-    loader = new TestClassLoader(getClass().getClassLoader(), "io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
+    loader =
+        new TestClassLoader(
+            getClass().getClassLoader(), "io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl");
   }
 
   @Benchmark
@@ -63,7 +65,7 @@ public class ClassInitBenchmark {
 
     private final List<String> classesToDrop;
 
-    TestClassLoader(ClassLoader parent, String ... classesToDrop) {
+    TestClassLoader(ClassLoader parent, String... classesToDrop) {
       super(parent);
       this.classesToDrop = Arrays.asList(classesToDrop);
     }

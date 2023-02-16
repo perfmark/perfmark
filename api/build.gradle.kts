@@ -1,6 +1,7 @@
 @Suppress("DSL_SCOPE_VIOLATION") // See https://github.com/gradle/gradle/issues/22797
 plugins {
     alias(libs.plugins.jmh)
+    alias(libs.plugins.spotless)
 }
 
 buildscript {
@@ -28,7 +29,6 @@ tasks.named<JavaCompile>("compileJava") {
 }
 
 dependencies {
-    compileOnly(libs.jsr305)
     compileOnly(libs.errorprone)
 
     testImplementation(project(":perfmark-impl"))
@@ -37,6 +37,12 @@ dependencies {
 
     jmhImplementation(project(":perfmark-java9"))
     jmhImplementation(project(":perfmark-java7"))
+}
+
+spotless {
+    java {
+        googleJavaFormat(libs.versions.gjf.get())
+    }
 }
 
 tasks.named<JavaCompile>("compileTestJava") {

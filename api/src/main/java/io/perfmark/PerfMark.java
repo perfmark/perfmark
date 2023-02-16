@@ -41,22 +41,22 @@ import java.lang.reflect.Method;
  * System property {@code io.perfmark.PerfMark.startEnabled} to true.
  *
  * <p>Tasks represent the span of work done by some code, starting and stopping in the same thread.
- * Each task is started using one of the {@code startTask} methods, and ended using one of
- * {@code stopTask} methods.  Each start must have a corresponding stop.    While not required,
- * it is good practice for the start and stop calls have matching arguments for clarity.  Tasks
- * form a "tree", with each child task starting after the parent has started, and stopping before
- * the parent has stopped. The most recently started (and not yet stopped) task is used by the
- * tagging and linking commands described below.
+ * Each task is started using one of the {@code startTask} methods, and ended using one of {@code
+ * stopTask} methods. Each start must have a corresponding stop. While not required, it is good
+ * practice for the start and stop calls have matching arguments for clarity. Tasks form a "tree",
+ * with each child task starting after the parent has started, and stopping before the parent has
+ * stopped. The most recently started (and not yet stopped) task is used by the tagging and linking
+ * commands described below.
  *
- * <p>Tags are metadata about the task.  Each {@code Tag} contains a String and/or a long that
- * describes the task, such as an RPC name, or request ID.  When PerfMark is disabled, the Tag
- * objects are not created, avoiding overhead.  Tags are useful for keeping track of metadata
- * about a task(s) that doesn't change frequently, or needs to be applied at multiple layers.
- * In addition to Tag objects, named-tags can be added to the current task using the
- * {@code attachTag} methods.  These allow including key-value like metadata with the task.
+ * <p>Tags are metadata about the task. Each {@code Tag} contains a String and/or a long that
+ * describes the task, such as an RPC name, or request ID. When PerfMark is disabled, the Tag
+ * objects are not created, avoiding overhead. Tags are useful for keeping track of metadata about a
+ * task(s) that doesn't change frequently, or needs to be applied at multiple layers. In addition to
+ * Tag objects, named-tags can be added to the current task using the {@code attachTag} methods.
+ * These allow including key-value like metadata with the task.
  *
- * <p>Links allow the code to represent relationships between different threads.  When one thread
- * initiates work for another thread (such as a callback), Links express the control flow.  For
+ * <p>Links allow the code to represent relationships between different threads. When one thread
+ * initiates work for another thread (such as a callback), Links express the control flow. For
  * example:
  *
  * <pre>{@code
@@ -79,13 +79,13 @@ import java.lang.reflect.Method;
  * }</pre>
  *
  * <p>Links are created inside the scope of the current task and are linked into the scope of
- * another task.  PerfMark will represent the causal relationship between these two tasks.  Links
- * have a many-many relationship, and can be reused.  Like Tasks and Tags, when PerfMark is
- * disabled, the Links returned are no-op implementations.
+ * another task. PerfMark will represent the causal relationship between these two tasks. Links have
+ * a many-many relationship, and can be reused. Like Tasks and Tags, when PerfMark is disabled, the
+ * Links returned are no-op implementations.
  *
- * <p>Events are a special kind of Task, which do not have a duration.  In effect, they only have
- * a single timestamp the represents a particular occurrence.  Events are slightly more efficient
- * than tasks while PerfMark is enabled, but cannot be used with Links or named-tags.
+ * <p>Events are a special kind of Task, which do not have a duration. In effect, they only have a
+ * single timestamp the represents a particular occurrence. Events are slightly more efficient than
+ * tasks while PerfMark is enabled, but cannot be used with Links or named-tags.
  *
  * @author Carl Mastrangelo
  */
@@ -187,7 +187,7 @@ public final class PerfMark {
    *
    * <p>This function has many more caveats than the {@link #traceTask(String)} that accept a
    * string. See the docs at {@link #attachTag(String, Object, StringFunction)} for a list of risks
-   * associated with passing a function.  Unlike other closeables, it is not safe to call close()
+   * associated with passing a function. Unlike other closeables, it is not safe to call close()
    * more than once.
    *
    * @param taskNameObject the name of the task.
@@ -577,11 +577,12 @@ public final class PerfMark {
     if (err != null) {
       try {
         if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
-          // We need to be careful here, as it's easy to accidentally cause a class load.  Logger is loaded
-          // reflectively to avoid accidentally pulling it in.
+          // We need to be careful here, as it's easy to accidentally cause a class load.  Logger is
+          // loaded reflectively to avoid accidentally pulling it in.
           // TODO(carl-mastrangelo): Maybe make this load SLF4J instead?
           Class<?> logClass = Class.forName("java.util.logging.Logger");
-          Object logger = logClass.getMethod("getLogger", String.class).invoke(null, PerfMark.class.getName());
+          Object logger =
+              logClass.getMethod("getLogger", String.class).invoke(null, PerfMark.class.getName());
           Class<?> levelClass = Class.forName("java.util.logging.Level");
           Object level = levelClass.getField("FINE").get(null);
           Method logMethod = logClass.getMethod("log", levelClass, String.class, Throwable.class);
