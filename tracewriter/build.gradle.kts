@@ -4,8 +4,9 @@ buildscript {
     }
 }
 
+@Suppress("DSL_SCOPE_VIOLATION") // See https://github.com/gradle/gradle/issues/22797
 plugins {
-    id("com.diffplug.spotless").version("6.15.0")
+    alias(libs.plugins.spotless)
 }
 
 description = "PerfMark Tracer Output"

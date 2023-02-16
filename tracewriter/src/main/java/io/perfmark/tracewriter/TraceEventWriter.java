@@ -455,6 +455,7 @@ public final class TraceEventWriter {
     }
 
     @Override
+    @SuppressWarnings("LabelledBreakTarget") // Breaks are actually a good thing.
     protected void onAttachTag(Mark mark) {
       if (taskStack.isEmpty()) {
         // In a mark list of only links (i.e. no starts or ends) it's possible there are no tasks

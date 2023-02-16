@@ -31,9 +31,7 @@ public final class TaskCloseable implements Closeable {
 
   static final TaskCloseable INSTANCE = new TaskCloseable();
 
-  /**
-   * Stops the opened task.   See {@link PerfMark#traceTask(String)}.
-   */
+  /** Stops the opened task. See {@link PerfMark#traceTask(String)}. */
   @Override
   public void close() {
     PerfMark.stopTask();
