@@ -19,9 +19,6 @@ package io.perfmark.tracewriter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonIOException;
 import com.google.gson.annotations.SerializedName;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
@@ -50,7 +47,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Writes the PerfMark results to a "Trace Event" JSON file usable by the Chromium Profiler
  * "Catapult". The format is defined at
- * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview
+ * <a href="https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview">...</a>
  *
  * <p>This code is <strong>NOT</strong> API stable, and may be removed in the future, or changed
  * without notice.
@@ -88,7 +85,7 @@ public final class TraceEventWriter {
   }
 
   /**
-   * Writes all trace events in in JSON format to the given destination.
+   * Writes all trace events in JSON format to the given destination.
    *
    * @param destination the destination for the JSON data.
    * @throws IOException if there are errors build the JSON, or can't write to the destination.
@@ -119,12 +116,90 @@ public final class TraceEventWriter {
       throws IOException {
     List<TraceEvent> traceEvents = new ArrayList<>();
     new TraceEventWalker(traceEvents, pid, initNanoTime).walk(markLists, nowNanoTime);
-    Gson gson = new GsonBuilder().create();
-    try {
-      gson.toJson(new TraceEventObject(traceEvents), destination);
-    } catch (JsonIOException e) {
-      throw new IOException(e);
+    writeTraceEventObject(destination, traceEvents);
+  }
+
+  private static void writeTraceEventObject(Writer dest, List<TraceEvent> events) throws IOException {
+    dest.write('{');
+    writeString(dest, "traceEvents");
+    dest.write(":[");
+    boolean firstEvent = true;
+    for (TraceEvent evt : events) {
+      firstEvent = maybeAddComment(dest, firstEvent);
+      dest.write('{');
+      boolean firstField = true;
+      if (evt.phase != null) {
+        writeString(dest, "ph");
+        dest.write(":");
+        writeString(dest, evt.phase);
+        firstField = false;
+      }
+      if (evt.name != null) {
+        firstField = maybeAddComment(dest, firstField);
+        writeString(dest, "name");
+        dest.write(":");
+        writeString(dest, evt.name);
+      }
+      if (evt.categories != null) {
+        firstField = maybeAddComment(dest, firstField);
+        writeString(dest, "cat");
+        dest.write(":");
+        writeString(dest, evt.categories);
+      }
+      if (evt.traceClockMicros != null) {
+        firstField = maybeAddComment(dest, firstField);
+        writeString(dest, "ts");
+        dest.write(":");
+        dest.write(evt.traceClockMicros.toString());
+      }
+      if (evt.pid != null) {
+        firstField = maybeAddComment(dest, firstField);
+        writeString(dest, "pid");
+        dest.write(":");
+        dest.write(evt.pid.toString());
+      }
+      if (evt.tid != null) {
+        firstField = maybeAddComment(dest, firstField);
+        writeString(dest, "tid");
+        dest.write(":");
+        dest.write(evt.tid.toString());
+      }
+      if (evt.id != null) {
+        firstField = maybeAddComment(dest, firstField);
+        writeString(dest, "id");
+        dest.write(":");
+        dest.write(evt.id.toString());
+      }
+      if (evt.args != null && !evt.args.isEmpty()) {
+        firstField = maybeAddComment(dest, firstField);
+        writeString(dest, "args");
+        dest.write(":{");
+        boolean firstTag = true;
+        for (Map.Entry<String, Object> arg : evt.args.entrySet()) {
+          firstTag = maybeAddComment(dest, firstTag);
+          writeString(dest, arg.getKey());
+          dest.write(":");
+          if (arg.getValue() instanceof String) {
+            writeString(dest, (String) arg.getValue());
+          } else if (arg.getValue() instanceof Long) {
+            dest.write(arg.getValue().toString());
+          } else {
+            throw new UnsupportedOperationException("Unknown type " + arg.getValue());
+          }
+        }
+        dest.write('}');
+      }
+      dest.write('}');
     }
+    dest.write("]");
+    dest.write('}');
+  }
+
+  private static boolean maybeAddComment(Writer writer, boolean firstOf) throws IOException {
+    if (!firstOf) {
+      writer.append(',');
+    }
+    return false;
   }
 
   private static Path pickNextDest(Path dir) throws IOException {
@@ -535,5 +610,55 @@ public final class TraceEventWriter {
         throw new UnsupportedOperationException(mark.toString());
     }
     throw new AssertionError(mark.getOperation());
+  }
+
+  private static final String HEX_TABLE = "0123456789abcdef";
+
+
+
+  private static void writeString(Writer writer, String s) throws IOException {
+    writer.write('"');
+    // See comments in GSON's JsonWriter for where this table comes from.
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      if (c == '\b') {
+        writer.write("\\b");
+      } else if (c == '\t') {
+        writer.write("\\t");
+      } else if (c == '\n') {
+        writer.write("\\n");
+      } else if (c == '\f') {
+        writer.write("\\f");
+      } else if (c == '\r') {
+        writer.write("\\r");
+      } else if (c < 0x10) {
+        writer.write("\\u000");
+        writer.write(HEX_TABLE.charAt(c));
+      } else if (c < 0x20) {
+        writer.write("\\u001");
+        writer.write(HEX_TABLE.charAt(c - 0x10));
+      } else if (c == '"') {
+        writer.write("\\\"");
+      } else if (c == '\\') {
+        writer.write("\\\\");
+      } else if (c == '\u2028') {
+        writer.write("\\u2028");
+      } else if (c == '\u2029') {
+        writer.write("\\u2029");
+      } else if (c == '<') {
+        writer.write("\\u003c");
+      } else if (c == '>') {
+        writer.write("\\u003e");
+      } else if (c == '&') {
+        writer.write("\\u0026");
+      } else if (c == '=') {
+        writer.write("\\u003d");
+      } else if (c == '\'') {
+        writer.write("\\u0027");
+      } else {
+        writer.write(c);
+      }
+    }
+    writer.write('"');
   }
 }

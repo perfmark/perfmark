@@ -39,46 +39,46 @@ final class TraceEvent implements Cloneable {
 
   @SerializedName("ph")
   @SuppressWarnings("unused")
-  private String phase;
+  String phase;
 
   @SerializedName("name")
   @SuppressWarnings("unused")
-  private String name;
+  String name;
 
   @Nullable
   @SerializedName("cat")
   @SuppressWarnings("unused")
-  private String categories;
+  String categories;
 
   @Nullable
   @SerializedName("ts")
   @SuppressWarnings("unused")
-  private Double traceClockMicros;
+  Double traceClockMicros;
 
   @Nullable
   @SerializedName("pid")
   @SuppressWarnings("unused")
-  private Long pid;
+  Long pid;
 
   @SerializedName("tid")
   @Nullable
   @SuppressWarnings("unused")
-  private Long tid;
+  Long tid;
 
   @Nullable
   @SerializedName("id")
   @SuppressWarnings("unused")
-  private Long id;
+  Long id;
 
   @Nullable
   @SerializedName("args")
   @SuppressWarnings("unused")
-  private TagMap args = null;
+  TagMap args = null;
 
   @Nullable
   @SerializedName("cname")
   @SuppressWarnings("unused")
-  private String colorName = null;
+  String colorName = null;
 
   TraceEvent name(String name) {
     if (name == null) {
