@@ -38,6 +38,7 @@ dependencyResolutionManagement {
             library("jmhcore", "org.openjdk.jmh", "jmh-core").versionRef("jmh")
             library("jmhanno", "org.openjdk.jmh", "jmh-generator-annprocess").versionRef("jmh")
 
+            version("gjf", "1.15.0")
 
             plugin("spotless", "com.diffplug.spotless").version("6.15.0")
             plugin("errorprone", "net.ltgt.errorprone").version("3.0.1")

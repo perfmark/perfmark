@@ -578,8 +578,7 @@ public final class PerfMark {
       try {
         if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
           // We need to be careful here, as it's easy to accidentally cause a class load.  Logger is
-          // loaded
-          // reflectively to avoid accidentally pulling it in.
+          // loaded reflectively to avoid accidentally pulling it in.
           // TODO(carl-mastrangelo): Maybe make this load SLF4J instead?
           Class<?> logClass = Class.forName("java.util.logging.Logger");
           Object logger =

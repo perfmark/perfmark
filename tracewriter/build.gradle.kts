@@ -26,7 +26,7 @@ dependencies {
 
 spotless {
     java {
-        googleJavaFormat()
+        googleJavaFormat(libs.versions.gjf.get())
     }
 }
 
