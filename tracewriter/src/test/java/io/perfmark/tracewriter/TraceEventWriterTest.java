@@ -66,16 +66,48 @@ public class TraceEventWriterTest {
     event3.tid = 99L;
     event3.pid = 100L;
     //event2.
-    Map<String, List<TestTraceEvent>> expected = Map.of("traceEvents", List.of(event1, event2, event3));
+    TestTraceObject expected = new TestTraceObject();
+    expected.traceEvents = List.of(event1, event2, event3);
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try (var osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8)) {
       TraceEventWriter.writeTraceEvents(osw, markLists, 1234, 5678, 100);
     }
-    Map<String, List<TestTraceEvent>> map =
+    TestTraceObject map =
         new ObjectMapper().readValue(baos.toByteArray(), new TypeReference<>() {});
 
     assertEquals(expected, map);
+  }
+  public static final class TestTraceObject {
+    public List<TestTraceEvent> traceEvents;
+    public String displayTimeUnit = "ns";
+    public String systemTraceEvents = "";
+    public List<?> samples = List.of();
+    public Map<String, ?> stackFrames = Map.of();
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      TestTraceObject that = (TestTraceObject) o;
+      return Objects.equals(traceEvents, that.traceEvents) && Objects.equals(displayTimeUnit, that.displayTimeUnit) && Objects.equals(systemTraceEvents, that.systemTraceEvents) && Objects.equals(samples, that.samples) && Objects.equals(stackFrames, that.stackFrames);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(traceEvents, displayTimeUnit, systemTraceEvents, samples, stackFrames);
+    }
+
+    @Override
+    public String toString() {
+      return "TestTraceObject{" +
+          "traceEvents=" + traceEvents +
+          ", displayTimeUnit='" + displayTimeUnit + '\'' +
+          ", systemTraceEvents='" + systemTraceEvents + '\'' +
+          ", samples=" + samples +
+          ", stackFrames=" + stackFrames +
+          '}';
+    }
   }
 
   public static final class TestTraceEvent {
