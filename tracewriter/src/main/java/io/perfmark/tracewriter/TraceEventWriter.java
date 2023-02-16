@@ -19,7 +19,6 @@ package io.perfmark.tracewriter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.gson.annotations.SerializedName;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.Storage;
@@ -261,23 +260,18 @@ public final class TraceEventWriter {
   }
 
   static final class TraceEventObject {
-    @SerializedName("traceEvents")
     @SuppressWarnings("unused")
     final List<TraceEvent> traceEvents;
 
-    @SerializedName("displayTimeUnit")
     @SuppressWarnings("unused")
     final String displayTimeUnit = "ns";
 
-    @SerializedName("systemTraceEvents")
     @SuppressWarnings("unused")
     final String systemTraceData = "";
 
-    @SerializedName("samples")
     @SuppressWarnings("unused")
     final List<Object> samples = new ArrayList<>();
 
-    @SerializedName("stackFrames")
     @SuppressWarnings("unused")
     final Map<String, ?> stackFrames = new HashMap<>();
 
