@@ -37,16 +37,18 @@ import org.junit.runners.JUnit4;
 public class TraceEventWriterTest {
   @Test
   public void writeAndParse() throws Exception {
-    List<MarkList> markLists = List.of(MarkList.newBuilder()
-            .setMarkListId(9)
-            .setThreadId(99)
-            .setThreadName("Billy")
-            .setMarks(
-                List.of(
-                    Mark.taskStart(1, 2345, "allbadd<>\\//\"'"),
-                    Mark.keyedTag(1, "hello", "world"),
-                    Mark.taskEnd(1, 2347)))
-        .build());
+    List<MarkList> markLists =
+        List.of(
+            MarkList.newBuilder()
+                .setMarkListId(9)
+                .setThreadId(99)
+                .setThreadName("Billy")
+                .setMarks(
+                    List.of(
+                        Mark.taskStart(1, 2345, "allbadd<>\\//\"'"),
+                        Mark.keyedTag(1, "hello", "world"),
+                        Mark.taskEnd(1, 2347)))
+                .build());
     TestTraceEvent event1 = new TestTraceEvent();
     event1.name = "thread_name";
     event1.phase = "M";
@@ -65,7 +67,7 @@ public class TraceEventWriterTest {
     event3.traceClockMicros = 1.113;
     event3.tid = 99L;
     event3.pid = 100L;
-    //event2.
+    // event2.
     TestTraceObject expected = new TestTraceObject();
     expected.traceEvents = List.of(event1, event2, event3);
 
@@ -78,6 +80,7 @@ public class TraceEventWriterTest {
 
     assertEquals(expected, map);
   }
+
   public static final class TestTraceObject {
     public List<TestTraceEvent> traceEvents;
     public String displayTimeUnit = "ns";
@@ -90,7 +93,11 @@ public class TraceEventWriterTest {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
       TestTraceObject that = (TestTraceObject) o;
-      return Objects.equals(traceEvents, that.traceEvents) && Objects.equals(displayTimeUnit, that.displayTimeUnit) && Objects.equals(systemTraceEvents, that.systemTraceEvents) && Objects.equals(samples, that.samples) && Objects.equals(stackFrames, that.stackFrames);
+      return Objects.equals(traceEvents, that.traceEvents)
+          && Objects.equals(displayTimeUnit, that.displayTimeUnit)
+          && Objects.equals(systemTraceEvents, that.systemTraceEvents)
+          && Objects.equals(samples, that.samples)
+          && Objects.equals(stackFrames, that.stackFrames);
     }
 
     @Override
@@ -100,13 +107,20 @@ public class TraceEventWriterTest {
 
     @Override
     public String toString() {
-      return "TestTraceObject{" +
-          "traceEvents=" + traceEvents +
-          ", displayTimeUnit='" + displayTimeUnit + '\'' +
-          ", systemTraceEvents='" + systemTraceEvents + '\'' +
-          ", samples=" + samples +
-          ", stackFrames=" + stackFrames +
-          '}';
+      return "TestTraceObject{"
+          + "traceEvents="
+          + traceEvents
+          + ", displayTimeUnit='"
+          + displayTimeUnit
+          + '\''
+          + ", systemTraceEvents='"
+          + systemTraceEvents
+          + '\''
+          + ", samples="
+          + samples
+          + ", stackFrames="
+          + stackFrames
+          + '}';
     }
   }
 
@@ -174,17 +188,30 @@ public class TraceEventWriterTest {
 
     @Override
     public String toString() {
-      return "TestTraceEvent{" +
-          ", phase='" + phase + '\'' +
-          ", name='" + name + '\'' +
-          ", categories='" + categories + '\'' +
-          ", traceClockMicros=" + traceClockMicros +
-          ", pid=" + pid +
-          ", tid=" + tid +
-          ", id=" + id +
-          ", args=" + args +
-          ", colorName='" + colorName + '\'' +
-          '}';
+      return "TestTraceEvent{"
+          + ", phase='"
+          + phase
+          + '\''
+          + ", name='"
+          + name
+          + '\''
+          + ", categories='"
+          + categories
+          + '\''
+          + ", traceClockMicros="
+          + traceClockMicros
+          + ", pid="
+          + pid
+          + ", tid="
+          + tid
+          + ", id="
+          + id
+          + ", args="
+          + args
+          + ", colorName='"
+          + colorName
+          + '\''
+          + '}';
     }
   }
 }

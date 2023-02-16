@@ -45,8 +45,8 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * Writes the PerfMark results to a "Trace Event" JSON file usable by the Chromium Profiler
- * "Catapult". The format is defined at
- * <a href="https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview">...</a>
+ * "Catapult". The format is defined at <a
+ * href="https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview">...</a>
  *
  * <p>This code is <strong>NOT</strong> API stable, and may be removed in the future, or changed
  * without notice.
@@ -118,7 +118,8 @@ public final class TraceEventWriter {
     writeTraceEventObject(destination, traceEvents);
   }
 
-  private static void writeTraceEventObject(Writer dest, List<TraceEvent> events) throws IOException {
+  private static void writeTraceEventObject(Writer dest, List<TraceEvent> events)
+      throws IOException {
     dest.write('{');
     writeString(dest, "traceEvents");
     dest.write(":[");
@@ -607,8 +608,6 @@ public final class TraceEventWriter {
   }
 
   private static final String HEX_TABLE = "0123456789abcdef";
-
-
 
   private static void writeString(Writer writer, String s) throws IOException {
     writer.write('"');

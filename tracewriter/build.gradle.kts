@@ -4,6 +4,10 @@ buildscript {
     }
 }
 
+plugins {
+    id("com.diffplug.spotless").version("6.15.0")
+}
+
 description = "PerfMark Tracer Output"
 
 val jdkVersion = JavaVersion.VERSION_1_7
@@ -17,6 +21,12 @@ dependencies {
     compileOnly(libs.jsr305)
     compileOnly(libs.errorprone)
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
+}
+
+spotless {
+    java {
+        googleJavaFormat()
+    }
 }
 
 tasks.getByName<JavaCompile>("compileJava") {
