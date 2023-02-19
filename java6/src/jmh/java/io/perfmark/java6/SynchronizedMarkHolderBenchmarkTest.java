@@ -17,7 +17,8 @@
 package io.perfmark.java6;
 
 import io.perfmark.impl.MarkHolder;
-import io.perfmark.testing.MarkHolderBenchmark;
+import io.perfmark.impl.MarkRecorder;
+import io.perfmark.testing.MarkHolderRecorder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -64,10 +65,10 @@ public class SynchronizedMarkHolderBenchmarkTest {
   }
 
   @State(Scope.Thread)
-  public static class SynchronizedMarkHolderBenchmark extends MarkHolderBenchmark {
+  public static class SynchronizedMarkHolderBenchmark extends MarkHolderRecorder {
     @Override
-    public MarkHolder getMarkHolder() {
-      return new SynchronizedMarkHolderOld(16384);
+    public MarkRecorder getMarkRecorder() {
+      return new SynchronizedMarkRecorder(16384);
     }
   }
 }

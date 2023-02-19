@@ -20,7 +20,7 @@ import io.perfmark.impl.MarkRecorderProvider;
 import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.Storage;
 
-final class SecretSynchronizedMarkHolderProvider {
+final class SecretSynchronizedMarkRecorderProvider {
 
   public static final class SynchronizedMarkRecorderProvider extends MarkRecorderProvider {
 
@@ -35,7 +35,7 @@ final class SecretSynchronizedMarkHolderProvider {
     }
   }
 
-  private SecretSynchronizedMarkHolderProvider() {
+  private SecretSynchronizedMarkRecorderProvider() {
     throw new AssertionError("nope");
   }
 }

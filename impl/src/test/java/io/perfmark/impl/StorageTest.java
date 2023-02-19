@@ -45,48 +45,49 @@ public class StorageTest {
 
   @Test
   public void threadsCleanedUp() throws Exception {
-    Storage.clearLocalStorage();
-    final CountDownLatch latch = new CountDownLatch(1);
-    new Thread(
-            new Runnable() {
-              @Override
-              public void run() {
-                Storage.clearLocalStorage();
-                Storage.linkAnyway(4096, 1234);
-                latch.countDown();
-              }
-            })
-        .start();
+    Storage.resetForAll();
+    Storage.registerMarkHolder(new MarkHolder() {
+      @Override
+      public List<MarkList> read() {
+        return List.of(MarkList.newBuilder().setMarkRecorderId(1).setMarks(List.of()).setThreadName("name").build());
+      }
 
-    for (int i = 10; i < 5000; i += i / 2) {
-      latch.await(i, TimeUnit.MILLISECONDS);
-      System.gc();
-      System.runFinalization();
-    }
-
-    assertEquals(0, latch.getCount());
+      @Override
+      public void resetForAll() {
+        Storage.unregisterMarkHolder(this);
+      }
+    });
     List<MarkList> firstRead = Storage.read();
     assertEquals(1, firstRead.size());
-    // simulate an OOM
-    Storage.clearGlobalIndex();
-    List<MarkList> secondRead = Storage.read();
-    assertEquals(0, secondRead.size());
+    Storage.resetForAll();
+
+    for (int i = 10; i < 5000; i += i / 2) {
+      System.gc();
+      System.runFinalization();
+      List<MarkList> secondRead = Storage.read();
+      if (secondRead.size() != 0) {
+        Thread.sleep(i);
+      } else{
+        return;
+      }
+    }
+    throw new AssertionError("Didn't clean up");
   }
   
   @Test
   public void customMarkHolderImpl() throws Exception {
     Class<?> clz = runWithProperty(
         System.getProperties(),
-        "io.perfmark.PerfMark.markHolderProvider",
-        TestMarkHolderProvider.class.getName(),
+        "io.perfmark.PerfMark.markRecorderProvider",
+        TestMarkRecorderProvider.class.getName(),
         () -> Class.forName(Storage.class.getName(), true, new TestClassLoader(getClass().getClassLoader())));
 
-    Field field = clz.getDeclaredField("markHolderProvider");
+    Field field = clz.getDeclaredField("markRecorderProvider");
     field.setAccessible(true);
     Object value = field.get(null);
     assertNotNull(value);
     // Can't do instanceof, since class loaders are different.
-    assertEquals(TestMarkHolderProvider.class.getName(), value.getClass().getName());
+    assertEquals(TestMarkRecorderProvider.class.getName(), value.getClass().getName());
   }
   @Test
   public void logEnabled() throws Exception {
@@ -112,21 +113,21 @@ public class StorageTest {
       logger.setLevel(oldLevel);
     }
 
-    // This depends on the the classpath being set up correctly.
+    // This depends on the classpath being set up correctly.
     Truth.assertThat(logs).hasSize(3);
-    Truth.assertThat(logs.get(0).getMessage()).contains("Error loading MarkHolderProvider");
+    Truth.assertThat(logs.get(0).getMessage()).contains("Error loading MarkRecorderProvider");
     Truth.assertThat(logs.get(0).getThrown()).hasMessageThat()
-        .contains("io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider");
-    Truth.assertThat(logs.get(1).getMessage()).contains("Error loading MarkHolderProvider");
+        .contains("io.perfmark.java9.SecretVarHandleMarkRecorderProvider$VarHandleMarkRecorderProvider");
+    Truth.assertThat(logs.get(1).getMessage()).contains("Error loading MarkRecorderProvider");
     Truth.assertThat(logs.get(1).getThrown()).hasMessageThat()
-        .contains("io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider");
+        .contains("io.perfmark.java6.SecretSynchronizedMarkRecorderProvider$SynchronizedMarkRecorderProvider");
     Truth.assertThat(new SimpleFormatter().format(logs.get(2)))
-        .contains("Using io.perfmark.impl.NoopMarkHolderProvider");
+        .contains("Using io.perfmark.impl.NoopMarkRecorderProvider");
   }
 
-  public static final class TestMarkHolderProvider extends MarkRecorderProvider {
+  public static final class TestMarkRecorderProvider extends MarkRecorderProvider {
     @Override
-    public MarkHolder create(long markHolderId) {
+    public MarkRecorder createMarkRecorder(long markRecorderId) {
       throw new AssertionError();
     }
   }

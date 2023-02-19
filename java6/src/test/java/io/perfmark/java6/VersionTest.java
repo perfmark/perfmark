@@ -31,7 +31,7 @@ public class VersionTest {
 
   @Test
   public void blah() throws Exception {
-    Class<?> clz = SecretSynchronizedMarkHolderProvider.class;
+    Class<?> clz = SecretSynchronizedMarkRecorderProvider.class;
     try (InputStream stream =
         clz.getClassLoader().getResourceAsStream(clz.getName().replace('.', '/') + ".class")) {
       byte[] data = stream.readAllBytes();

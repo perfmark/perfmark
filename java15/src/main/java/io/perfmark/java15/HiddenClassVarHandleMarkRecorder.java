@@ -19,8 +19,12 @@ package io.perfmark.java15;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkList;
+import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.Storage;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,7 +34,7 @@ import java.util.Deque;
 import java.util.List;
 
 /** HiddenClassVarHandleMarkHolder is a MarkHolder optimized for wait free writes and few reads. */
-final class HiddenClassVarHandleMarkHolder extends MarkHolder {
+final class HiddenClassVarHandleMarkRecorder extends MarkRecorder {
   private static final long GEN_MASK = (1 << Generator.GEN_OFFSET) - 1;
   private static final long START_OP = 1; // Mark.Operation.TASK_START.ordinal();
   private static final long START_S_OP = 2;
@@ -52,7 +56,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolder {
   private static final VarHandle STRINGS;
   private static final VarHandle LONGS;
 
-  /** This is a magic number, read the top level doc for explanation. */
+  /** These are a magic number, read the top level doc for explanation. */
   static final int MAX_EVENTS = 0x7e3779b9;
   static final long MAX_EVENTS_MASK = MAX_EVENTS - 1;
 
@@ -68,7 +72,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolder {
 
   static {
     try {
-      IDX = MethodHandles.lookup().findStaticVarHandle(HiddenClassVarHandleMarkHolder.class, "idx", long.class);
+      IDX = MethodHandles.lookup().findStaticVarHandle(HiddenClassVarHandleMarkRecorder.class, "idx", long.class);
       STRINGS = MethodHandles.arrayElementVarHandle(String[].class);
       LONGS = MethodHandles.arrayElementVarHandle(long[].class);
     } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -76,14 +80,14 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolder {
     }
 
     try {
-      int maxEvents = (int) HiddenClassVarHandleMarkHolder.class.getDeclaredField("MAX_EVENTS").get(null);
+      int maxEvents = (int) HiddenClassVarHandleMarkRecorder.class.getDeclaredField("MAX_EVENTS").get(null);
       if (((maxEvents - 1) & maxEvents) != 0) {
         throw new IllegalArgumentException(maxEvents + " is not a power of two");
       }
       if (maxEvents <= 0) {
         throw new IllegalArgumentException(maxEvents + " is not positive");
       }
-      long maxEventsMask = (long) HiddenClassVarHandleMarkHolder.class.getDeclaredField("MAX_EVENTS_MASK").get(null);
+      long maxEventsMask = (long) HiddenClassVarHandleMarkRecorder.class.getDeclaredField("MAX_EVENTS_MASK").get(null);
       if (maxEvents - 1 != maxEventsMask) {
         throw new IllegalArgumentException(maxEvents + " doesn't match mask " + maxEventsMask);
       }
@@ -98,7 +102,8 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolder {
     genOps = new long[MAX_EVENTS];
   }
 
-  HiddenClassVarHandleMarkHolder() {}
+  HiddenClassVarHandleMarkRecorder() {
+  }
 
   @Override
   public void start(long gen, String taskName, String tagName, long tagId, long nanoTime) {
@@ -273,8 +278,111 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolder {
     VarHandle.storeStoreFence();
   }
 
-  @Override
-  public void resetForTest() {
+  static final class MarkHolderForward extends MarkHolder {
+
+    private final Class<? extends MarkRecorder> recorder;
+    private final long markRecorderId;
+    private final WeakReference<Thread> threadRef;
+    private volatile String threadName;
+    private volatile long threadId;
+
+    MarkHolderForward(long markRecorderId, Class<? extends MarkRecorder> recorder) {
+      this.recorder = recorder;
+      this.markRecorderId = markRecorderId;
+      Thread t = Thread.currentThread();
+      this.threadRef = new WeakReference<>(t);
+      this.threadName = t.getName();
+      this.threadId = t.getId();
+    }
+
+    @Override
+    public void resetForThread() {
+      if (threadRef.get() == null) {
+        Storage.unregisterMarkHolder(this);
+      }
+      if (threadRef.get() != Thread.currentThread()) {
+        return;
+      }
+      try {
+        var method = recorder.getDeclaredMethod("resetForThread");
+        method.invoke(null);
+      } catch (ReflectiveOperationException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public void resetForAll() {
+      if (threadRef.get() == null) {
+        Storage.unregisterMarkHolder(this);
+      }
+      if (threadRef.get() != Thread.currentThread()) {
+        return;
+      }
+      try {
+        var method = recorder.getDeclaredMethod("resetForThread");
+        method.invoke(null);
+      } catch (ReflectiveOperationException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<MarkList> read() {
+      Thread t = threadRef.get();
+      List<Mark> marks;
+      try {
+        var method = recorder.getDeclaredMethod("read", boolean.class);
+        marks = (List<Mark>) method.invoke(null, !(t == Thread.currentThread() || t == null));
+      } catch (ReflectiveOperationException e) {
+        throw new RuntimeException(e);
+      }
+      if (marks.isEmpty()) {
+        return Collections.emptyList();
+      }
+      return List.of(
+          MarkList.newBuilder()
+              .setMarks(marks)
+              .setThreadId(getAndUpdateThreadId())
+              .setThreadName(getAndUpdateThreadName())
+              .setMarkRecorderId(markRecorderId)
+              .build());
+    }
+
+    @Override
+    public int maxMarks() {
+      // TODO(carl-mastrangelo): propagate this from the provider
+      return 32768;
+    }
+
+    private String getAndUpdateThreadName() {
+      Thread t = threadRef.get();
+      String name;
+      if (t != null) {
+        threadName = (name = t.getName());
+      } else {
+        name = threadName;
+      }
+      return name;
+    }
+
+    /**
+     * Some threads change their id over time, so we need to sync it if available.
+     */
+    private long getAndUpdateThreadId() {
+      Thread t = threadRef.get();
+      long id;
+      if (t != null) {
+        threadId = (id = t.getId());
+      } else {
+        id = threadId;
+      }
+      return id;
+    }
+  }
+
+  static void resetForThread() {
     Arrays.fill(taskNames, null);
     Arrays.fill(tagNames, null);
     Arrays.fill(tagIds, 0);
@@ -284,8 +392,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolder {
     VarHandle.storeStoreFence();
   }
 
-  @Override
-  public List<Mark> read(boolean concurrentWrites) {
+  static List<Mark> read(boolean concurrentWrites) {
     final String[] localTaskNames = new String[MAX_EVENTS];
     final String[] localTagNames = new String[MAX_EVENTS];
     final long[] localTagIds = new long[MAX_EVENTS];
@@ -382,12 +489,6 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolder {
           throw new ConcurrentModificationException("Read of storage was not threadsafe " + opVal);
       }
     }
-
     return Collections.unmodifiableList(new ArrayList<>(marks));
-  }
-
-  @Override
-  public int maxMarks() {
-    return MAX_EVENTS;
   }
 }

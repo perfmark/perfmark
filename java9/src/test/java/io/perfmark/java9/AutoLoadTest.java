@@ -34,7 +34,7 @@ import org.junit.runners.JUnit4;
 public class AutoLoadTest {
   @Test
   public void autoLoad() throws Exception {
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
     PerfMark.setEnabled(true);
     PerfMark.startTask("hi");
     PerfMark.stopTask("hi");

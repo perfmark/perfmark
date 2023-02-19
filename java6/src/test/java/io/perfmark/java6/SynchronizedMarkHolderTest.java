@@ -17,15 +17,25 @@
 package io.perfmark.java6;
 
 import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkRecorder;
 import io.perfmark.testing.MarkHolderTest;
+import java.util.Random;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class SynchronizedMarkHolderTest extends MarkHolderTest  {
 
+
+  private final SynchronizedMarkRecorder recorder = new SynchronizedMarkRecorder(1);
+
+  @Override
+  protected MarkRecorder getMarkRecorder() {
+    return recorder;
+  }
+
   @Override
   protected MarkHolder getMarkHolder() {
-    return new SynchronizedMarkHolderOld();
+    return recorder.markHolder;
   }
 }

@@ -21,6 +21,7 @@ import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.Storage;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
@@ -290,14 +291,34 @@ final class VarHandleMarkRecorder extends MarkRecorder {
     }
 
     @Override
-    public void resetForTest() {
-      VarHandleMarkRecorder.this.resetForTest();
+    public void resetForThread() {
+      if (threadRef.get() == null) {
+        Storage.unregisterMarkHolder(this);
+      }
+      if (Thread.currentThread() != threadRef.get()) {
+        return;
+      }
+      VarHandleMarkRecorder.this.resetForThread();
+    }
+
+    @Override
+    public void resetForAll() {
+      if (threadRef.get() == null) {
+        Storage.unregisterMarkHolder(this);
+      }
+      if (Thread.currentThread() != threadRef.get()) {
+        return;
+      }
+      VarHandleMarkRecorder.this.resetForThread();
     }
 
     @Override
     public List<MarkList> read() {
       Thread t = threadRef.get();
       List<Mark> marks = VarHandleMarkRecorder.this.read(!(t == Thread.currentThread() || t == null));
+      if (marks.isEmpty()) {
+        return Collections.emptyList();
+      }
       return List.of(
           MarkList.newBuilder()
               .setMarks(marks)
@@ -339,7 +360,7 @@ final class VarHandleMarkRecorder extends MarkRecorder {
     }
   }
 
-  void resetForTest() {
+  void resetForThread() {
     Arrays.fill(taskNames, null);
     Arrays.fill(tagNames, null);
     Arrays.fill(tagIds, 0);
@@ -446,7 +467,6 @@ final class VarHandleMarkRecorder extends MarkRecorder {
           throw new ConcurrentModificationException("Read of storage was not threadsafe " + opVal);
       }
     }
-
     return Collections.unmodifiableList(new ArrayList<>(marks));
   }
 }

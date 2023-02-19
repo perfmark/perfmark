@@ -26,7 +26,20 @@ public abstract class MarkHolder {
 
   public static final int NO_MAX_MARKS = -1;
 
-  public abstract void resetForTest();
+  /**
+   * Attempts to remove all Marks for the calling thread.
+   *
+   */
+  public void resetForThread() {
+    // noop
+  }
+
+  /**
+   * Attempts to remove all Marks in this mark holder.
+   */
+  public void resetForAll() {
+    // noop
+  }
 
   public abstract List<MarkList> read();
 

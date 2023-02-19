@@ -30,7 +30,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
 @State(Scope.Thread)
-public class MarkHolderBenchmark {
+public class MarkHolderRecorder {
 
   private static final long gen = 1 << Generator.GEN_OFFSET;
   private static final String taskName = "hiya";

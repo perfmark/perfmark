@@ -34,8 +34,8 @@ public class ArtifactTest {
     List<String> reflectiveClasses =
         List.of(
             "io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl",
-            "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider",
-            "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkHolderProvider",
+            "io.perfmark.java9.SecretVarHandleMarkRecorderProvider$VarHandleMarkRecorderProvider",
+            "io.perfmark.java6.SecretSynchronizedMarkRecorderProvider$SynchronizedMarkRecorderProvider",
             "io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator"
             );
     for (String reflectiveClass : reflectiveClasses) {

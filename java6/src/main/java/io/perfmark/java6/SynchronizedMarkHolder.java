@@ -21,6 +21,7 @@ import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
+import io.perfmark.impl.Storage;
 import java.lang.ref.WeakReference;
 import java.util.AbstractCollection;
 import java.util.ArrayDeque;
@@ -121,11 +122,22 @@ final class SynchronizedMarkHolder extends MarkHolder {
   }
 
   @Override
-  public synchronized void resetForTest() {
+  public synchronized void resetForThread() {
+    if (threadReference.get() == null) {
+      Storage.unregisterMarkHolder(this);
+    }
+    if (threadReference.get() != Thread.currentThread()) {
+      return;
+    }
     Arrays.fill(nums, 0);
     Arrays.fill(strings, null);
     nIdx = 0;
     sIdx = 0;
+  }
+
+  @Override
+  public synchronized void resetForAll() {
+    resetForThread();
   }
 
   @Override
@@ -249,6 +261,9 @@ final class SynchronizedMarkHolder extends MarkHolder {
         case NONE:
           throw new UnsupportedOperationException();
       }
+    }
+    if (marks.isEmpty()) {
+      return Collections.emptyList();
     }
     MarkList marksList = MarkList.newBuilder()
         .setMarkRecorderId(markRecorderId)

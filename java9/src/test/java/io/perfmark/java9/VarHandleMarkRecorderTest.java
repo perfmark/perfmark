@@ -42,13 +42,14 @@ public class VarHandleMarkRecorderTest extends MarkHolderTest {
     return markHolder;
   }
 
-  public MarkRecorder getRecorder() {
+  @Override
+  public MarkRecorder getMarkRecorder() {
     return recorder;
   }
 
   @Test
   public void read_getsAllButLastIfNotWriter() {
-    MarkRecorder mr = getRecorder();
+    MarkRecorder mr = getMarkRecorder();
     int events = markHolder.maxMarks() - 1;
     for (int i = 0; i < events; i++) {
       mr.start(gen, "task", 3);
@@ -56,12 +57,12 @@ public class VarHandleMarkRecorderTest extends MarkHolderTest {
 
     List<MarkList> markLists = markHolder.read();
     assertEquals(markLists.size(), 1);
-    assertEquals(events - 1, markLists.get(0).size());
+    assertEquals(events, markLists.get(0).size());
   }
 
   @Test
   public void read_getsAllIfNotWriterButNoWrap() {
-    MarkRecorder mr = getRecorder();
+    MarkRecorder mr = getMarkRecorder();
 
     int events = markHolder.maxMarks() - 2;
     for (int i = 0; i < events; i++) {

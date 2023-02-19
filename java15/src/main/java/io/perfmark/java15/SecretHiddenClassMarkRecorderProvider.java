@@ -16,8 +16,9 @@
 
 package io.perfmark.java15;
 
-import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.MarkRecorderProvider;
+import io.perfmark.impl.Storage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
@@ -25,8 +26,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-public final class SecretHiddenClassMarkHolderProvider {
-  public static final class HiddenClassMarkHolderProvider extends MarkRecorderProvider {
+public final class SecretHiddenClassMarkRecorderProvider {
+  public static final class HiddenClassMarkRecorderProvider extends MarkRecorderProvider {
     private static final int DEFAULT_SIZE = 32768;
 
     private final int[] maxEventsOffsets;
@@ -34,15 +35,15 @@ public final class SecretHiddenClassMarkHolderProvider {
 
     private final byte[] markHolderClassData;
 
-    public HiddenClassMarkHolderProvider() {
-      try (InputStream classData = getClass().getResourceAsStream("HiddenClassVarHandleMarkHolder.class")) {
+    public HiddenClassMarkRecorderProvider() {
+      try (InputStream classData = getClass().getResourceAsStream("HiddenClassVarHandleMarkRecorder.class")) {
         markHolderClassData = classData.readAllBytes();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
 
       ByteBuffer expectedMaxEvents = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN);
-      expectedMaxEvents.putInt(HiddenClassVarHandleMarkHolder.MAX_EVENTS);
+      expectedMaxEvents.putInt(HiddenClassVarHandleMarkRecorder.MAX_EVENTS);
       byte[] maxEvents = expectedMaxEvents.array();
       maxEventsOffsets = findOffsets(markHolderClassData, maxEvents);
       if (maxEventsOffsets.length != 2) {
@@ -50,7 +51,7 @@ public final class SecretHiddenClassMarkHolderProvider {
       }
 
       ByteBuffer expectedMaxEventsMask = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN);
-      expectedMaxEventsMask.putLong(HiddenClassVarHandleMarkHolder.MAX_EVENTS_MASK);
+      expectedMaxEventsMask.putLong(HiddenClassVarHandleMarkRecorder.MAX_EVENTS_MASK);
       byte[] maxEventsMax = expectedMaxEventsMask.array();
       maxEventsMaskOffsets = findOffsets(markHolderClassData, maxEventsMax);
       if (maxEventsMaskOffsets.length != 1) {
@@ -61,11 +62,11 @@ public final class SecretHiddenClassMarkHolderProvider {
     }
 
     @Override
-    public MarkHolder create(long markHolderId) {
-      return create(markHolderId, DEFAULT_SIZE);
+    public MarkRecorder createMarkRecorder(long markRecorderId) {
+      return create(markRecorderId, DEFAULT_SIZE);
     }
 
-    MarkHolder create(long markHolderId, int size) {
+    MarkRecorder create(long markRecorderId, int size) {
       final byte[] classData;
       if (size != DEFAULT_SIZE) {
         classData = Arrays.copyOf(markHolderClassData, markHolderClassData.length);
@@ -74,8 +75,11 @@ public final class SecretHiddenClassMarkHolderProvider {
         classData = markHolderClassData;
       }
       try {
-        Class<?> clz = MethodHandles.lookup().defineHiddenClass(classData, true).lookupClass();
-        return clz.asSubclass(MarkHolder.class).getDeclaredConstructor().newInstance();
+        Class<? extends MarkRecorder> clz =
+            MethodHandles.lookup().defineHiddenClass(classData, true).lookupClass().asSubclass(MarkRecorder.class);
+        var holder = new HiddenClassVarHandleMarkRecorder.MarkHolderForward(markRecorderId, clz);
+        Storage.registerMarkHolder(holder);
+        return clz.getDeclaredConstructor().newInstance();
       } catch (ReflectiveOperationException e) {
         throw new RuntimeException(e);
       }
@@ -106,5 +110,5 @@ public final class SecretHiddenClassMarkHolderProvider {
     }
   }
 
-  private SecretHiddenClassMarkHolderProvider() {}
+  private SecretHiddenClassMarkRecorderProvider() {}
 }

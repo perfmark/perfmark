@@ -18,12 +18,14 @@ package io.perfmark.impl;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -72,7 +74,7 @@ public final class Storage {
       try {
         Class<?> clz =
             Class.forName(
-                "io.perfmark.java9.SecretVarHandleMarkHolderProvider$VarHandleMarkHolderProvider");
+                "io.perfmark.java9.SecretVarHandleMarkRecorderProvider$VarHandleMarkRecorderProvider");
         provider = clz.asSubclass(MarkRecorderProvider.class).getConstructor().newInstance();
       } catch (Throwable t) {
         problems[1] = t;
@@ -82,7 +84,7 @@ public final class Storage {
       try {
         Class<?> clz =
             Class.forName(
-                "io.perfmark.java6.SecretSynchronizedMarkHolderProvider$SynchronizedMarkRecorderProvider");
+                "io.perfmark.java6.SecretSynchronizedMarkRecorderProvider$SynchronizedMarkRecorderProvider");
         provider = clz.asSubclass(MarkRecorderProvider.class).getConstructor().newInstance();
       } catch (Throwable t) {
         problems[2] = t;
@@ -106,7 +108,7 @@ public final class Storage {
           if (problem == null) {
             continue;
           }
-          logProblemMethod.invoke(logger, level, "Error loading MarkHolderProvider", problem);
+          logProblemMethod.invoke(logger, level, "Error loading MarkRecorderProvider", problem);
         }
         Method logSuccessMethod = logClass.getMethod("log", levelClass, String.class, Object[].class);
         logSuccessMethod.invoke(logger, level, "Using {0}", new Object[] {markRecorderProvider.getClass().getName()});
@@ -121,7 +123,7 @@ public final class Storage {
   }
 
   /**
-   * Returns a list of {@link MarkList}s across all reachable threads.
+   * Returns a list of {@link MarkList}s across all reachable threads.  MarkLists with no Marks may be removed.
    *
    * @return all reachable MarkLists.
    */
@@ -129,15 +131,15 @@ public final class Storage {
     long lastReset = lastGlobalIndexClear;
     List<MarkList> markLists = new ArrayList<MarkList>();
     for (Iterator<Reference<MarkHolder>> it = allMarkHolders.values().iterator(); it.hasNext();) {
-      Reference<MarkHolder> markHolderReference = it.next();
-      MarkHolder markHolder = markHolderReference.get();
+      Reference<MarkHolder> ref = it.next();
+      MarkHolder markHolder = ref.get();
       if (markHolder == null) {
         it.remove();
         continue;
       }
       markHolder.read(markLists);
     }
-    // Avoid doing this in the loop to avoid tearing the reads too much.
+    // Avoid doing this in the upper loop to avoid tearing the reads too much.
     Set<Long> markRecorderIds = new HashSet<Long>(markLists.size());
     for (MarkList list : markLists) {
       if (!markRecorderIds.add(list.getMarkRecorderId())) {
@@ -148,96 +150,138 @@ public final class Storage {
   }
 
   static void startAnyway(long gen, String taskName, String tagName, long tagId) {
-    localMarkRecorder.getOrCreate().start(gen, taskName, tagName, tagId, System.nanoTime());
+    localMarkRecorder.get().start(gen, taskName, tagName, tagId, System.nanoTime());
   }
 
   static void startAnyway(long gen, String taskName) {
-    localMarkRecorder.getOrCreate().start(gen, taskName, System.nanoTime());
+    localMarkRecorder.get().start(gen, taskName, System.nanoTime());
   }
 
   static void startAnyway(long gen, String taskName, String subTaskName) {
-    localMarkRecorder.getOrCreate().start(gen, taskName, subTaskName, System.nanoTime());
+    localMarkRecorder.get().start(gen, taskName, subTaskName, System.nanoTime());
   }
 
   static void stopAnyway(long gen) {
     long nanoTime = System.nanoTime();
-    localMarkRecorder.getOrCreate().stop(gen, nanoTime);
+    localMarkRecorder.get().stop(gen, nanoTime);
   }
 
   static void stopAnyway(long gen, String taskName, String tagName, long tagId) {
     long nanoTime = System.nanoTime();
-    localMarkRecorder.getOrCreate().stop(gen, taskName, tagName, tagId, nanoTime);
+    localMarkRecorder.get().stop(gen, taskName, tagName, tagId, nanoTime);
   }
 
   static void stopAnyway(long gen, String taskName) {
     long nanoTime = System.nanoTime();
-    localMarkRecorder.getOrCreate().stop(gen, taskName, nanoTime);
+    localMarkRecorder.get().stop(gen, taskName, nanoTime);
   }
 
   static void stopAnyway(long gen, String taskName, String subTaskName) {
     long nanoTime = System.nanoTime();
-    localMarkRecorder.getOrCreate().stop(gen, taskName, subTaskName, nanoTime);
+    localMarkRecorder.get().stop(gen, taskName, subTaskName, nanoTime);
   }
 
   static void eventAnyway(long gen, String eventName, String tagName, long tagId) {
     long nanoTime = System.nanoTime();
-    localMarkRecorder.getOrCreate().event(gen, eventName, tagName, tagId, nanoTime);
+    localMarkRecorder.get().event(gen, eventName, tagName, tagId, nanoTime);
   }
 
   static void eventAnyway(long gen, String eventName) {
     long nanoTime = System.nanoTime();
-    localMarkRecorder.getOrCreate().event(gen, eventName, nanoTime);
+    localMarkRecorder.get().event(gen, eventName, nanoTime);
   }
 
   static void eventAnyway(long gen, String eventName, String subEventName) {
     long nanoTime = System.nanoTime();
-    localMarkRecorder.getOrCreate().event(gen, eventName, subEventName, nanoTime);
+    localMarkRecorder.get().event(gen, eventName, subEventName, nanoTime);
   }
 
   static void linkAnyway(long gen, long linkId) {
-    localMarkRecorder.getOrCreate().link(gen, linkId);
+    localMarkRecorder.get().link(gen, linkId);
   }
 
   static void attachTagAnyway(long gen, String tagName, long tagId) {
-    localMarkRecorder.getOrCreate().attachTag(gen, tagName, tagId);
+    localMarkRecorder.get().attachTag(gen, tagName, tagId);
   }
 
   static void attachKeyedTagAnyway(long gen, String tagName, String tagValue) {
-    localMarkRecorder.getOrCreate().attachKeyedTag(gen, tagName, tagValue);
+    localMarkRecorder.get().attachKeyedTag(gen, tagName, tagValue);
   }
 
   static void attachKeyedTagAnyway(long gen, String tagName, long tagValue) {
-    localMarkRecorder.getOrCreate().attachKeyedTag(gen, tagName, tagValue);
+    localMarkRecorder.get().attachKeyedTag(gen, tagName, tagValue);
   }
 
   static void attachKeyedTagAnyway(
       long gen, String tagName, long tagValue0, long tagValue1) {
-    localMarkRecorder.getOrCreate().attachKeyedTag(gen, tagName, tagValue0, tagValue1);
+    localMarkRecorder.get().attachKeyedTag(gen, tagName, tagValue0, tagValue1);
   }
 
   /**
    * Removes all data for the calling Thread.  Other threads may Still have stored data.
    */
-  public static void clearLocalStorage() {
-    localMarkRecorder.clear();
+  public static void resetForThread() {
+    for (Iterator<Reference<MarkHolder>> it = allMarkHolders.values().iterator(); it.hasNext();) {
+      Reference<MarkHolder> ref = it.next();
+      MarkHolder holder = ref.get();
+      if (holder == null) {
+        it.remove();
+        continue;
+      }
+      holder.resetForThread();
+    }
   }
 
   /**
    * Removes the global Read index on all storage, but leaves local storage in place.  Because writer threads may still
    * be writing to the same buffer (which they have a strong ref to), this function only removed data that is truly
    * unwritable anymore.   In addition, it captures a timestamp to which marks to include when reading.  Thus, the data
-   * isn't fully removed.  To fully remove all data, each tracing thread must call {@link #clearLocalStorage}.
+   * isn't fully removed.  To fully remove all data, each tracing thread must call {@link #resetForThread}.
    */
-  public static void clearGlobalIndex() {
+  public static void resetForAll() {
     lastGlobalIndexClear = System.nanoTime() - 1;
-    // FixMe
+    for (Iterator<Map.Entry<Object, Reference<MarkHolder>>> it = allMarkHolders.entrySet().iterator(); it.hasNext();) {
+      Map.Entry<Object, Reference<MarkHolder>> entry = it.next();
+      Reference<MarkHolder> ref = entry.getValue();
+      MarkHolder holder = ref.get();
+      if (holder == null) {
+        it.remove();
+        continue;
+      }
+      entry.setValue(new WeakReference<MarkHolder>(holder));
+      holder.resetForAll();
+    }
   }
 
+  /**
+   * Note: it is the responsibility of the caller to keep a strong reference to the markHolder.
+   */
   public static void registerMarkHolder(MarkHolder markHolder) {
     if (markHolder == null) {
       throw new NullPointerException("markHolder");
     }
     allMarkHolders.put(new Object(), new SoftReference<MarkHolder>(markHolder));
+  }
+
+  /**
+   * This method is meant to aid in cleanup.  It is not efficient so don't use it in production.
+   */
+  public static void unregisterMarkHolder(MarkHolder markHolder) {
+    if (markHolder == null) {
+      throw new NullPointerException("markHolder");
+    }
+    for (Iterator<Reference<MarkHolder>> it = allMarkHolders.values().iterator(); it.hasNext();) {
+      Reference<MarkHolder> ref = it.next();
+      MarkHolder holder = ref.get();
+      if (holder == null) {
+        it.remove();
+        continue;
+      }
+      if (holder == markHolder) {
+        it.remove();
+        break;
+      }
+    }
   }
 
   /**

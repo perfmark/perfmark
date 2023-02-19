@@ -19,7 +19,7 @@ package io.perfmark.java9;
 
 import io.perfmark.impl.MarkRecorder;
 import io.perfmark.testing.GarbageCollector;
-import io.perfmark.testing.MarkHolderBenchmark;
+import io.perfmark.testing.MarkHolderRecorder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -74,7 +74,7 @@ public class VarHandleMarkRecorderBenchmarkTest {
   }
 
   @State(Scope.Thread)
-  public static class VarHandleMarkHolderBenchmark extends MarkHolderBenchmark {
+  public static class VarHandleMarkHolderBenchmark extends MarkHolderRecorder {
     @Override
     public MarkRecorder getMarkRecorder() {
       return new VarHandleMarkRecorder(1234, 16384);
