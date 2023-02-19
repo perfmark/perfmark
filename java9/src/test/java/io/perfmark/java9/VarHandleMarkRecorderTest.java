@@ -21,6 +21,8 @@ import static org.junit.Assert.assertEquals;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkList;
+import io.perfmark.impl.MarkRecorder;
 import io.perfmark.testing.MarkHolderTest;
 import java.util.List;
 import org.junit.Test;
@@ -28,37 +30,47 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class VarHandleMarkHolderTest extends MarkHolderTest {
+public class VarHandleMarkRecorderTest extends MarkHolderTest {
 
   private final long gen = 1L << Generator.GEN_OFFSET;
 
+  private final VarHandleMarkRecorder recorder =  new VarHandleMarkRecorder(1234, 16384);
+  private final MarkHolder markHolder = recorder.markHolder;
+
   @Override
   protected MarkHolder getMarkHolder() {
-    return new VarHandleMarkHolder();
+    return markHolder;
+  }
+
+  @Override
+  public MarkRecorder getMarkRecorder() {
+    return recorder;
   }
 
   @Test
   public void read_getsAllButLastIfNotWriter() {
-    MarkHolder mh = getMarkHolder();
-    int events = mh.maxMarks() - 1;
+    MarkRecorder mr = getMarkRecorder();
+    int events = markHolder.maxMarks() - 1;
     for (int i = 0; i < events; i++) {
-      mh.start(gen, "task", 3);
+      mr.start(gen, "task", 3);
     }
 
-    List<Mark> marks = mh.read(true);
-    assertEquals(events - 1, marks.size());
+    List<MarkList> markLists = markHolder.read();
+    assertEquals(markLists.size(), 1);
+    assertEquals(events, markLists.get(0).size());
   }
 
   @Test
   public void read_getsAllIfNotWriterButNoWrap() {
-    MarkHolder mh = getMarkHolder();
+    MarkRecorder mr = getMarkRecorder();
 
-    int events = mh.maxMarks() - 2;
+    int events = markHolder.maxMarks() - 2;
     for (int i = 0; i < events; i++) {
-      mh.start(gen, "task", 3);
+      mr.start(gen, "task", 3);
     }
 
-    List<Mark> marks = mh.read(true);
-    assertEquals(events, marks.size());
+    List<MarkList> markLists = markHolder.read();
+    assertEquals(markLists.size(), 1);
+    assertEquals(events, markLists.get(0).size());
   }
 }

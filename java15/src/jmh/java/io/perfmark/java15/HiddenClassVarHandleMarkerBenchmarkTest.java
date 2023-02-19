@@ -17,7 +17,8 @@
 package io.perfmark.java15;
 
 import io.perfmark.impl.MarkHolder;
-import io.perfmark.testing.MarkHolderBenchmark;
+import io.perfmark.impl.MarkRecorder;
+import io.perfmark.testing.MarkHolderRecorder;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,7 +39,7 @@ public class HiddenClassVarHandleMarkerBenchmarkTest {
   @Test
   public void markHolderBenchmark() throws Exception {
     Options options = new OptionsBuilder()
-        .include(SecretHiddenClassMarkHolderBenchmark.class.getCanonicalName())
+        .include(SecretHiddenClassMarkRecorderBenchmark.class.getCanonicalName())
         .addProfiler("perfasm")
         .measurementIterations(10)
         .warmupIterations(10)
@@ -71,17 +72,17 @@ public class HiddenClassVarHandleMarkerBenchmarkTest {
   }
 
   @State(Scope.Thread)
-  public static class SecretHiddenClassMarkHolderBenchmark extends MarkHolderBenchmark {
+  public static class SecretHiddenClassMarkRecorderBenchmark extends MarkHolderRecorder {
     @Override
-    public MarkHolder getMarkHolder() {
-      return new SecretHiddenClassMarkHolderProvider.HiddenClassMarkHolderProvider().create(1234, 16384);
+    public MarkRecorder getMarkRecorder() {
+      return new SecretHiddenClassMarkRecorderProvider.HiddenClassMarkRecorderProvider().create(1234, 16384);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    public MarkHolder allocationBenchmark() {
-      return new SecretHiddenClassMarkHolderProvider.HiddenClassMarkHolderProvider().create(1234, 4);
+    public MarkRecorder allocationBenchmark() {
+      return new SecretHiddenClassMarkRecorderProvider.HiddenClassMarkRecorderProvider().create(1234, 4);
     }
   }
 }

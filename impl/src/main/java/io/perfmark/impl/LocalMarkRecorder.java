@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Carl Mastrangelo
+ * Copyright 2023 Carl Mastrangelo
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,20 @@
 
 package io.perfmark.impl;
 
-final class MostlyThreadLocalMarkHolder extends LocalMarkHolder {
+/**
+ * A local MarkRecorder is a class that gets the "current" MarkRecorder based on context.  For example, a thread local
+ * MarkRecorder could use this class to pull the local MarkRecorder from a threadlocal variable.  Other
+ * implementations are possible as well.
+ */
+public interface LocalMarkRecorder {
+  /**
+   * Gets or creates a MarkHolder.
+   * @return a non {@code null} MarkRecorder.
+   */
+  MarkRecorder get();
 
-  private static final MostlyThreadLocal localMarkHolder = new MostlyThreadLocal();
-
-  MostlyThreadLocalMarkHolder() {}
-
-  @Override
-  public MarkHolder acquire() {
-    return localMarkHolder.get();
-  }
-
-  @Override
-  public void release(MarkHolder markHolder) {}
-
-  @Override
-  public void clear() {
-    localMarkHolder.remove();
-  }
+  /**
+   * Removes the local Mark Holder
+   */
+  void remove();
 }

@@ -63,7 +63,7 @@ import org.openjdk.jcstress.infra.results.L_Result;
 @Outcome(id = "31", expect = Expect.ACCEPTABLE, desc = "31 Writes")
 @Outcome(id = "32", expect = Expect.ACCEPTABLE, desc = "32 Writes")
 @Outcome(id = "-1", expect = Expect.FORBIDDEN, desc = "Wrong Type")
-@Outcome(id = "-3", expect = Expect.FORBIDDEN, desc = "Wrong ID")
+@Outcome(id = "-2", expect = Expect.FORBIDDEN, desc = "Wrong ID")
 @State
 @Description("Simulates the PerfMarkStorage reader.")
 public class PerfMarkStorageStress {
@@ -75,7 +75,7 @@ public class PerfMarkStorageStress {
     assert Generator.GEN_OFFSET <= OFFSET;
   }
 
-  private final VarHandleMarkHolder holder = new VarHandleMarkHolder(SIZE);
+  private final VarHandleMarkRecorder holder = new VarHandleMarkRecorder(1234, SIZE);
 
   @Actor
   public void writer() {

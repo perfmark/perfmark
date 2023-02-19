@@ -31,7 +31,7 @@ public final class MarkList extends AbstractList<Mark> {
 
   private final List<Mark> marks;
   private final long threadId;
-  private final long markListId;
+  private final long markRecorderId;
   private final String threadName;
 
   MarkList(Builder builder) {
@@ -44,7 +44,7 @@ public final class MarkList extends AbstractList<Mark> {
     }
     this.threadName = builder.threadName;
     this.threadId = builder.threadId;
-    this.markListId = builder.markListId;
+    this.markRecorderId = builder.markRecorderId;
   }
 
   /**
@@ -66,13 +66,13 @@ public final class MarkList extends AbstractList<Mark> {
   }
 
   /**
-   * The globally unique ID for this Mark list. Unlike {@link #getThreadId()}, this value is never
-   * recycled.
+   * The globally unique ID for the MarkRecorder that recorded this list. Unlike {@link #getThreadId()}, this value
+   * is never recycled.
    *
-   * @return the id of this list.
+   * @return the id of this Mark Holder.
    */
-  public long getMarkListId() {
-    return markListId;
+  public long getMarkRecorderId() {
+    return markRecorderId;
   }
 
   @Override
@@ -88,13 +88,13 @@ public final class MarkList extends AbstractList<Mark> {
     MarkList that = (MarkList) obj;
     return Mark.equal(this.marks, that.marks)
         && this.threadId == that.threadId
-        && this.markListId == that.markListId
+        && this.markRecorderId == that.markRecorderId
         && Mark.equal(this.threadName, that.threadName);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(new Object[] {marks, threadId, markListId, threadName});
+    return Arrays.hashCode(new Object[] {marks, threadId, markRecorderId, threadName});
   }
 
   @Override
@@ -111,8 +111,8 @@ public final class MarkList extends AbstractList<Mark> {
         + "threadId="
         + threadId
         + ", "
-        + "markListId="
-        + markListId
+        + "markRecorderId="
+        + markRecorderId
         + ", "
         + "threadName="
         + threadName
@@ -122,7 +122,7 @@ public final class MarkList extends AbstractList<Mark> {
   public Builder toBuilder() {
     Builder builder = newBuilder();
     builder.marks = marks;
-    return builder.setThreadName(threadName).setThreadId(threadId).setMarkListId(markListId);
+    return builder.setThreadName(threadName).setThreadId(threadId).setMarkRecorderId(markRecorderId);
   }
 
   public static final class Builder {
@@ -130,14 +130,15 @@ public final class MarkList extends AbstractList<Mark> {
     List<Mark> marks;
     String threadName;
     long threadId;
-    long markListId;
+    long markRecorderId;
 
     public MarkList build() {
       return new MarkList(this);
     }
 
     /**
-     * Sets the marks for this MarkList builder.
+     * Sets the marks for this MarkList builder.  This method always makes a defensive copy.
+     * This method never retains a reference to the list.
      *
      * @throws NullPointerException if any element in this list is {@code null}.
      * @param marks the marks to set.
@@ -183,13 +184,13 @@ public final class MarkList extends AbstractList<Mark> {
     }
 
     /**
-     * Sets the mark list ID for this MarkList builder.
+     * Sets the MarkRecorder ID for this MarkList builder.
      *
-     * @param markListId the mark list ID
+     * @param markRecorderId the MarkRecorder ID
      * @return this
      */
-    public Builder setMarkListId(long markListId) {
-      this.markListId = markListId;
+    public Builder setMarkRecorderId(long markRecorderId) {
+      this.markRecorderId = markRecorderId;
       return this;
     }
   }

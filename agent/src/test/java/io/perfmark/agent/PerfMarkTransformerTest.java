@@ -60,7 +60,7 @@ public class PerfMarkTransformerTest {
   public void transform_autoAnnotate() throws Exception {
     // This test currently depends on the transformer treating this test class specially.
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzAutoRecord.class);
     Constructor<?> ctor = clz.getConstructor();
@@ -73,7 +73,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_record() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.SomeRecord.class);
     Constructor<?> ctor = clz.getConstructor(int.class);
@@ -97,7 +97,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_lambda() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzCtorLambda.class);
     Constructor<?> ctor = clz.getConstructor();
@@ -121,7 +121,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_methodRef() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithMethodRefs.class);
     Constructor<?> ctor = clz.getConstructor();
@@ -135,7 +135,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_interface() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz =
         transformAndLoad(TransformerTestClasses.Bar.class, TransformerTestClasses.InterfaceWithDefaults.class);
@@ -178,7 +178,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_link() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithLinks.class);
     Constructor<?> ctor = clz.getConstructor();
@@ -205,7 +205,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_closeable() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithCloseable.class);
     Constructor<?> ctor = clz.getConstructor();
@@ -232,7 +232,7 @@ public class PerfMarkTransformerTest {
     // If the wrong static type is used, the agent won't be able to instrument it.  Add a test to document this
     // behavior.
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithWrongCloseable.class);
     Constructor<?> ctor = clz.getConstructor();
@@ -255,7 +255,7 @@ public class PerfMarkTransformerTest {
     // If the wrong static type is used, the agent won't be able to instrument it.  Add a test to document this
     // behavior.
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<? extends Closeable> clz = transformAndLoad(TaskCloseable.class).asSubclass(Closeable.class);
     Constructor<? extends Closeable> ctor = clz.getDeclaredConstructor();
@@ -271,7 +271,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_ctor() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithCtor.class);
     Constructor<?> ctor = clz.getConstructor();
@@ -312,7 +312,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_init() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithInit.class);
     Constructor<?> ctor = clz.getDeclaredConstructor();
@@ -353,7 +353,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_clinit() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(TransformerTestClasses.ClzWithClinit.class);
     Constructor<?> ctor = clz.getDeclaredConstructor();
@@ -394,7 +394,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_toplevel() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(ClzFooter.class);
     Constructor<?> ctor = clz.getDeclaredConstructor();
@@ -435,7 +435,7 @@ public class PerfMarkTransformerTest {
   @Test
   public void transform_anonymousClass() throws Exception {
     PerfMark.setEnabled(true);
-    Storage.clearLocalStorage();
+    Storage.resetForThread();
 
     Class<?> clz = transformAndLoad(new Runnable() {
       // avoid IntelliJ thinking this should be a lambda.

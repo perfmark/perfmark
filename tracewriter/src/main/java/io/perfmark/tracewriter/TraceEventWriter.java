@@ -357,7 +357,7 @@ public final class TraceEventWriter {
           // TODO: log?
           continue;
         }
-        if (linkOut.markListId == linkIn.markListId) {
+        if (linkOut.markRecorderId == linkIn.markRecorderId) {
           // continue;
         }
         // The name must be the same to match links together.
@@ -552,13 +552,13 @@ public final class TraceEventWriter {
       final Mark lastTaskStart;
       final Mark link;
       final long threadId;
-      final long markListId;
+      final long markRecorderId;
 
-      LinkTuple(Mark lastTaskStart, Mark link, long threadId, long markListId) {
+      LinkTuple(Mark lastTaskStart, Mark link, long threadId, long markRecorderId) {
         this.lastTaskStart = lastTaskStart;
         this.link = link;
         this.threadId = threadId;
-        this.markListId = markListId;
+        this.markRecorderId = markRecorderId;
       }
     }
 

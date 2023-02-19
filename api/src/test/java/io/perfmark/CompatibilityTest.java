@@ -103,7 +103,7 @@ public class CompatibilityTest {
   @After
   public void tearDown() throws Exception {
     if (storageClz != null) {
-      storageClz.getMethod("clearLocalStorage").invoke(null);
+      storageClz.getMethod("resetForThread").invoke(null);
     }
   }
 
@@ -178,6 +178,7 @@ public class CompatibilityTest {
 
   @Test
   public void startStopTaskWorks() throws Exception {
+    Assume.assumeTrue(minorVersion >= STABLE_VERSION);
     perfMarkClz.getMethod("setEnabled", boolean.class).invoke(null, true);
     perfMarkClz.getMethod("startTask", String.class).invoke(null, "task1");
     perfMarkClz.getMethod("stopTask", String.class).invoke(null, "task1");
@@ -194,6 +195,7 @@ public class CompatibilityTest {
 
   @Test
   public void startStopTaskWorks_tag() throws Exception {
+    Assume.assumeTrue(minorVersion >= STABLE_VERSION);
     Class<?> tagClz = Class.forName("io.perfmark.Tag", false, perfMarkClz.getClassLoader());
     Object tag = perfMarkClz.getMethod("createTag").invoke(null);
 
@@ -315,6 +317,7 @@ public class CompatibilityTest {
 
   @Test
   public void createTags() throws Exception {
+    Assume.assumeTrue(minorVersion >= STABLE_VERSION);
     perfMarkClz.getMethod("setEnabled", boolean.class).invoke(null, true);
     perfMarkClz.getMethod("createTag", long.class).invoke(null, 2);
     perfMarkClz.getMethod("createTag", String.class).invoke(null, "tag2");

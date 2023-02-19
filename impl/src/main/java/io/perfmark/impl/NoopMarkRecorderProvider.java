@@ -16,25 +16,15 @@
 
 package io.perfmark.impl;
 
-import java.util.Collections;
-import java.util.List;
-
-final class NoopMarkHolderProvider extends MarkHolderProvider {
-  NoopMarkHolderProvider() {}
+final class NoopMarkRecorderProvider extends MarkRecorderProvider {
+  NoopMarkRecorderProvider() {}
 
   @Override
-  @SuppressWarnings("deprecation")
-  public MarkHolder create() {
+  public MarkRecorder createMarkRecorder(long markRecorderId) {
     return new NoopMarkHolder();
   }
 
-  @Override
-  public MarkHolder create(long markHolderId) {
-    return new NoopMarkHolder();
-  }
-
-
-  private static final class NoopMarkHolder extends MarkHolder {
+  private static final class NoopMarkHolder extends MarkRecorder {
 
     NoopMarkHolder() {}
 
@@ -82,13 +72,5 @@ final class NoopMarkHolderProvider extends MarkHolderProvider {
 
     @Override
     public void attachKeyedTag(long gen, String name, long value0, long value1) {}
-
-    @Override
-    public void resetForTest() {}
-
-    @Override
-    public List<Mark> read(boolean readerIsWriter) {
-      return Collections.emptyList();
-    }
   }
 }

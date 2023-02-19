@@ -16,30 +16,20 @@
 
 package io.perfmark.impl;
 
-public abstract class MarkHolderProvider {
+/**
+ * This class creates MarkRecorders.  Custom MarkRecorder providers can be set using
+ * {@link Storage#MARK_RECORDER_PROVIDER_PROP "io.perfmark.PerfMark.markRecorderProvider"}.
+ */
+public abstract class MarkRecorderProvider {
 
-  protected MarkHolderProvider() {}
-
-  /**
-   * To be removed in 0.26.0
-   *
-   * @return the new MarkHolder for the current thread.
-   */
-  @Deprecated
-  public MarkHolder create() {
-    throw new UnsupportedOperationException();
-  }
+  protected MarkRecorderProvider() {}
 
   /**
    * Creates a new MarkHolder.  Mark holders are always mutated by the thread that created them, (e.g. THIS thread),
    * but may be read by other threads.
    *
-   * @param markHolderId the Unique ID associated with the Mark Holder.   This exists as a work around to Java's
-   *                     thread ID, which does not guarantee they will not be reused.
    * @return the new MarkHolder for the current thread.
-   * @since 0.24.0
+   * @since 0.27.0
    */
-  public MarkHolder create(long markHolderId) {
-    return create();
-  }
+  public abstract MarkRecorder createMarkRecorder(long markRecorderId);
 }

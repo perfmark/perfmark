@@ -16,28 +16,26 @@
 
 package io.perfmark.java6;
 
-import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.MarkHolderProvider;
+import io.perfmark.impl.MarkRecorderProvider;
+import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.Storage;
 
-final class SecretSynchronizedMarkHolderProvider {
+final class SecretSynchronizedMarkRecorderProvider {
 
-  public static final class SynchronizedMarkHolderProvider extends MarkHolderProvider {
+  public static final class SynchronizedMarkRecorderProvider extends MarkRecorderProvider {
 
-    public SynchronizedMarkHolderProvider() {}
-
-    @Override
-    @SuppressWarnings("deprecation")
-    public MarkHolder create() {
-      return new SynchronizedMarkHolder();
-    }
+    // Used reflectively
+    public SynchronizedMarkRecorderProvider() {}
 
     @Override
-    public MarkHolder create(long markHolderId) {
-      return new SynchronizedMarkHolder();
+    public MarkRecorder createMarkRecorder(long markRecorderId) {
+      SynchronizedMarkRecorder markRecorder = new SynchronizedMarkRecorder(markRecorderId);
+      Storage.registerMarkHolder(markRecorder.markHolder);
+      return markRecorder;
     }
   }
 
-  private SecretSynchronizedMarkHolderProvider() {
+  private SecretSynchronizedMarkRecorderProvider() {
     throw new AssertionError("nope");
   }
 }

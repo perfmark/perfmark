@@ -40,7 +40,7 @@ public class TraceEventWriterTest {
     List<MarkList> markLists =
         List.of(
             MarkList.newBuilder()
-                .setMarkListId(9)
+                .setMarkRecorderId(9)
                 .setThreadId(99)
                 .setThreadName("Billy")
                 .setMarks(

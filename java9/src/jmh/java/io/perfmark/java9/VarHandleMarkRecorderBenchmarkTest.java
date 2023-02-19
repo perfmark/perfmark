@@ -16,17 +16,15 @@
 
 package io.perfmark.java9;
 
-import static java.util.List.of;
 
-import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkRecorder;
 import io.perfmark.testing.GarbageCollector;
-import io.perfmark.testing.MarkHolderBenchmark;
+import io.perfmark.testing.MarkHolderRecorder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.junit.runners.Parameterized;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
@@ -36,7 +34,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 @RunWith(Parameterized.class)
-public class VarHandleMarkHolderBenchmarkTest {
+public class VarHandleMarkRecorderBenchmarkTest {
 
   @Parameterized.Parameter(0)
   public GarbageCollector gc;
@@ -76,10 +74,10 @@ public class VarHandleMarkHolderBenchmarkTest {
   }
 
   @State(Scope.Thread)
-  public static class VarHandleMarkHolderBenchmark extends MarkHolderBenchmark {
+  public static class VarHandleMarkHolderBenchmark extends MarkHolderRecorder {
     @Override
-    public MarkHolder getMarkHolder() {
-      return new VarHandleMarkHolder(16384);
+    public MarkRecorder getMarkRecorder() {
+      return new VarHandleMarkRecorder(1234, 16384);
     }
   }
 }

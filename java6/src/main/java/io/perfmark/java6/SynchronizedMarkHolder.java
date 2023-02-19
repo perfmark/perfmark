@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
+
 package io.perfmark.java6;
 
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
+import io.perfmark.impl.MarkList;
+import io.perfmark.impl.Storage;
+import java.lang.ref.WeakReference;
 import java.util.AbstractCollection;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -30,21 +34,13 @@ import java.util.List;
 import java.util.Queue;
 
 final class SynchronizedMarkHolder extends MarkHolder {
+
   private static final long GEN_MASK = (1 << Generator.GEN_OFFSET) - 1;
 
-  private static final long START_N1S1_OP = Mark.Operation.TASK_START_N1S1.ordinal();
-  private static final long START_N1S2_OP = Mark.Operation.TASK_START_N1S2.ordinal();
-  private static final long STOP_N1S0_OP = Mark.Operation.TASK_END_N1S0.ordinal();
-  private static final long STOP_N1S1_OP = Mark.Operation.TASK_END_N1S1.ordinal();
-  private static final long STOP_N1S2_OP = Mark.Operation.TASK_END_N1S2.ordinal();
-  private static final long EVENT_N1S1_OP = Mark.Operation.EVENT_N1S1.ordinal();
-  private static final long EVENT_N1S2_OP = Mark.Operation.EVENT_N1S2.ordinal();
-  private static final long EVENT_N2S2_OP = Mark.Operation.EVENT_N2S2.ordinal();
-  private static final long LINK_OP = Mark.Operation.LINK.ordinal();
-  private static final long TAG_N1S1_OP = Mark.Operation.TAG_N1S1.ordinal();
-  private static final long TAG_KEYED_N0S2_OP = Mark.Operation.TAG_KEYED_N0S2.ordinal();
-  private static final long TAG_KEYED_N1S1_OP = Mark.Operation.TAG_KEYED_N1S1.ordinal();
-  private static final long TAG_KEYED_N2S1_OP = Mark.Operation.TAG_KEYED_N2S1.ordinal();
+  private final WeakReference<Thread> threadReference;
+  private final long markRecorderId;
+  private volatile String threadName;
+  private volatile long threadId;
 
   private final int maxEvents;
   private final long maxEventsMask;
@@ -56,11 +52,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
   private final long[] nums;
   private final String[] strings;
 
-  SynchronizedMarkHolder() {
-    this(32768);
-  }
-
-  SynchronizedMarkHolder(int maxEvents) {
+  SynchronizedMarkHolder(int maxEvents, long markRecorderId) {
     if (((maxEvents - 1) & maxEvents) != 0) {
       throw new IllegalArgumentException(maxEvents + " is not a power of two");
     }
@@ -71,9 +63,16 @@ final class SynchronizedMarkHolder extends MarkHolder {
     this.maxEventsMask = maxEvents - 1L;
     this.nums = new long[maxEvents];
     this.strings = new String[maxEvents];
+    Thread t = Thread.currentThread();
+    this.threadReference = new WeakReference<Thread>(t);
+    this.threadName = t.getName();
+    this.threadId = t.getId();
+    this.markRecorderId = markRecorderId;
   }
 
-  private void writeNnss(long genOp, long n0, long n1, String s0, String s1) {
+  // This must be externally synchronized.
+  void writeNnss(long genOp, long n0, long n1, String s0, String s1) {
+    assert Thread.holdsLock(this);
     nums[(int) (nIdx++ & maxEventsMask)] = n0;
     nums[(int) (nIdx++ & maxEventsMask)] = n1;
     strings[(int) (sIdx++ & maxEventsMask)] = s0;
@@ -81,119 +80,55 @@ final class SynchronizedMarkHolder extends MarkHolder {
     nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 
-  private void writeNss(long genOp, long n0, String s0, String s1) {
+  // This must be externally synchronized.
+  void writeNss(long genOp, long n0, String s0, String s1) {
+    assert Thread.holdsLock(this);
     nums[(int) (nIdx++ & maxEventsMask)] = n0;
     strings[(int) (sIdx++ & maxEventsMask)] = s0;
     strings[(int) (sIdx++ & maxEventsMask)] = s1;
     nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 
-  private void writeNs(long genOp, long n0, String s0) {
+  // This must be externally synchronized.
+  void writeNs(long genOp, long n0, String s0) {
+    assert Thread.holdsLock(this);
     nums[(int) (nIdx++ & maxEventsMask)] = n0;
     strings[(int) (sIdx++ & maxEventsMask)] = s0;
     nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 
-  private void writeN(long genOp, long n0) {
+  // This must be externally synchronized.
+  void writeN(long genOp, long n0) {
+    assert Thread.holdsLock(this);
     nums[(int) (nIdx++ & maxEventsMask)] = n0;
     nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 
-  private void writeNns(long genOp, long n0, long n1, String s0) {
+  // This must be externally synchronized.
+  void writeNns(long genOp, long n0, long n1, String s0) {
+    assert Thread.holdsLock(this);
     nums[(int) (nIdx++ & maxEventsMask)] = n0;
     nums[(int) (nIdx++ & maxEventsMask)] = n1;
     strings[(int) (sIdx++ & maxEventsMask)] = s0;
     nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 
-  private void writeSs(long genOp, String s0, String s1) {
+  // This must be externally synchronized.
+  void writeSs(long genOp, String s0, String s1) {
+    assert Thread.holdsLock(this);
     strings[(int) (sIdx++ & maxEventsMask)] = s0;
     strings[(int) (sIdx++ & maxEventsMask)] = s1;
     nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 
   @Override
-  public synchronized void start(
-      long gen, String taskName, String tagName, long tagId, long nanoTime) {
-    writeNs(gen + START_N1S1_OP, nanoTime, taskName);
-    writeNs(gen + TAG_N1S1_OP, tagId, tagName);
-  }
-
-  @Override
-  public synchronized void start(long gen, String taskName, long nanoTime) {
-    writeNs(gen + START_N1S1_OP, nanoTime, taskName);
-  }
-
-  @Override
-  public synchronized void start(long gen, String taskName, String subTaskName, long nanoTime) {
-    writeNss(gen + START_N1S2_OP, nanoTime, taskName, subTaskName);
-  }
-
-  @Override
-  public synchronized void link(long gen, long linkId) {
-    writeN(gen + LINK_OP, linkId);
-  }
-
-  @Override
-  public synchronized void stop(long gen, long nanoTime) {
-    writeN(gen + STOP_N1S0_OP, nanoTime);
-  }
-
-  @Override
-  public synchronized void stop(
-      long gen, String taskName, String tagName, long tagId, long nanoTime) {
-    writeNs(gen + TAG_N1S1_OP, tagId, tagName);
-    writeNs(gen + STOP_N1S1_OP, nanoTime, taskName);
-  }
-
-  @Override
-  public synchronized void stop(long gen, String taskName, long nanoTime) {
-    writeNs(gen + STOP_N1S1_OP, nanoTime, taskName);
-  }
-
-  @Override
-  public synchronized void stop(long gen, String taskName, String subTaskName, long nanoTime) {
-    writeNss(gen + STOP_N1S2_OP, nanoTime, taskName, subTaskName);
-  }
-
-  @Override
-  public synchronized void event(
-      long gen, String eventName, String tagName, long tagId, long nanoTime) {
-    writeNnss(gen + EVENT_N2S2_OP, nanoTime, tagId, eventName, tagName);
-  }
-
-  @Override
-  public synchronized void event(long gen, String eventName, long nanoTime) {
-    writeNs(gen + EVENT_N1S1_OP, nanoTime, eventName);
-  }
-
-  @Override
-  public synchronized void event(long gen, String eventName, String subEventName, long nanoTime) {
-    writeNss(gen + EVENT_N1S2_OP, nanoTime, eventName, subEventName);
-  }
-
-  @Override
-  public synchronized void attachTag(long gen, String tagName, long tagId) {
-    writeNs(gen + TAG_N1S1_OP, tagId, tagName);
-  }
-
-  @Override
-  public synchronized void attachKeyedTag(long gen, String name, long value0) {
-    writeNs(gen + TAG_KEYED_N1S1_OP, value0, name);
-  }
-
-  @Override
-  public synchronized void attachKeyedTag(long gen, String name, String value) {
-    writeSs(gen + TAG_KEYED_N0S2_OP, name, value);
-  }
-
-  @Override
-  public synchronized void attachKeyedTag(long gen, String name, long value0, long value1) {
-    writeNns(gen + TAG_KEYED_N2S1_OP, value0, value1, name);
-  }
-
-  @Override
-  public synchronized void resetForTest() {
+  public synchronized void resetForThread() {
+    if (threadReference.get() == null) {
+      Storage.unregisterMarkHolder(this);
+    }
+    if (threadReference.get() != Thread.currentThread()) {
+      return;
+    }
     Arrays.fill(nums, 0);
     Arrays.fill(strings, null);
     nIdx = 0;
@@ -201,7 +136,12 @@ final class SynchronizedMarkHolder extends MarkHolder {
   }
 
   @Override
-  public List<Mark> read(boolean concurrentWrites) {
+  public synchronized void resetForAll() {
+    resetForThread();
+  }
+
+  @Override
+  public List<MarkList> read() {
     Kyoo<Long> numQ;
     Kyoo<String> stringQ;
     {
@@ -322,13 +262,42 @@ final class SynchronizedMarkHolder extends MarkHolder {
           throw new UnsupportedOperationException();
       }
     }
+    if (marks.isEmpty()) {
+      return Collections.emptyList();
+    }
+    MarkList marksList = MarkList.newBuilder()
+        .setMarkRecorderId(markRecorderId)
+        .setThreadId(getAndUpdateThreadId())
+        .setThreadName(getAndUpdateThreadName())
+        .setMarks(new ArrayList<Mark>(marks))
+        .build();
 
-    return Collections.unmodifiableList(new ArrayList<Mark>(marks));
+    return Collections.singletonList(marksList);
   }
 
-  @Override
-  public int maxMarks() {
-    return maxEvents;
+  private String getAndUpdateThreadName() {
+    Thread t = threadReference.get();
+    String name;
+    if (t != null) {
+      threadName = (name = t.getName());
+    } else {
+      name = threadName;
+    }
+    return name;
+  }
+
+  /**
+   * Some threads change their id over time, so we need to sync it if available.
+   */
+  private long getAndUpdateThreadId() {
+    Thread t = threadReference.get();
+    long id;
+    if (t != null) {
+      threadId = (id = t.getId());
+    } else {
+      id = threadId;
+    }
+    return id;
   }
 
   private final class Kyoo<T> extends AbstractCollection<T> implements Queue<T> {
