@@ -76,7 +76,6 @@ public class SecurityManagerTest {
     Truth.assertThat(marks).hasSize(1);
   }
 
-
   @Test
   public void worksWithSecurityManager_noStartEnabled_debug() throws Exception {
     ClassLoader loader = new PerfMarkTest.TestClassLoader(getClass().getClassLoader());

@@ -96,12 +96,6 @@ public class PerfMarkTest {
     Truth.assertThat(ref.get().getMessage()).contains("Error during PerfMark.<clinit>");
   }
 
-
-
-
-
-
-
   @Test
   public void allMethodForward_taskName() {
     Storage.resetForThread();
