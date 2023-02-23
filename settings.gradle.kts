@@ -43,7 +43,7 @@ dependencyResolutionManagement {
             plugin("spotless", "com.diffplug.spotless").version("6.15.0")
             plugin("errorprone", "net.ltgt.errorprone").version("3.0.1")
             plugin("jmh", "me.champeau.jmh").version("0.6.8")
-            plugin("jcstress", "io.github.reyerizo.gradle.jcstress").version("0.8.14")
+            plugin("jcstress", "io.github.reyerizo.gradle.jcstress").version("0.8.15")
 
         }
     }

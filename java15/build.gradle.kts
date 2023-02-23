@@ -64,7 +64,7 @@ tasks.register<Test>("jmh") {
 
 //  ./gradlew --no-daemon clean :perfmark-java9:jcstress
 jcstress {
-    jcstressDependency = "org.openjdk.jcstress:jcstress-core:0.5"
+    jcstressDependency = "org.openjdk.jcstress:jcstress-core:0.15"
     // mode "tough"
     deoptRatio = "2"
 }
