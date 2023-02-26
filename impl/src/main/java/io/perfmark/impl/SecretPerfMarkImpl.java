@@ -77,10 +77,15 @@ final class SecretPerfMarkImpl {
           problems[2] = t;
         }
       }
-      if (gen == null) {
-        generator = new NoopGenerator();
-      } else {
+      if (gen != null) {
         generator = gen;
+      } else {
+        // This magic incantation avoids loading the NoopGenerator class.   When PerfMarkImpl is
+        // being verified, the JVM needs to load NoopGenerator to see that it actually is a
+        // Generator.  By doing a cast here, Java pushes the verification to when this branch is
+        // actually taken, which is uncommon.  Avoid reflectively loading the class, which may
+        // make binary shrinkers drop the NoopGenerator class.
+        generator = (Generator) (Object) new NoopGenerator();
       }
 
       boolean startEnabled = false;

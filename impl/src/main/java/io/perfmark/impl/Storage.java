@@ -90,10 +90,15 @@ public final class Storage {
         problems[2] = t;
       }
     }
-    if (provider == null) {
-      markRecorderProvider = new NoopMarkRecorderProvider();
-    } else {
+    if (provider != null) {
       markRecorderProvider = provider;
+    } else {
+      // This magic incantation avoids loading the NoopMarkRecorderProvider class.   When Storage
+      // is being verified, the JVM needs to load NoopMarkRecorderProvider to see that it actually
+      // is a MarkRecorderProvider.  By doing a cast here, Java pushes the verification to when
+      // this branch is actually taken, which is uncommon.  Avoid reflectively loading the class,
+      // which may make binary shrinkers drop the NoopMarkRecorderProvider class.
+      markRecorderProvider = (MarkRecorderProvider) (Object) new NoopMarkRecorderProvider();
     }
     try {
       if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
