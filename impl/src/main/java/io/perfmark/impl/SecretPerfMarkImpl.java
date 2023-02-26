@@ -51,7 +51,9 @@ final class SecretPerfMarkImpl {
     private static long actualGeneration;
 
     static {
-      assert ENABLED_BIT_SPACE + Generator.GEN_OFFSET + GEN_TIMESTAMP_SPACE <= 64;
+      // Avoid using asserts here, because it triggers a class load of the outer SecretPerfMarkImpl.
+      // See https://docs.oracle.com/javase/specs/jls/se7/html/jls-14.html#jls-14.10
+      // assert ENABLED_BIT_SPACE + Generator.GEN_OFFSET + GEN_TIMESTAMP_SPACE <= 64;
       Generator gen = null;
       Throwable[] problems = new Throwable[4];
       // Avoid using a for-loop for this code, as it makes it easier for tools like Proguard to rewrite.
@@ -159,7 +161,7 @@ final class SecretPerfMarkImpl {
 
     // VisibleForTesting
     static long nextGeneration(final long currentGeneration, final long nanosSinceInit) {
-      assert currentGeneration != Generator.FAILURE;
+      // currentGeneration != Generator.FAILURE;
       long currentMibros = mibrosFromGeneration(currentGeneration);
       long mibrosSinceInit = Math.min(mibrosFromNanos(nanosSinceInit), MAX_MIBROS); // 54bits
       boolean nextEnabled = !isEnabled(currentGeneration);
@@ -174,7 +176,7 @@ final class SecretPerfMarkImpl {
       }
       long enabledMask = nextEnabled ? INCREMENT : 0;
       long mibroMask = (nextMibros << (Generator.GEN_OFFSET + ENABLED_BIT_SPACE));
-      assert (enabledMask & mibroMask) == 0;
+      // (enabledMask & mibroMask) == 0;
       return mibroMask | enabledMask;
     }
 
