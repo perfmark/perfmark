@@ -50,7 +50,7 @@ public class ArtifactTest {
   private static void checkPackage(Package pkg) {
     Truth.assertWithMessage(pkg.toString()).that(pkg.getImplementationTitle()).contains("PerfMark");
     Truth.assertWithMessage(pkg.toString()).that(pkg.toString()).contains("PerfMark");
-    Truth.assertWithMessage(pkg.toString()).that(pkg.isSealed()).isTrue();
+    Truth.assertWithMessage(pkg.toString()).that(pkg.isSealed()).isFalse();
 
     String vers = pkg.getImplementationVersion();
     assertNotNull(vers);
