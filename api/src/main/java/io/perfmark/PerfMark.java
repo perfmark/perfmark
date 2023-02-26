@@ -16,7 +16,7 @@
 
 package io.perfmark;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.DoNotCall;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.lang.reflect.Method;
@@ -96,8 +96,8 @@ public final class PerfMark {
    *
    * @param value {@code true} to enable PerfMark recording, or {@code false} to disable it.
    * @return If the enabled value was changed.
+   * @since 0.13.37
    */
-  @CanIgnoreReturnValue
   public static boolean setEnabled(boolean value) {
     return impl.setEnabled(value, false);
   }
@@ -113,6 +113,7 @@ public final class PerfMark {
    *
    * @param taskName the name of the task.
    * @param tag a user provided tag for the task.
+   * @since 0.13.37
    */
   public static void startTask(String taskName, Tag tag) {
     impl.startTask(taskName, tag);
@@ -124,6 +125,7 @@ public final class PerfMark {
    * be grouped together for analysis later, so avoid using too many unique task names.
    *
    * @param taskName the name of the task.
+   * @since 0.13.37
    */
   public static void startTask(String taskName) {
     impl.startTask(taskName);
@@ -175,6 +177,7 @@ public final class PerfMark {
    * @since 0.23.0
    */
   @MustBeClosed
+  @CheckReturnValue
   public static TaskCloseable traceTask(String taskName) {
     impl.startTask(taskName);
     return TaskCloseable.INSTANCE;
@@ -197,6 +200,7 @@ public final class PerfMark {
    * @since 0.23.0
    */
   @MustBeClosed
+  @CheckReturnValue
   public static <T> TaskCloseable traceTask(
       T taskNameObject, StringFunction<? super T> taskNameFunction) {
     impl.startTask(taskNameObject, taskNameFunction);
@@ -214,6 +218,7 @@ public final class PerfMark {
    *
    * @param eventName the name of the event.
    * @param tag a user provided tag for the event.
+   * @since 0.13.37
    */
   public static void event(String eventName, Tag tag) {
     impl.event(eventName, tag);
@@ -225,6 +230,7 @@ public final class PerfMark {
    * method is a no-op.
    *
    * @param eventName the name of the event.
+   * @since 0.13.37
    */
   public static void event(String eventName) {
     impl.event(eventName);
@@ -268,6 +274,7 @@ public final class PerfMark {
    *
    * @param taskName the name of the task being ended.
    * @param tag the tag of the task being ended.
+   * @since 0.13.37
    */
   public static void stopTask(String taskName, Tag tag) {
     impl.stopTask(taskName, tag);
@@ -285,6 +292,7 @@ public final class PerfMark {
    * of exceptions. Failing to do so may result in corrupted results.
    *
    * @param taskName the name of the task being ended.
+   * @since 0.13.37
    */
   public static void stopTask(String taskName) {
     impl.stopTask(taskName);
@@ -318,6 +326,7 @@ public final class PerfMark {
    * tasks may change over time.
    *
    * @return a Tag that has no name or id.
+   * @since 0.13.37
    */
   public static Tag createTag() {
     return Impl.NO_TAG;
@@ -330,6 +339,7 @@ public final class PerfMark {
    *
    * @param id a user provided identifier for this Tag.
    * @return a Tag that has no name.
+   * @since 0.13.37
    */
   public static Tag createTag(long id) {
     return impl.createTag(Impl.NO_TAG_NAME, id);
@@ -342,6 +352,7 @@ public final class PerfMark {
    *
    * @param name a user provided name for this Tag.
    * @return a Tag that has no numeric identifier.
+   * @since 0.13.37
    */
   public static Tag createTag(String name) {
     return impl.createTag(name, Impl.NO_TAG_ID);
@@ -355,6 +366,7 @@ public final class PerfMark {
    * @param id a user provided identifier for this Tag.
    * @param name a user provided name for this Tag.
    * @return a Tag that has both a name and id.
+   * @since 0.13.37
    */
   public static Tag createTag(String name, long id) {
     return impl.createTag(name, id);
@@ -472,7 +484,7 @@ public final class PerfMark {
    * tags. This method is useful for when you have the tag information after the task is started.
    *
    * <p>This method may treat the given two longs as special. If the tag name contains the string
-   * "uuid" (case insensitive), the value may be treated as a single 128 bit value. An example
+   * "uuid" (case-insensitive), the value may be treated as a single 128 bit value. An example
    * usage:
    *
    * <pre>
