@@ -20,7 +20,7 @@ final class NoopMarkRecorderProvider extends MarkRecorderProvider {
   NoopMarkRecorderProvider() {}
 
   @Override
-  public MarkRecorder createMarkRecorder(long markRecorderId) {
+  public MarkRecorder createMarkRecorder(MarkRecorderRef ref) {
     return new NoopMarkHolder();
   }
 

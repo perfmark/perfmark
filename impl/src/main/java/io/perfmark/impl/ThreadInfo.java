@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google LLC
+ * Copyright 2023 Carl Mastrangelo
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,23 @@
 package io.perfmark.impl;
 
 /**
- * This class creates MarkRecorders.  Custom MarkRecorder providers can be set using
- * {@link Storage#MARK_RECORDER_PROVIDER_PROP "io.perfmark.PerfMark.markRecorderProvider"}.
+ * Represents info about a Thread that may or may not still be around.
  */
-public abstract class MarkRecorderProvider {
-
-  protected MarkRecorderProvider() {}
+public abstract class ThreadInfo {
+  /**
+   * The most recent name of the thread.  Non-{@code null}.
+   */
+  public abstract String getName();
 
   /**
-   * Creates a new MarkHolder.  Mark holders are always mutated by the thread that created them, (e.g. THIS thread),
-   * but may be read by other threads.
-   *
-   * @return the new MarkHolder for the current thread.
-   * @since 0.27.0
+   * The most recent ID of the thread.
    */
-  public abstract MarkRecorder createMarkRecorder(MarkRecorderRef markRecorderRef);
+  public abstract long getId();
+
+  /**
+   * Returns {@code true} if the thread has been GC'd or is terminated.
+   */
+  public abstract boolean isTerminated();
+
+  public abstract boolean isCurrentThread();
 }

@@ -21,7 +21,9 @@ import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
+import io.perfmark.impl.ThreadInfo;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
@@ -281,26 +283,19 @@ final class HiddenClassVarHandleMarkRecorder extends MarkRecorder {
   static final class MarkHolderForward extends MarkHolder {
 
     private final Class<? extends MarkRecorder> recorder;
-    private final long markRecorderId;
-    private final WeakReference<Thread> threadRef;
-    private volatile String threadName;
-    private volatile long threadId;
+    private final MarkRecorderRef markRecorderRef;
 
-    MarkHolderForward(long markRecorderId, Class<? extends MarkRecorder> recorder) {
+    MarkHolderForward(MarkRecorderRef markRecorderRef, Class<? extends MarkRecorder> recorder) {
+      this.markRecorderRef = markRecorderRef;
       this.recorder = recorder;
-      this.markRecorderId = markRecorderId;
-      Thread t = Thread.currentThread();
-      this.threadRef = new WeakReference<>(t);
-      this.threadName = t.getName();
-      this.threadId = t.getId();
     }
 
     @Override
     public void resetForThread() {
-      if (threadRef.get() == null) {
+      if (markRecorderRef.threadInfo().isTerminated()) {
         Storage.unregisterMarkHolder(this);
       }
-      if (threadRef.get() != Thread.currentThread()) {
+      if (!markRecorderRef.threadInfo().isCurrentThread()) {
         return;
       }
       try {
@@ -313,10 +308,10 @@ final class HiddenClassVarHandleMarkRecorder extends MarkRecorder {
 
     @Override
     public void resetForAll() {
-      if (threadRef.get() == null) {
+      if (markRecorderRef.threadInfo().isTerminated()) {
         Storage.unregisterMarkHolder(this);
       }
-      if (threadRef.get() != Thread.currentThread()) {
+      if (!markRecorderRef.threadInfo().isCurrentThread()) {
         return;
       }
       try {
@@ -330,11 +325,11 @@ final class HiddenClassVarHandleMarkRecorder extends MarkRecorder {
     @Override
     @SuppressWarnings("unchecked")
     public List<MarkList> read() {
-      Thread t = threadRef.get();
+      ThreadInfo threadInfo = markRecorderRef.threadInfo();
       List<Mark> marks;
       try {
         var method = recorder.getDeclaredMethod("read", boolean.class);
-        marks = (List<Mark>) method.invoke(null, !(t == Thread.currentThread() || t == null));
+        marks = (List<Mark>) method.invoke(null, !(threadInfo.isTerminated() || threadInfo.isCurrentThread()));
       } catch (ReflectiveOperationException e) {
         throw new RuntimeException(e);
       }
@@ -344,9 +339,9 @@ final class HiddenClassVarHandleMarkRecorder extends MarkRecorder {
       return List.of(
           MarkList.newBuilder()
               .setMarks(marks)
-              .setThreadId(getAndUpdateThreadId())
-              .setThreadName(getAndUpdateThreadName())
-              .setMarkRecorderId(markRecorderId)
+              .setThreadId(markRecorderRef.threadInfo().getId())
+              .setThreadName(markRecorderRef.threadInfo().getName())
+              .setMarkRecorderId(markRecorderRef.markRecorderId())
               .build());
     }
 
@@ -354,31 +349,6 @@ final class HiddenClassVarHandleMarkRecorder extends MarkRecorder {
     public int maxMarks() {
       // TODO(carl-mastrangelo): propagate this from the provider
       return 32768;
-    }
-
-    private String getAndUpdateThreadName() {
-      Thread t = threadRef.get();
-      String name;
-      if (t != null) {
-        threadName = (name = t.getName());
-      } else {
-        name = threadName;
-      }
-      return name;
-    }
-
-    /**
-     * Some threads change their id over time, so we need to sync it if available.
-     */
-    private long getAndUpdateThreadId() {
-      Thread t = threadRef.get();
-      long id;
-      if (t != null) {
-        threadId = (id = t.getId());
-      } else {
-        id = threadId;
-      }
-      return id;
     }
   }
 

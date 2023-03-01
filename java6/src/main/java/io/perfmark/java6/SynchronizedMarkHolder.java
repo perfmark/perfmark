@@ -21,6 +21,7 @@ import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
+import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
 import java.lang.ref.WeakReference;
 import java.util.AbstractCollection;
@@ -36,12 +37,7 @@ import java.util.Queue;
 final class SynchronizedMarkHolder extends MarkHolder {
 
   private static final long GEN_MASK = (1 << Generator.GEN_OFFSET) - 1;
-
-  private final WeakReference<Thread> threadReference;
-  private final long markRecorderId;
-  private volatile String threadName;
-  private volatile long threadId;
-
+  private final MarkRecorderRef markRecorderRef;
   private final int maxEvents;
   private final long maxEventsMask;
 
@@ -52,7 +48,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
   private final long[] nums;
   private final String[] strings;
 
-  SynchronizedMarkHolder(int maxEvents, long markRecorderId) {
+  SynchronizedMarkHolder(int maxEvents, MarkRecorderRef markRecorderRef) {
     if (((maxEvents - 1) & maxEvents) != 0) {
       throw new IllegalArgumentException(maxEvents + " is not a power of two");
     }
@@ -63,11 +59,7 @@ final class SynchronizedMarkHolder extends MarkHolder {
     this.maxEventsMask = maxEvents - 1L;
     this.nums = new long[maxEvents];
     this.strings = new String[maxEvents];
-    Thread t = Thread.currentThread();
-    this.threadReference = new WeakReference<Thread>(t);
-    this.threadName = t.getName();
-    this.threadId = t.getId();
-    this.markRecorderId = markRecorderId;
+    this.markRecorderRef = markRecorderRef;
   }
 
   // This must be externally synchronized.
@@ -123,10 +115,10 @@ final class SynchronizedMarkHolder extends MarkHolder {
 
   @Override
   public synchronized void resetForThread() {
-    if (threadReference.get() == null) {
+    if (markRecorderRef.threadInfo().isTerminated()) {
       Storage.unregisterMarkHolder(this);
     }
-    if (threadReference.get() != Thread.currentThread()) {
+    if (!markRecorderRef.threadInfo().isCurrentThread()) {
       return;
     }
     Arrays.fill(nums, 0);
@@ -266,38 +258,13 @@ final class SynchronizedMarkHolder extends MarkHolder {
       return Collections.emptyList();
     }
     MarkList marksList = MarkList.newBuilder()
-        .setMarkRecorderId(markRecorderId)
-        .setThreadId(getAndUpdateThreadId())
-        .setThreadName(getAndUpdateThreadName())
+        .setMarkRecorderId(markRecorderRef.markRecorderId())
+        .setThreadId(markRecorderRef.threadInfo().getId())
+        .setThreadName(markRecorderRef.threadInfo().getName())
         .setMarks(new ArrayList<Mark>(marks))
         .build();
 
     return Collections.singletonList(marksList);
-  }
-
-  private String getAndUpdateThreadName() {
-    Thread t = threadReference.get();
-    String name;
-    if (t != null) {
-      threadName = (name = t.getName());
-    } else {
-      name = threadName;
-    }
-    return name;
-  }
-
-  /**
-   * Some threads change their id over time, so we need to sync it if available.
-   */
-  private long getAndUpdateThreadId() {
-    Thread t = threadReference.get();
-    long id;
-    if (t != null) {
-      threadId = (id = t.getId());
-    } else {
-      id = threadId;
-    }
-    return id;
   }
 
   private final class Kyoo<T> extends AbstractCollection<T> implements Queue<T> {

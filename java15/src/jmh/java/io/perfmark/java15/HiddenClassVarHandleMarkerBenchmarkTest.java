@@ -18,6 +18,7 @@ package io.perfmark.java15;
 
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.testing.MarkHolderRecorder;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
@@ -75,14 +76,16 @@ public class HiddenClassVarHandleMarkerBenchmarkTest {
   public static class SecretHiddenClassMarkRecorderBenchmark extends MarkHolderRecorder {
     @Override
     public MarkRecorder getMarkRecorder() {
-      return new SecretHiddenClassMarkRecorderProvider.HiddenClassMarkRecorderProvider().create(1234, 16384);
+      return new SecretHiddenClassMarkRecorderProvider.HiddenClassMarkRecorderProvider()
+          .create(MarkRecorderRef.newRef(), 16384);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public MarkRecorder allocationBenchmark() {
-      return new SecretHiddenClassMarkRecorderProvider.HiddenClassMarkRecorderProvider().create(1234, 4);
+      return new SecretHiddenClassMarkRecorderProvider.HiddenClassMarkRecorderProvider()
+          .create(MarkRecorderRef.newRef(), 4);
     }
   }
 }

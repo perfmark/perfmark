@@ -127,7 +127,7 @@ public class StorageTest {
 
   public static final class TestMarkRecorderProvider extends MarkRecorderProvider {
     @Override
-    public MarkRecorder createMarkRecorder(long markRecorderId) {
+    public MarkRecorder createMarkRecorder(MarkRecorderRef ref) {
       throw new AssertionError();
     }
   }

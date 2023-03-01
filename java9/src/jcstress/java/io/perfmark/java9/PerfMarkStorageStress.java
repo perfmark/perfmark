@@ -18,6 +18,7 @@ package io.perfmark.java9;
 
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.Mark;
+import io.perfmark.impl.MarkRecorderRef;
 import java.util.List;
 import org.openjdk.jcstress.annotations.Actor;
 import org.openjdk.jcstress.annotations.Description;
@@ -75,7 +76,8 @@ public class PerfMarkStorageStress {
     assert Generator.GEN_OFFSET <= OFFSET;
   }
 
-  private final VarHandleMarkRecorder holder = new VarHandleMarkRecorder(1234, SIZE);
+  private final VarHandleMarkRecorder holder =
+      new VarHandleMarkRecorder(MarkRecorderRef.newRef(), SIZE);
 
   @Actor
   public void writer() {

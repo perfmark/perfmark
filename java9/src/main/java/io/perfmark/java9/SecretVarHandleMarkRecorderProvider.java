@@ -19,7 +19,9 @@ package io.perfmark.java9;
 import io.perfmark.impl.Generator;
 import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.MarkRecorderProvider;
+import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
+import io.perfmark.impl.ThreadInfo;
 
 final class SecretVarHandleMarkRecorderProvider {
 
@@ -27,7 +29,7 @@ final class SecretVarHandleMarkRecorderProvider {
 
     public VarHandleMarkRecorderProvider() {
       // Do some basic operations to see if it works.
-      VarHandleMarkRecorder recorder = new VarHandleMarkRecorder(12345);
+      VarHandleMarkRecorder recorder = new VarHandleMarkRecorder(MarkRecorderRef.newRef());
       recorder.start(1 << Generator.GEN_OFFSET, "bogus", 0);
       recorder.stop(1 << Generator.GEN_OFFSET, "bogus", 0);
       int size = recorder.markHolder.read().get(0).size();
@@ -37,8 +39,8 @@ final class SecretVarHandleMarkRecorderProvider {
     }
 
     @Override
-    public MarkRecorder createMarkRecorder(long markHolderId) {
-      VarHandleMarkRecorder markRecorder = new VarHandleMarkRecorder(markHolderId);
+    public MarkRecorder createMarkRecorder(MarkRecorderRef markRecorderRef) {
+      VarHandleMarkRecorder markRecorder = new VarHandleMarkRecorder(markRecorderRef);
       Storage.registerMarkHolder(markRecorder.markHolder);
       return markRecorder;
     }

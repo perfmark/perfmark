@@ -21,10 +21,11 @@ import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
+import io.perfmark.impl.ThreadInfo;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,18 +81,18 @@ final class VarHandleMarkRecorder extends MarkRecorder {
   private final long[] nanoTimes;
   private final long[] genOps;
 
-  VarHandleMarkRecorder(long markRecorderId) {
-    this(markRecorderId, 32768);
+  VarHandleMarkRecorder(MarkRecorderRef markRecorderRef) {
+    this(markRecorderRef, 32768);
   }
 
-  VarHandleMarkRecorder(long markRecorderId, int maxEvents) {
+  VarHandleMarkRecorder(MarkRecorderRef markRecorderRef, int maxEvents) {
     if (((maxEvents - 1) & maxEvents) != 0) {
       throw new IllegalArgumentException(maxEvents + " is not a power of two");
     }
     if (maxEvents <= 0) {
       throw new IllegalArgumentException(maxEvents + " is not positive");
     }
-    this.markHolder = new MarkHolderForward(markRecorderId);
+    this.markHolder = new MarkHolderForward(markRecorderRef);
     this.maxEvents = maxEvents;
     this.maxEventsMax = maxEvents - 1L;
     this.taskNames = new String[maxEvents];
@@ -277,25 +278,18 @@ final class VarHandleMarkRecorder extends MarkRecorder {
 
   final class MarkHolderForward extends MarkHolder {
 
-    private final long markRecorderId;
-    private final WeakReference<Thread> threadRef;
-    private volatile String threadName;
-    private volatile long threadId;
+    private final MarkRecorderRef markRecorderRef;
 
-    MarkHolderForward(long markRecorderId) {
-      this.markRecorderId = markRecorderId;
-      Thread t = Thread.currentThread();
-      this.threadRef = new WeakReference<>(t);
-      this.threadName = t.getName();
-      this.threadId = t.getId();
+    MarkHolderForward(MarkRecorderRef markRecorderRef) {
+      this.markRecorderRef = markRecorderRef;
     }
 
     @Override
     public void resetForThread() {
-      if (threadRef.get() == null) {
+      if (markRecorderRef.threadInfo().isTerminated()) {
         Storage.unregisterMarkHolder(this);
       }
-      if (Thread.currentThread() != threadRef.get()) {
+      if (!markRecorderRef.threadInfo().isCurrentThread()) {
         return;
       }
       VarHandleMarkRecorder.this.resetForThread();
@@ -303,10 +297,10 @@ final class VarHandleMarkRecorder extends MarkRecorder {
 
     @Override
     public void resetForAll() {
-      if (threadRef.get() == null) {
+      if (markRecorderRef.threadInfo().isTerminated()) {
         Storage.unregisterMarkHolder(this);
       }
-      if (Thread.currentThread() != threadRef.get()) {
+      if (!markRecorderRef.threadInfo().isCurrentThread()) {
         return;
       }
       VarHandleMarkRecorder.this.resetForThread();
@@ -314,17 +308,17 @@ final class VarHandleMarkRecorder extends MarkRecorder {
 
     @Override
     public List<MarkList> read() {
-      Thread t = threadRef.get();
-      List<Mark> marks = VarHandleMarkRecorder.this.read(!(t == Thread.currentThread() || t == null));
+      ThreadInfo threadInfo = markRecorderRef.threadInfo();
+      List<Mark> marks = VarHandleMarkRecorder.this.read(!(threadInfo.isTerminated() || threadInfo.isCurrentThread()));
       if (marks.isEmpty()) {
         return Collections.emptyList();
       }
       return List.of(
           MarkList.newBuilder()
               .setMarks(marks)
-              .setThreadId(getAndUpdateThreadId())
-              .setThreadName(getAndUpdateThreadName())
-              .setMarkRecorderId(markRecorderId)
+              .setThreadId(threadInfo.getId())
+              .setThreadName(threadInfo.getName())
+              .setMarkRecorderId(markRecorderRef.markRecorderId())
               .build());
     }
 
@@ -332,31 +326,6 @@ final class VarHandleMarkRecorder extends MarkRecorder {
     @Override
     public int maxMarks() {
       return maxEvents;
-    }
-
-    private String getAndUpdateThreadName() {
-      Thread t = threadRef.get();
-      String name;
-      if (t != null) {
-        threadName = (name = t.getName());
-      } else {
-        name = threadName;
-      }
-      return name;
-    }
-
-    /**
-     * Some threads change their id over time, so we need to sync it if available.
-     */
-    private long getAndUpdateThreadId() {
-      Thread t = threadRef.get();
-      long id;
-      if (t != null) {
-        threadId = (id = t.getId());
-      } else {
-        id = threadId;
-      }
-      return id;
     }
   }
 
