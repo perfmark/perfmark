@@ -19,10 +19,10 @@ package io.perfmark.java9;
 import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.testing.MarkHolderTest;
 import java.util.List;
 import org.junit.Test;
@@ -34,7 +34,8 @@ public class VarHandleMarkRecorderTest extends MarkHolderTest {
 
   private final long gen = 1L << Generator.GEN_OFFSET;
 
-  private final VarHandleMarkRecorder recorder =  new VarHandleMarkRecorder(1234, 16384);
+  private final VarHandleMarkRecorder recorder =
+      new VarHandleMarkRecorder(MarkRecorderRef.newRef(), 16384);
   private final MarkHolder markHolder = recorder.markHolder;
 
   @Override

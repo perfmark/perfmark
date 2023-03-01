@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
-@javax.annotation.CheckReturnValue
-@javax.annotation.ParametersAreNonnullByDefault
+/**
+ * Represents implementation pieces to make PerfMark work.
+ */
 package io.perfmark.impl;

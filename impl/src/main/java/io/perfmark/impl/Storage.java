@@ -48,7 +48,6 @@ public final class Storage {
    * </ul>
    */
   static final String MARK_RECORDER_PROVIDER_PROP = "io.perfmark.PerfMark.markRecorderProvider";
-  static final AtomicLong markRecorderIdAllocator = new AtomicLong(1);
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
   // and need to use these static variables.
 
@@ -304,8 +303,8 @@ public final class Storage {
   }
 
   public static MarkRecorder allocateMarkRecorder() {
-    long markRecorderId = markRecorderIdAllocator.getAndIncrement();
-    return markRecorderProvider.createMarkRecorder(markRecorderId);
+    return markRecorderProvider.createMarkRecorder(
+        MarkRecorderRef.newRef(ThreadRef.newRef(null).asThreadInfo()));
   }
 
   private Storage() {}

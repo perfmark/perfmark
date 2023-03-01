@@ -18,6 +18,7 @@ package io.perfmark.java15;
 
 import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.MarkRecorderProvider;
+import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,11 +63,11 @@ public final class SecretHiddenClassMarkRecorderProvider {
     }
 
     @Override
-    public MarkRecorder createMarkRecorder(long markRecorderId) {
-      return create(markRecorderId, DEFAULT_SIZE);
+    public MarkRecorder createMarkRecorder(MarkRecorderRef ref) {
+      return create(ref, DEFAULT_SIZE);
     }
 
-    MarkRecorder create(long markRecorderId, int size) {
+    MarkRecorder create(MarkRecorderRef ref, int size) {
       final byte[] classData;
       if (size != DEFAULT_SIZE) {
         classData = Arrays.copyOf(markHolderClassData, markHolderClassData.length);
@@ -77,7 +78,7 @@ public final class SecretHiddenClassMarkRecorderProvider {
       try {
         Class<? extends MarkRecorder> clz =
             MethodHandles.lookup().defineHiddenClass(classData, true).lookupClass().asSubclass(MarkRecorder.class);
-        var holder = new HiddenClassVarHandleMarkRecorder.MarkHolderForward(markRecorderId, clz);
+        var holder = new HiddenClassVarHandleMarkRecorder.MarkHolderForward(ref, clz);
         Storage.registerMarkHolder(holder);
         return clz.getDeclaredConstructor().newInstance();
       } catch (ReflectiveOperationException e) {

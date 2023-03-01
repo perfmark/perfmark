@@ -18,6 +18,7 @@ package io.perfmark.java6;
 
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.MarkRecorderRef;
 
 final class SynchronizedMarkRecorder extends MarkRecorder {
 
@@ -53,8 +54,8 @@ final class SynchronizedMarkRecorder extends MarkRecorder {
 
   final SynchronizedMarkHolder markHolder;
 
-  SynchronizedMarkRecorder(long markRecorderId) {
-    this.markHolder = new SynchronizedMarkHolder(32768, markRecorderId);
+  SynchronizedMarkRecorder(MarkRecorderRef markRecorderRef) {
+    this.markHolder = new SynchronizedMarkHolder(32768, markRecorderRef);
   }
 
   @Override

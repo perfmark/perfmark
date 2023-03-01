@@ -22,6 +22,7 @@ import io.perfmark.impl.Generator;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.testing.MarkHolderTest;
 import java.util.List;
 import org.junit.Ignore;
@@ -35,11 +36,12 @@ public class HiddenClassVarHandleMarkRecorderTest extends MarkHolderTest {
   private final long gen = 1L << Generator.GEN_OFFSET;
 
   private final MarkRecorder recorder =
-      new SecretHiddenClassMarkRecorderProvider.HiddenClassMarkRecorderProvider().create(1234, 32768);
+      new SecretHiddenClassMarkRecorderProvider.HiddenClassMarkRecorderProvider()
+          .create(MarkRecorderRef.newRef(), 32768);
 
   @Override
   protected MarkHolder getMarkHolder() {
-    return new HiddenClassVarHandleMarkRecorder.MarkHolderForward(1234, recorder.getClass());
+    return new HiddenClassVarHandleMarkRecorder.MarkHolderForward(MarkRecorderRef.newRef(), recorder.getClass());
   }
 
   @Override

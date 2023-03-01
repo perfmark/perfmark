@@ -18,6 +18,7 @@ package io.perfmark.java6;
 
 import io.perfmark.impl.MarkRecorderProvider;
 import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
 
 final class SecretSynchronizedMarkRecorderProvider {
@@ -28,8 +29,8 @@ final class SecretSynchronizedMarkRecorderProvider {
     public SynchronizedMarkRecorderProvider() {}
 
     @Override
-    public MarkRecorder createMarkRecorder(long markRecorderId) {
-      SynchronizedMarkRecorder markRecorder = new SynchronizedMarkRecorder(markRecorderId);
+    public MarkRecorder createMarkRecorder(MarkRecorderRef markRecorderRef) {
+      SynchronizedMarkRecorder markRecorder = new SynchronizedMarkRecorder(markRecorderRef);
       Storage.registerMarkHolder(markRecorder.markHolder);
       return markRecorder;
     }
