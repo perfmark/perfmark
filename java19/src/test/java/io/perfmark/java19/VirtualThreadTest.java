@@ -49,7 +49,7 @@ public class VirtualThreadTest {
     int count = 10_000;
     var latch = new CountDownLatch(count);
     for (int i = 0; i < count; i++) {
-      exec.submit(
+      exec.execute(
           () -> {
             PerfMark.event("run");
             Runtime.getRuntime().gc();

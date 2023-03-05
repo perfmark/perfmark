@@ -75,6 +75,7 @@ tasks.named<JavaCompile>("compileJmhJava") {
     sourceCompatibility = jdkVersion.toString()
     targetCompatibility = jdkVersion.toString()
     options.compilerArgs.add("--enable-preview")
+    options.compilerArgs.add("-Xlint:preview")
 }
 
 
