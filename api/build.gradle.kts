@@ -57,7 +57,7 @@ tasks.named<JavaCompile>("compileJmhJava") {
 }
 
 java {
-    disableAutoTargetJvm()
+    // disableAutoTargetJvm()
 }
 
 tasks.named<Javadoc>("javadoc") {
