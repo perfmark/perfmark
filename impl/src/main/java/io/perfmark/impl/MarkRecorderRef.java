@@ -75,6 +75,6 @@ public final class MarkRecorderRef {
 
   @Override
   public String toString() {
-    return "MarkRecorderRef[" + markRecorderId + ", alive=" + (!threadInfo().isTerminated()) + "]";
+    return "MarkRecorderRef[" + markRecorderId + ", alive=" + !threadInfo().isTerminated() + "]";
   }
 }

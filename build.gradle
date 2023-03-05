@@ -124,6 +124,7 @@ subprojects {
     [publishMavenPublicationToMavenRepository, publishMavenPublicationToMavenLocal]*.onlyIf {
         !name.contains("perfmark-examples") && !name.contains("perfmark-api-testing")
                 && !name.contains("perfmark-testing") && !name.contains("perfmark-agent")
+                && !name.contains("perfmark-java19")
     }
 
     [javadoc]*.onlyIf {
