@@ -24,6 +24,10 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class MarkRecorderRef {
   private static final AtomicLong markRecorderAlloc = new AtomicLong(1);
 
+  public static long allocateMarkRecorderId() {
+    return markRecorderAlloc.getAndIncrement();
+  }
+
   private final long markRecorderId;
   private final ThreadInfo threadInfo;
 
@@ -38,7 +42,8 @@ public final class MarkRecorderRef {
    * Creates a new MarkRecorderRef that can update the thread name and ID from the current thread.
    */
   public static MarkRecorderRef newRef() {
-    return new MarkRecorderRef(markRecorderAlloc.getAndIncrement(), ThreadRef.newRef(null).asThreadInfo());
+    ThreadRef threadRef = ThreadRef.newRef(null);
+    return new MarkRecorderRef(markRecorderAlloc.getAndIncrement(), new ThreadRefInfo(threadRef));
   }
 
   private MarkRecorderRef(long markRecorderId, ThreadInfo threadInfo) {

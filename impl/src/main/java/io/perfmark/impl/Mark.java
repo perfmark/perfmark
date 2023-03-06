@@ -25,8 +25,6 @@ public final class Mark {
   public static final long NO_TAG_ID = Long.MIN_VALUE;
   public static final long NO_LINK_ID = Long.MIN_VALUE;
 
-  public static final long NO_NANOTIME = 0;
-
   private static final long N0 = 0;
   private static final String S0 = null;
 

@@ -303,8 +303,9 @@ public final class Storage {
   }
 
   public static MarkRecorder allocateMarkRecorder() {
-    return markRecorderProvider.createMarkRecorder(
-        MarkRecorderRef.newRef(ThreadRef.newRef(null).asThreadInfo()));
+    ThreadRef ref = ThreadRef.newRef(null);
+    ThreadRefInfo threadRefInfo = new ThreadRefInfo(ref);
+    return markRecorderProvider.createMarkRecorder(MarkRecorderRef.newRef(threadRefInfo));
   }
 
   private Storage() {}

@@ -23,6 +23,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.GroupThreads;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
@@ -55,13 +56,13 @@ public class ThreadLocalBenchmarkTest {
             .warmupIterations(10)
             .forks(1)
             .verbosity(VerboseMode.EXTRA)
-            .warmupTime(TimeValue.seconds(1))
-            .measurementTime(TimeValue.seconds(1))
+            .measurementTime(TimeValue.milliseconds(10))
+            .warmupTime(TimeValue.milliseconds(10))
             .shouldFailOnError(true)
             .param("allowed", Boolean.toString(allowed))
             .jvmArgs(
                 "-da",
-                // "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005",
+                "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005",
                 "-D" + VirtualExecutor.THREAD_LOCALS_DISABLED_PROP + "=" + !allowed,
                 "--enable-preview",
                 "-Djmh.executor=CUSTOM",
@@ -133,6 +134,7 @@ public class ThreadLocalBenchmarkTest {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @GroupThreads(1)
     public Long staticTLInitialValue() {
       return staticTLInitialValue.get();
     }
@@ -147,7 +149,7 @@ public class ThreadLocalBenchmarkTest {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public Long astaticTLGetSet() {
+    public Long staticTLGetSet() {
       return staticTLGetSet.get();
     }
 
