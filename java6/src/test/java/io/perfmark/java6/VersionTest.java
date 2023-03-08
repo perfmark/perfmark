@@ -30,8 +30,8 @@ public class VersionTest {
   private static final short JAVA_VERSION_6 = 50;
 
   @Test
-  public void blah() throws Exception {
-    Class<?> clz = SecretSynchronizedMarkRecorderProvider.class;
+  public void checkVersion() throws Exception {
+    Class<?> clz = SecretSynchronizedGlobalMarkRecorder.SynchronizedGlobalMarkRecorder.class;
     try (InputStream stream =
         clz.getClassLoader().getResourceAsStream(clz.getName().replace('.', '/') + ".class")) {
       byte[] data = stream.readAllBytes();

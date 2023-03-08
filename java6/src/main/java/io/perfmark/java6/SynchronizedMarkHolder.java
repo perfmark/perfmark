@@ -90,6 +90,23 @@ final class SynchronizedMarkHolder extends MarkHolder {
   }
 
   // This must be externally synchronized.
+  void writeTs(long genOp, String s0) {
+    assert Thread.holdsLock(this);
+    strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    nums[(int) (nIdx++ & maxEventsMask)] = System.nanoTime();
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
+  }
+
+  // This must be externally synchronized.
+  void writeTss(long genOp, String s0, String s1) {
+    assert Thread.holdsLock(this);
+    nums[(int) (nIdx++ & maxEventsMask)] = System.nanoTime();
+    strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    strings[(int) (sIdx++ & maxEventsMask)] = s1;
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
+  }
+
+  // This must be externally synchronized.
   void writeN(long genOp, long n0) {
     assert Thread.holdsLock(this);
     nums[(int) (nIdx++ & maxEventsMask)] = n0;

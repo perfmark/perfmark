@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Carl Mastrangelo
+ * Copyright 2023 Carl Mastrangelo
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package io.perfmark.java6;
 
-import io.perfmark.impl.GlobalMarkRecorder;
-import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.MarkRecorder;
-import io.perfmark.impl.MarkRecorderRef;
-import io.perfmark.testing.MarkHolderRecorder;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.runner.Runner;
@@ -32,7 +32,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
 @RunWith(JUnit4.class)
-public class SynchronizedMarkHolderBenchmarkTest {
+public class SynchronizedGlobalMarkHolderBenchmarkTest {
   @Test
   public void markHolderBenchmark() throws Exception {
       Options options = new OptionsBuilder()
@@ -48,6 +48,7 @@ public class SynchronizedMarkHolderBenchmarkTest {
           // This is necessary to run in the IDE, otherwise it would inherit the VM args.
           .jvmArgs("-da",
               "-XX:+UnlockDiagnosticVMOptions",
+             // "-XX:+UseBiasedLocking",
               "-XX:+LogCompilation",
               "-XX:LogFile=/dev/null",
               "-XX:+PrintAssembly",
@@ -67,10 +68,15 @@ public class SynchronizedMarkHolderBenchmarkTest {
   }
 
   @State(Scope.Thread)
-  public static class SynchronizedMarkHolderBenchmark extends MarkHolderRecorder {
-    @Override
-    public GlobalMarkRecorder getMarkRecorder() {
-      return new SecretSynchronizedGlobalMarkRecorder.SynchronizedGlobalMarkRecorder();
+  public static class SynchronizedMarkHolderBenchmark {
+
+    private static final SecretSynchronizedGlobalMarkRecorder.SynchronizedGlobalMarkRecorder mr
+        = new SecretSynchronizedGlobalMarkRecorder.SynchronizedGlobalMarkRecorder();
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public void st() {
+      mr.start(1234, "task");
     }
   }
 }

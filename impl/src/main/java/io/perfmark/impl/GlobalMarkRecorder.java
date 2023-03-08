@@ -20,73 +20,53 @@ public class GlobalMarkRecorder {
 
   protected GlobalMarkRecorder() {}
 
-  protected void start(long gen, String taskName, String tagName, long tagId) {
-    startAt(gen, taskName, tagName, tagId, System.nanoTime());
-  }
+  public void start(long gen, String taskName, String tagName, long tagId) {}
 
-  protected void start(long gen, String taskName) {
-    startAt(gen, taskName, System.nanoTime());
-  }
+  public void start(long gen, String taskName) {}
 
-  protected void start(long gen, String taskName, String subTaskName) {
-    startAt(gen, taskName, subTaskName, System.nanoTime());
-  }
+  public void start(long gen, String taskName, String subTaskName) {}
 
-  protected void startAt(long gen, String taskName, String tagName, long tagId, long nanoTime) {}
+  public void startAt(long gen, String taskName, String tagName, long tagId, long nanoTime) {}
 
-  protected void startAt(long gen, String taskName, long nanoTime) {}
+  public void startAt(long gen, String taskName, long nanoTime) {}
 
-  protected void startAt(long gen, String taskName, String subTaskName, long nanoTime) {}
+  public void startAt(long gen, String taskName, String subTaskName, long nanoTime) {}
 
-  protected void link(long gen, long linkId) {}
+  public void link(long gen, long linkId) {}
 
-  protected void stop(long gen) {
-    stopAt(gen, System.nanoTime());
-  }
+  public void stop(long gen) {}
 
-  protected void stop(long gen, String taskName, String tagName, long tagId) {
-    stopAt(gen, taskName, tagName, tagId, System.nanoTime());
-  }
+  public void stop(long gen, String taskName, String tagName, long tagId) {}
 
-  protected void stop(long gen, String taskName) {
-    stopAt(gen, taskName, System.nanoTime());
-  }
+  public void stop(long gen, String taskName) {}
 
-  protected void stop(long gen, String taskName, String subTaskName) {
-    stopAt(gen, taskName, subTaskName, System.nanoTime());
-  }
+  public void stop(long gen, String taskName, String subTaskName) {}
 
-  protected void stopAt(long gen, long nanoTime) {}
+  public void stopAt(long gen, long nanoTime) {}
 
-  protected void stopAt(long gen, String taskName, String tagName, long tagId, long nanoTime) {}
+  public void stopAt(long gen, String taskName, String tagName, long tagId, long nanoTime) {}
 
-  protected void stopAt(long gen, String taskName, long nanoTime) {}
+  public void stopAt(long gen, String taskName, long nanoTime) {}
 
-  protected void stopAt(long gen, String taskName, String subTaskName, long nanoTime) {}
+  public void stopAt(long gen, String taskName, String subTaskName, long nanoTime) {}
 
-  protected void event(long gen, String eventName, String tagName, long tagId) {
-    eventAt(gen, eventName, tagName, tagId);
-  }
+  public void event(long gen, String eventName, String tagName, long tagId) {}
 
-  protected void event(long gen, String eventName) {
-    eventAt(gen, eventName, System.nanoTime());
-  }
+  public void event(long gen, String eventName) {}
 
-  protected void event(long gen, String eventName, String subEventName) {
-    eventAt(gen, eventName, subEventName, System.nanoTime());
-  }
+  public void event(long gen, String eventName, String subEventName) {}
 
-  protected void eventAt(long gen, String eventName, String tagName, long tagId, long nanoTime) {}
+  public void eventAt(long gen, String eventName, String tagName, long tagId, long nanoTime) {}
 
-  protected void eventAt(long gen, String eventName, long nanoTime) {}
+  public void eventAt(long gen, String eventName, long nanoTime) {}
 
-  protected void eventAt(long gen, String eventName, String subEventName, long nanoTime) {}
+  public void eventAt(long gen, String eventName, String subEventName, long nanoTime) {}
 
-  protected void attachTag(long gen, String tagName, long tagId) {}
+  public void attachTag(long gen, String tagName, long tagId) {}
 
-  protected void attachKeyedTag(long gen, String name, String value) {}
+  public void attachKeyedTag(long gen, String name, String value) {}
 
-  protected void attachKeyedTag(long gen, String name, long value0) {}
+  public void attachKeyedTag(long gen, String name, long value0) {}
 
-  protected void attachKeyedTag(long gen, String name, long value0, long value1) {}
+  public void attachKeyedTag(long gen, String name, long value0, long value1) {}
 }
