@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Storage is responsible for storing and returning recorded marks. This is a low level class and
@@ -54,8 +53,6 @@ public final class Storage {
   private static final ConcurrentMap<Object, Reference<MarkHolder>> allMarkHolders =
       new ConcurrentHashMap<Object, Reference<MarkHolder>>();
   private static final MarkRecorderProvider markRecorderProvider;
-  private static final LocalMarkRecorder localMarkRecorder = new MostlyThreadLocalMarkRecorder();
-  private static volatile long lastGlobalIndexClear = Generator.INIT_NANO_TIME - 1;
 
   static {
     MarkRecorderProvider provider = null;
@@ -132,7 +129,6 @@ public final class Storage {
    * @return all reachable MarkLists.
    */
   public static List<MarkList> read() {
-    long lastReset = lastGlobalIndexClear;
     List<MarkList> markLists = new ArrayList<MarkList>();
     for (Iterator<Reference<MarkHolder>> it = allMarkHolders.values().iterator(); it.hasNext();) {
       Reference<MarkHolder> ref = it.next();
@@ -151,74 +147,6 @@ public final class Storage {
       }
     }
     return Collections.unmodifiableList(markLists);
-  }
-
-  static void startAnyway(long gen, String taskName, String tagName, long tagId) {
-    localMarkRecorder.get().start(gen, taskName, tagName, tagId, System.nanoTime());
-  }
-
-  static void startAnyway(long gen, String taskName) {
-    localMarkRecorder.get().start(gen, taskName, System.nanoTime());
-  }
-
-  static void startAnyway(long gen, String taskName, String subTaskName) {
-    localMarkRecorder.get().start(gen, taskName, subTaskName, System.nanoTime());
-  }
-
-  static void stopAnyway(long gen) {
-    long nanoTime = System.nanoTime();
-    localMarkRecorder.get().stop(gen, nanoTime);
-  }
-
-  static void stopAnyway(long gen, String taskName, String tagName, long tagId) {
-    long nanoTime = System.nanoTime();
-    localMarkRecorder.get().stop(gen, taskName, tagName, tagId, nanoTime);
-  }
-
-  static void stopAnyway(long gen, String taskName) {
-    long nanoTime = System.nanoTime();
-    localMarkRecorder.get().stop(gen, taskName, nanoTime);
-  }
-
-  static void stopAnyway(long gen, String taskName, String subTaskName) {
-    long nanoTime = System.nanoTime();
-    localMarkRecorder.get().stop(gen, taskName, subTaskName, nanoTime);
-  }
-
-  static void eventAnyway(long gen, String eventName, String tagName, long tagId) {
-    long nanoTime = System.nanoTime();
-    localMarkRecorder.get().event(gen, eventName, tagName, tagId, nanoTime);
-  }
-
-  static void eventAnyway(long gen, String eventName) {
-    long nanoTime = System.nanoTime();
-    localMarkRecorder.get().event(gen, eventName, nanoTime);
-  }
-
-  static void eventAnyway(long gen, String eventName, String subEventName) {
-    long nanoTime = System.nanoTime();
-    localMarkRecorder.get().event(gen, eventName, subEventName, nanoTime);
-  }
-
-  static void linkAnyway(long gen, long linkId) {
-    localMarkRecorder.get().link(gen, linkId);
-  }
-
-  static void attachTagAnyway(long gen, String tagName, long tagId) {
-    localMarkRecorder.get().attachTag(gen, tagName, tagId);
-  }
-
-  static void attachKeyedTagAnyway(long gen, String tagName, String tagValue) {
-    localMarkRecorder.get().attachKeyedTag(gen, tagName, tagValue);
-  }
-
-  static void attachKeyedTagAnyway(long gen, String tagName, long tagValue) {
-    localMarkRecorder.get().attachKeyedTag(gen, tagName, tagValue);
-  }
-
-  static void attachKeyedTagAnyway(
-      long gen, String tagName, long tagValue0, long tagValue1) {
-    localMarkRecorder.get().attachKeyedTag(gen, tagName, tagValue0, tagValue1);
   }
 
   /**
@@ -243,7 +171,6 @@ public final class Storage {
    * isn't fully removed.  To fully remove all data, each tracing thread must call {@link #resetForThread}.
    */
   public static void resetForAll() {
-    lastGlobalIndexClear = System.nanoTime() - 1;
     for (Iterator<Map.Entry<Object, Reference<MarkHolder>>> it = allMarkHolders.entrySet().iterator(); it.hasNext();) {
       Map.Entry<Object, Reference<MarkHolder>> entry = it.next();
       Reference<MarkHolder> ref = entry.getValue();
@@ -252,7 +179,9 @@ public final class Storage {
         it.remove();
         continue;
       }
-      entry.setValue(new WeakReference<MarkHolder>(holder));
+      if (ref instanceof SoftReference) {
+        entry.setValue(new WeakReference<MarkHolder>(holder));
+      }
       holder.resetForAll();
     }
   }
@@ -303,8 +232,9 @@ public final class Storage {
   }
 
   public static MarkRecorder allocateMarkRecorder() {
-    return markRecorderProvider.createMarkRecorder(
-        MarkRecorderRef.newRef(ThreadRef.newRef(null).asThreadInfo()));
+    ThreadRef ref = ThreadRef.newRef(null);
+    ThreadRefInfo threadRefInfo = new ThreadRefInfo(ref);
+    return markRecorderProvider.createMarkRecorder(MarkRecorderRef.newRef(threadRefInfo));
   }
 
   private Storage() {}

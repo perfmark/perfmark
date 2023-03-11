@@ -36,8 +36,10 @@ public abstract class Generator {
    */
   static final long INIT_NANO_TIME = System.nanoTime();
 
+  static final long NO_NANO_TIME = INIT_NANO_TIME - 1;
+
   /**
-   * This field is also here as a hack, capturing the time the program stated.
+   * This field is also here as a hack, capturing the time the class loaded.
    */
   static final long INIT_CURRENT_TIME_MILLIS = System.currentTimeMillis();
 

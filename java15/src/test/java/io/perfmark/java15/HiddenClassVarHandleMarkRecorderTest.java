@@ -19,12 +19,15 @@ package io.perfmark.java15;
 import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
+import io.perfmark.impl.GlobalMarkRecorder;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.testing.MarkHolderTest;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,20 +38,28 @@ public class HiddenClassVarHandleMarkRecorderTest extends MarkHolderTest {
 
   private final long gen = 1L << Generator.GEN_OFFSET;
 
-  private final MarkRecorder recorder =
-      new SecretHiddenClassMarkRecorderProvider.HiddenClassMarkRecorderProvider()
-          .create(MarkRecorderRef.newRef(), 32768);
+  @Before
+  public void setUp() {
+    try {
+      Reflect15.HiddenClassVarHandleGlobalMarkRecorder.setLocalMarkHolder(
+          Loader.getHiddenClass(Loader.DEFAULT_SIZE)
+              .getDeclaredConstructor(MarkRecorderRef.class)
+              .newInstance(MarkRecorderRef.newRef()));
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   @Override
   protected MarkHolder getMarkHolder() {
-    return new HiddenClassVarHandleMarkRecorder.MarkHolderForward(MarkRecorderRef.newRef(), recorder.getClass());
+    return Reflect15.HiddenClassVarHandleGlobalMarkRecorder.getLocalMarkHolder();
   }
 
   @Override
-  protected MarkRecorder getMarkRecorder() {
-    return recorder;
+  protected GlobalMarkRecorder getMarkRecorder() {
+    return new Reflect15.HiddenClassVarHandleGlobalMarkRecorder();
   }
-
+/*
   @Test
   @Ignore// TODO(carl-mastrangelo): reenable this
   public void read_getsAllButLastIfNotWriter() {
@@ -76,5 +87,5 @@ public class HiddenClassVarHandleMarkRecorderTest extends MarkHolderTest {
 
     List<MarkList> marks = mh.read();
     assertEquals(events, marks.size());
-  }
+  }*/
 }

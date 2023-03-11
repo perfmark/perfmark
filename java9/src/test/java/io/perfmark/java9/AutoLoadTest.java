@@ -41,11 +41,5 @@ public class AutoLoadTest {
     PerfMark.setEnabled(false);
     MarkList markList = Storage.readForTest();
     assertEquals(2, markList.size());
-
-    // Have to check after to ensure it loaded properly
-    Field field = Storage.class.getDeclaredField("markRecorderProvider");
-    field.setAccessible(true);
-
-    assertTrue(field.get(null) instanceof SecretVarHandleMarkRecorderProvider.VarHandleMarkRecorderProvider);
   }
 }

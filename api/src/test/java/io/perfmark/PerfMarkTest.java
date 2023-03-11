@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -124,7 +125,7 @@ public class PerfMarkTest {
       try (TaskCloseable task7 = PerfMark.traceTask("task7", String::valueOf)) {}
     }
 
-    List<Mark> marks = Storage.readForTest();
+    List<Mark> marks = new ArrayList<>(Storage.readForTest());
 
     Truth.assertThat(marks).hasSize(24);
     List<Mark> expected =

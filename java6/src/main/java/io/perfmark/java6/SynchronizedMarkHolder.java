@@ -23,7 +23,6 @@ import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
-import java.lang.ref.WeakReference;
 import java.util.AbstractCollection;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -86,6 +85,23 @@ final class SynchronizedMarkHolder extends MarkHolder {
     assert Thread.holdsLock(this);
     nums[(int) (nIdx++ & maxEventsMask)] = n0;
     strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
+  }
+
+  // This must be externally synchronized.
+  void writeTs(long genOp, String s0) {
+    assert Thread.holdsLock(this);
+    strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    nums[(int) (nIdx++ & maxEventsMask)] = System.nanoTime();
+    nums[(int) (nIdx++ & maxEventsMask)] = genOp;
+  }
+
+  // This must be externally synchronized.
+  void writeTss(long genOp, String s0, String s1) {
+    assert Thread.holdsLock(this);
+    nums[(int) (nIdx++ & maxEventsMask)] = System.nanoTime();
+    strings[(int) (sIdx++ & maxEventsMask)] = s0;
+    strings[(int) (sIdx++ & maxEventsMask)] = s1;
     nums[(int) (nIdx++ & maxEventsMask)] = genOp;
   }
 

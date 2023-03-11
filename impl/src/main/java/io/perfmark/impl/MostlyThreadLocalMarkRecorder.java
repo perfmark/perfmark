@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
  *   Note that this class avoids using {@link #initialValue()} because it may be called multiple times, in the
  *   case that ThreadLocals are unsettable.
  */
-final class MostlyThreadLocalMarkRecorder extends ThreadLocal<MarkRecorder> implements LocalMarkRecorder {
+public final class MostlyThreadLocalMarkRecorder extends ThreadLocal<MarkRecorder> implements LocalMarkRecorder {
   private static final int BITS = 11;
   private static final int SIZE = 1 << BITS;
   private static final int MASK = SIZE - 1;
@@ -38,7 +38,7 @@ final class MostlyThreadLocalMarkRecorder extends ThreadLocal<MarkRecorder> impl
   private final AtomicReferenceArray<CopyOnWriteArrayList<MarkRecorderHandle>> threadToHandles =
       new AtomicReferenceArray<CopyOnWriteArrayList<MarkRecorderHandle>>(SIZE);
 
-  MostlyThreadLocalMarkRecorder() {}
+  public MostlyThreadLocalMarkRecorder() {}
 
   @Override
   public MarkRecorder get() {

@@ -17,6 +17,7 @@
 package io.perfmark.testing;
 
 import io.perfmark.impl.Generator;
+import io.perfmark.impl.GlobalMarkRecorder;
 import io.perfmark.impl.MarkRecorder;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -51,14 +52,14 @@ public class MarkHolderRecorder {
       "-XX:PrintAssemblyOptions=syntax",
       "-XX:PrintAssemblyOptions=intel");
 
-  protected MarkRecorder markRecorder;
+  protected GlobalMarkRecorder markRecorder;
 
   private String tagName = "tag";
   private long tagId = 0xf0f0;
   private long nanoTime = 0xf1f1;
   private long linkId = 0xf2f2;
 
-  public MarkRecorder getMarkRecorder() {
+  public GlobalMarkRecorder getMarkRecorder() {
     throw new UnsupportedOperationException("not implemented");
   }
 
@@ -73,43 +74,43 @@ public class MarkHolderRecorder {
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void start_name_tag() {
-    markRecorder.start(gen, taskName, tagName, tagId, nanoTime);
+  public void startAt_name_tag() {
+    markRecorder.startAt(gen, taskName, tagName, tagId, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void start_name_noTag() {
-    markRecorder.start(gen, taskName, nanoTime);
+  public void startAt_name_noTag() {
+    markRecorder.startAt(gen, taskName, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void start_name_subname() {
-    markRecorder.start(gen, taskName, taskName, nanoTime);
+  public void startAt_name_subname() {
+    markRecorder.startAt(gen, taskName, taskName, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void stop_name_tag() {
-    markRecorder.stop(gen, taskName, tagName, tagId, nanoTime);
+  public void stopAt_name_tag() {
+    markRecorder.stopAt(gen, taskName, tagName, tagId, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void stop_name_noTag() {
-    markRecorder.stop(gen, taskName, nanoTime);
+  public void stopAt_name_noTag() {
+    markRecorder.stopAt(gen, taskName, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void stop_name_subname() {
-    markRecorder.stop(gen, taskName, tagName, nanoTime);
+  public void stopAt_name_subname() {
+    markRecorder.stopAt(gen, taskName, tagName, nanoTime);
   }
 
   @Benchmark
@@ -122,21 +123,21 @@ public class MarkHolderRecorder {
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void event_name_tag() {
-    markRecorder.event(gen, taskName, tagName, tagId, nanoTime);
+  public void eventAt_name_tag() {
+    markRecorder.eventAt(gen, taskName, tagName, tagId, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void event_name_noTag() {
-    markRecorder.event(gen, taskName, nanoTime);
+  public void eventAt_name_noTag() {
+    markRecorder.eventAt(gen, taskName, nanoTime);
   }
 
   @Benchmark
   @BenchmarkMode(Mode.AverageTime)
   @OutputTimeUnit(TimeUnit.NANOSECONDS)
-  public void event_name_subname() {
-    markRecorder.event(gen, taskName, taskName, nanoTime);
+  public void eventAt_name_subname() {
+    markRecorder.eventAt(gen, taskName, taskName, nanoTime);
   }
 }

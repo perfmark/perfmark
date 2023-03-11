@@ -18,7 +18,6 @@ package io.perfmark.impl;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -26,30 +25,31 @@ import java.util.concurrent.ConcurrentMap;
  * A "thread local" variable that uses weak refs to track the thread to value mapping.
  * This class is useful when {@link ThreadLocal} instances are inconvenient.
  *
+ * <p>Like All classes in this package, this class is not API stable.
  */
 public class ConcurrentThreadLocal<T> {
   private final ConcurrentMap<ThreadRef, T> refs = new ConcurrentHashMap<ThreadRef, T>();
   private final ReferenceQueue<Thread> queue = new ReferenceQueue<Thread>();
 
   public T get() {
-    T value = refs.get(ThreadRef.IDENTITY);
-    if (value == null) {
-      refs.put(new ThreadRef(Thread.currentThread(), queue), value = initialValueInternal());
+    T value;
+    if ((value = ThreadRef.get(refs)) != null) {
+      return value;
+    }
+    if ((value = initialValueInternal()) != null) {
+      refs.put(ThreadRef.newRef(queue), value);
     }
     return value;
   }
 
   public void remove() {
-    refs.remove(ThreadRef.IDENTITY);
+    ThreadRef.removeAndClearRef(refs);
     drainQueue();
   }
 
   public void set(T value) {
-    if (refs.containsKey(ThreadRef.IDENTITY)) {
-      refs.replace(ThreadRef.IDENTITY, value);
-    } else {
-      refs.put(new ThreadRef(Thread.currentThread(), queue), value);
-    }
+    ThreadRef.removeAndClearRef(refs);
+    refs.put(ThreadRef.newRef(queue), value);
   }
 
   protected T initialValue() {
@@ -73,36 +73,5 @@ public class ConcurrentThreadLocal<T> {
     do {
       refs.remove((ThreadRef) ref);
     } while ((ref = queue.poll()) != null);
-  }
-
-  private static final class ThreadRef extends WeakReference<Thread> {
-    private static final ThreadRef IDENTITY = new ThreadRef(null, null);
-
-    private final int hashCode;
-
-    ThreadRef(Thread thread, ReferenceQueue<? super Thread> queue) {
-      super(thread, queue);
-      this.hashCode = System.identityHashCode(thread);
-    }
-
-    @Override
-    @SuppressWarnings("ReferenceEquality")
-    public int hashCode() {
-      return this == IDENTITY ? System.identityHashCode(Thread.currentThread()) : hashCode;
-    }
-
-    @Override
-    @SuppressWarnings("ReferenceEquality")
-    public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (!(obj instanceof ThreadRef)) {
-        return false;
-      }
-      Thread that = ((ThreadRef) obj).get();
-      Thread thiz = this == IDENTITY ? Thread.currentThread() : get();
-      return thiz == that;
-    }
   }
 }
