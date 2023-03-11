@@ -80,8 +80,10 @@ final class SecretPerfMarkImpl {
           problems[2] = t;
         }
       }
+      boolean isNoop;
       if (gen != null) {
         generator = gen;
+        isNoop = false;
       } else {
         // This magic incantation avoids loading the NoopGenerator class.   When PerfMarkImpl is
         // being verified, the JVM needs to load NoopGenerator to see that it actually is a
@@ -89,6 +91,7 @@ final class SecretPerfMarkImpl {
         // actually taken, which is uncommon.  Avoid reflectively loading the class, which may
         // make binary shrinkers drop the NoopGenerator class.
         generator = (Generator) (Object) new NoopGenerator();
+        isNoop = true;
       }
 
       boolean startEnabled = false;
@@ -125,18 +128,29 @@ final class SecretPerfMarkImpl {
       problems[3] = null;
 
       GlobalMarkRecorder markRecorder0 = null;
-      try {
-        Class<?> clz = Class.forName("io.perfmark.java6.SecretSynchronizedGlobalMarkRecorder$SynchronizedGlobalMarkRecorder");
-        markRecorder0 = clz.asSubclass(GlobalMarkRecorder.class).getConstructor().newInstance();
-      } catch (Throwable t) {
-        problems[0] = t;
+      if (!isNoop) {
+        try {
+          Class<?> clz =
+              Class.forName("io.perfmark.java9.Reflect9$VarHandleGlobalMarkRecorder");
+          markRecorder0 = clz.asSubclass(GlobalMarkRecorder.class).getConstructor().newInstance();
+        } catch (Throwable t) {
+          problems[0] = t;
+        }
+        if (markRecorder0 == null) {
+          try {
+            Class<?> clz =
+                Class.forName("io.perfmark.java6.SecretSynchronizedGlobalMarkRecorder$SynchronizedGlobalMarkRecorder");
+            markRecorder0 = clz.asSubclass(GlobalMarkRecorder.class).getConstructor().newInstance();
+          } catch (Throwable t) {
+            problems[1] = t;
+          }
+        }
       }
       if (markRecorder0 == null) {
         markRecorder0 = new GlobalMarkRecorder();
       }
       markRecorder = markRecorder0;
     }
-
 
     public PerfMarkImpl(Tag key) {
       super(key);
@@ -324,7 +338,7 @@ final class SecretPerfMarkImpl {
       if (!isEnabled(gen)) {
         return;
       }
-      markRecorder.attachKeyedTag(gen, unpackTagName(tag), unpackTagId(tag));
+      markRecorder.attachTag(gen, unpackTagName(tag), unpackTagId(tag));
     }
 
     @Override

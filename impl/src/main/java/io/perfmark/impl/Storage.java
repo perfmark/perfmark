@@ -179,7 +179,9 @@ public final class Storage {
         it.remove();
         continue;
       }
-      entry.setValue(new WeakReference<MarkHolder>(holder));
+      if (ref instanceof SoftReference) {
+        entry.setValue(new WeakReference<MarkHolder>(holder));
+      }
       holder.resetForAll();
     }
   }

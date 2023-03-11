@@ -22,7 +22,6 @@ import io.perfmark.impl.Storage;
 
 final class SecretSynchronizedGlobalMarkRecorder {
   public static final class SynchronizedGlobalMarkRecorder extends GlobalMarkRecorder {
-
     private static final long START_N1S1_OP = 1; // Mark.Operation.TASK_START_N1S1.ordinal();
     private static final long START_N1S2_OP = 2; // Mark.Operation.TASK_START_N1S2.ordinal();
     private static final long STOP_N1S0_OP = 3; // Mark.Operation.TASK_END_N1S0.ordinal();

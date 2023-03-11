@@ -16,6 +16,10 @@
 
 package io.perfmark.impl;
 
+/**
+ * A Global MarkRecorder records tracing events from {@link io.perfmark.PerfMark} calls.  Instances
+ * of this class can be called concurrently by multiple threads.
+ */
 public class GlobalMarkRecorder {
 
   protected GlobalMarkRecorder() {}

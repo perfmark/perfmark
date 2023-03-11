@@ -23,7 +23,6 @@ import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
-import java.lang.ref.WeakReference;
 import java.util.AbstractCollection;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
