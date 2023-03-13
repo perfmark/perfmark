@@ -19,7 +19,6 @@ package io.perfmark.impl;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -46,78 +45,12 @@ public final class Storage {
    *   <li>If a MarkHolder is detached from its Thread, it cannot be written to again.</li>
    * </ul>
    */
-  static final String MARK_RECORDER_PROVIDER_PROP = "io.perfmark.PerfMark.markRecorderProvider";
+
   // The order of initialization here matters.  If a logger invokes PerfMark, it will be re-entrant
   // and need to use these static variables.
 
   private static final ConcurrentMap<Object, Reference<MarkHolder>> allMarkHolders =
       new ConcurrentHashMap<Object, Reference<MarkHolder>>();
-  private static final MarkRecorderProvider markRecorderProvider;
-
-  static {
-    MarkRecorderProvider provider = null;
-    Throwable[] problems = new Throwable[3];
-    try {
-      String markRecorderOverride = System.getProperty(MARK_RECORDER_PROVIDER_PROP);
-      if (markRecorderOverride != null && !markRecorderOverride.isEmpty()) {
-        Class<?> clz = Class.forName(markRecorderOverride);
-        provider = clz.asSubclass(MarkRecorderProvider.class).getConstructor().newInstance();
-      }
-    } catch (Throwable t) {
-      problems[0] = t;
-    }
-    if (provider == null) {
-      try {
-        Class<?> clz =
-            Class.forName(
-                "io.perfmark.java9.SecretVarHandleMarkRecorderProvider$VarHandleMarkRecorderProvider");
-        provider = clz.asSubclass(MarkRecorderProvider.class).getConstructor().newInstance();
-      } catch (Throwable t) {
-        problems[1] = t;
-      }
-    }
-    if (provider == null) {
-      try {
-        Class<?> clz =
-            Class.forName(
-                "io.perfmark.java6.SecretSynchronizedMarkRecorderProvider$SynchronizedMarkRecorderProvider");
-        provider = clz.asSubclass(MarkRecorderProvider.class).getConstructor().newInstance();
-      } catch (Throwable t) {
-        problems[2] = t;
-      }
-    }
-    if (provider != null) {
-      markRecorderProvider = provider;
-    } else {
-      // This magic incantation avoids loading the NoopMarkRecorderProvider class.   When Storage
-      // is being verified, the JVM needs to load NoopMarkRecorderProvider to see that it actually
-      // is a MarkRecorderProvider.  By doing a cast here, Java pushes the verification to when
-      // this branch is actually taken, which is uncommon.  Avoid reflectively loading the class,
-      // which may make binary shrinkers drop the NoopMarkRecorderProvider class.
-      markRecorderProvider = (MarkRecorderProvider) (Object) new NoopMarkRecorderProvider();
-    }
-    try {
-      if (Boolean.getBoolean("io.perfmark.PerfMark.debug")) {
-        // See the comment in io.perfmark.PerfMark for why this is invoked reflectively.
-        Class<?> logClass = Class.forName("java.util.logging.Logger");
-        Object logger = logClass.getMethod("getLogger", String.class).invoke(null, Storage.class.getName());
-        Class<?> levelClass = Class.forName("java.util.logging.Level");
-        Object level = levelClass.getField("FINE").get(null);
-        Method logProblemMethod = logClass.getMethod("log", levelClass, String.class, Throwable.class);
-
-        for (Throwable problem : problems) {
-          if (problem == null) {
-            continue;
-          }
-          logProblemMethod.invoke(logger, level, "Error loading MarkRecorderProvider", problem);
-        }
-        Method logSuccessMethod = logClass.getMethod("log", levelClass, String.class, Object[].class);
-        logSuccessMethod.invoke(logger, level, "Using {0}", new Object[] {markRecorderProvider.getClass().getName()});
-      }
-    } catch (Throwable t) {
-      // ignore
-    }
-  }
 
   public static long getInitNanoTime() {
     return Generator.INIT_NANO_TIME;
@@ -229,12 +162,6 @@ public final class Storage {
       }
     }
     return null;
-  }
-
-  public static MarkRecorder allocateMarkRecorder() {
-    ThreadRef ref = ThreadRef.newRef(null);
-    ThreadRefInfo threadRefInfo = new ThreadRefInfo(ref);
-    return markRecorderProvider.createMarkRecorder(MarkRecorderRef.newRef(threadRefInfo));
   }
 
   private Storage() {}
