@@ -1,6 +1,7 @@
+import net.ltgt.gradle.errorprone.errorprone
+
 @Suppress("DSL_SCOPE_VIOLATION") // See https://github.com/gradle/gradle/issues/22797
 plugins {
-    alias(libs.plugins.jmh)
     alias(libs.plugins.spotless)
 }
 
@@ -14,6 +15,18 @@ buildscript {
 val jdkVersion = JavaVersion.VERSION_1_6
 
 description = "PerfMark API"
+
+sourceSets {
+    create("jmh")
+}
+
+val jmhImplementation by configurations.getting {
+    extendsFrom(configurations.implementation.get())
+}
+
+val jmhAnnotationProcessor by configurations.getting {
+    extendsFrom(configurations.annotationProcessor.get())
+}
 
 java {
     toolchain {
@@ -35,8 +48,12 @@ dependencies {
     testImplementation(libs.truth)
     testRuntimeOnly(project(":perfmark-java6"))
 
+    jmhImplementation(project(":perfmark-api"))
     jmhImplementation(project(":perfmark-java9"))
     jmhImplementation(project(":perfmark-java7"))
+    jmhImplementation(libs.junit)
+    jmhImplementation(libs.jmhcore)
+    jmhAnnotationProcessor(libs.jmhanno)
 }
 
 spotless {
@@ -54,6 +71,7 @@ tasks.named<JavaCompile>("compileTestJava") {
 tasks.named<JavaCompile>("compileJmhJava") {
     sourceCompatibility = JavaVersion.VERSION_11.toString()
     targetCompatibility = JavaVersion.VERSION_11.toString()
+    options.errorprone.excludedPaths.set(".*/build/generated/sources/annotationProcessor/.*")
 }
 
 java {
@@ -64,39 +82,19 @@ tasks.named<Javadoc>("javadoc") {
     exclude("io/perfmark/Impl**")
 }
 
+tasks.named<JavaCompile>("compileJmhJava") {
+    sourceCompatibility = JavaVersion.VERSION_11.toString()
+    targetCompatibility = JavaVersion.VERSION_11.toString()
+}
 
-jmh {
+tasks.register<Test>("jmh") {
+    description = "Runs integration tests."
+    group = "stress"
 
-    timeOnIteration.set("1s")
-    warmup.set("1s")
-    fork.set(400)
-    warmupIterations.set(0)
+    testClassesDirs = sourceSets["jmh"].output.classesDirs
+    classpath = sourceSets["jmh"].runtimeClasspath
 
-    includes.add("ClassInit")
-    profilers.add("cl")
-    jvmArgs.add("-Dio.perfmark.debug=true")
-
-    /*
-    profilers = ["perfasm"]
-
-    jvmArgs = [
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+LogCompilation",
-            "-XX:LogFile=/tmp/blah.txt",
-            "-XX:+PrintAssembly",
-            "-XX:+PrintInterpreter",
-            "-XX:+PrintNMethods",
-            "-XX:+PrintNativeNMethods",
-            "-XX:+PrintSignatureHandlers",
-            "-XX:+PrintAdapterHandlers",
-            "-XX:+PrintStubCode",
-            "-XX:+PrintCompilation",
-            "-XX:+PrintInlining",
-            "-XX:+TraceClassLoading",
-            "-XX:PrintAssemblyOptions=syntax",
-            "-XX:PrintAssemblyOptions=intel"
-    ]
-     */
-
-    //duplicateClassesStrategy DuplicatesStrategy.INCLUDE
+    javaLauncher.set(javaToolchains.launcherFor({
+        languageVersion.set(JavaLanguageVersion.of("11"))
+    }))
 }
