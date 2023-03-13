@@ -21,7 +21,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MutableCallSite;
 
-final class SecretMethodHandleGenerator {
+final class SecretGenerator {
 
   // UsedReflectively
   public static final class MethodHandleGenerator extends Generator {
@@ -62,7 +62,7 @@ final class SecretMethodHandleGenerator {
     }
   }
 
-  private SecretMethodHandleGenerator() {
+  private SecretGenerator() {
     throw new AssertionError("nope");
   }
 }

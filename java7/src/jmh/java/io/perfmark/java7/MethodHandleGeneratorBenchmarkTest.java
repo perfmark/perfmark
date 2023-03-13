@@ -54,7 +54,7 @@ public class MethodHandleGeneratorBenchmarkTest {
   public static class MethodHandleGeneratorBenchmark extends GeneratorBenchmark {
     @Override
     protected Generator getGenerator() {
-      return new SecretMethodHandleGenerator.MethodHandleGenerator();
+      return new SecretGenerator.MethodHandleGenerator();
     }
   }
 }

@@ -19,17 +19,11 @@ package io.perfmark.java15;
 import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.GlobalMarkRecorder;
-import io.perfmark.impl.MarkHolder;
-import io.perfmark.impl.MarkList;
 import io.perfmark.impl.MarkRecorder;
+import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.testing.MarkHolderTest;
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -41,7 +35,7 @@ public class HiddenClassVarHandleMarkRecorderTest extends MarkHolderTest {
   @Before
   public void setUp() {
     try {
-      Reflect15.HiddenClassVarHandleGlobalMarkRecorder.setLocalMarkHolder(
+      SecretMarkRecorder.HiddenClassMarkRecorder.setLocalMarkHolder(
           Loader.getHiddenClass(Loader.DEFAULT_SIZE)
               .getDeclaredConstructor(MarkRecorderRef.class)
               .newInstance(MarkRecorderRef.newRef()));
@@ -52,12 +46,12 @@ public class HiddenClassVarHandleMarkRecorderTest extends MarkHolderTest {
 
   @Override
   protected MarkHolder getMarkHolder() {
-    return Reflect15.HiddenClassVarHandleGlobalMarkRecorder.getLocalMarkHolder();
+    return SecretMarkRecorder.HiddenClassMarkRecorder.getLocalMarkHolder();
   }
 
   @Override
-  protected GlobalMarkRecorder getMarkRecorder() {
-    return new Reflect15.HiddenClassVarHandleGlobalMarkRecorder();
+  protected MarkRecorder getMarkRecorder() {
+    return new SecretMarkRecorder.HiddenClassMarkRecorder();
   }
 /*
   @Test

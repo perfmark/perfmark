@@ -26,7 +26,7 @@ package io.perfmark.impl;
  *
  * <p>Normal users are not expected to use this class.
  */
-public abstract class Generator {
+public class Generator {
   /**
    * This field is here as a hack. This class is a shared dependency of both {@link
    * SecretPerfMarkImpl} and {@link Storage}. The impl needs to record the first time an event
@@ -64,7 +64,7 @@ public abstract class Generator {
    *
    * @param generation the generation id, shifted left by {@link #GEN_OFFSET}.
    */
-  public abstract void setGeneration(long generation);
+  public void setGeneration(long generation) {}
 
   /**
    * Gets the current generation, shifted left by {@link #GEN_OFFSET}. An odd number means the
@@ -72,7 +72,9 @@ public abstract class Generator {
    *
    * @return the current generation or {@link #FAILURE}.
    */
-  public abstract long getGeneration();
+  public long getGeneration() {
+    return FAILURE;
+  }
 
   /**
    * Returns the approximate cost to change the generation.

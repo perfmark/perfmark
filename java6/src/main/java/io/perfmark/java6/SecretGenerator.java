@@ -18,7 +18,7 @@ package io.perfmark.java6;
 
 import io.perfmark.impl.Generator;
 
-final class SecretVolatileGenerator {
+final class SecretGenerator {
 
   // @UsedReflectively
   public static final class VolatileGenerator extends Generator {
@@ -49,7 +49,7 @@ final class SecretVolatileGenerator {
     }
   }
 
-  private SecretVolatileGenerator() {
+  private SecretGenerator() {
     throw new AssertionError("nope");
   }
 }

@@ -16,12 +16,12 @@
 
 package io.perfmark.java6;
 
-import io.perfmark.impl.GlobalMarkRecorder;
+import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
 
-final class SecretSynchronizedGlobalMarkRecorder {
-  public static final class SynchronizedGlobalMarkRecorder extends GlobalMarkRecorder {
+final class SecretMarkRecorder {
+  public static final class SynchronizedMarkRecorder extends MarkRecorder {
     private static final long START_N1S1_OP = 1; // Mark.Operation.TASK_START_N1S1.ordinal();
     private static final long START_N1S2_OP = 2; // Mark.Operation.TASK_START_N1S2.ordinal();
     private static final long STOP_N1S0_OP = 3; // Mark.Operation.TASK_END_N1S0.ordinal();
@@ -39,7 +39,7 @@ final class SecretSynchronizedGlobalMarkRecorder {
     private static final LocalHolder localMarkHolder = new LocalHolder();
 
     // Used reflectively
-    public SynchronizedGlobalMarkRecorder() {}
+    public SynchronizedMarkRecorder() {}
 
     @Override
     public void start(long gen, String taskName) {
@@ -285,5 +285,5 @@ final class SecretSynchronizedGlobalMarkRecorder {
     }
   }
 
-  private SecretSynchronizedGlobalMarkRecorder() {}
+  private SecretMarkRecorder() {}
 }

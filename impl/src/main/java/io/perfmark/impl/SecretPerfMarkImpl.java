@@ -38,7 +38,7 @@ final class SecretPerfMarkImpl {
 
     private static final AtomicLong linkIdAlloc = new AtomicLong(1);
     private static final Generator generator;
-    private static final GlobalMarkRecorder markRecorder;
+    private static final MarkRecorder markRecorder;
 
     // May be null if debugging is disabled.
     private static final Object logger;
@@ -59,14 +59,14 @@ final class SecretPerfMarkImpl {
       Throwable[] problems = new Throwable[4];
       // Avoid using a for-loop for this code, as it makes it easier for tools like Proguard to rewrite.
       try {
-        Class<?> clz = Class.forName("io.perfmark.java7.SecretMethodHandleGenerator$MethodHandleGenerator");
+        Class<?> clz = Class.forName("io.perfmark.java7.SecretGenerator$MethodHandleGenerator");
         gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
       } catch (Throwable t) {
         problems[0] = t;
       }
       if (gen == null) {
         try {
-          Class<?> clz = Class.forName("io.perfmark.java9.SecretVarHandleGenerator$VarHandleGenerator");
+          Class<?> clz = Class.forName("io.perfmark.java9.SecretGenerator$VarHandleGenerator");
           gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
         } catch (Throwable t) {
           problems[1] = t;
@@ -74,7 +74,7 @@ final class SecretPerfMarkImpl {
       }
       if (gen == null) {
         try {
-          Class<?> clz = Class.forName("io.perfmark.java6.SecretVolatileGenerator$VolatileGenerator");
+          Class<?> clz = Class.forName("io.perfmark.java6.SecretGenerator$VolatileGenerator");
           gen = clz.asSubclass(Generator.class).getConstructor().newInstance();
         } catch (Throwable t) {
           problems[2] = t;
@@ -90,7 +90,7 @@ final class SecretPerfMarkImpl {
         // Generator.  By doing a cast here, Java pushes the verification to when this branch is
         // actually taken, which is uncommon.  Avoid reflectively loading the class, which may
         // make binary shrinkers drop the NoopGenerator class.
-        generator = (Generator) (Object) new NoopGenerator();
+        generator = new Generator();
         isNoop = true;
       }
 
@@ -127,27 +127,27 @@ final class SecretPerfMarkImpl {
       problems[2] = null;
       problems[3] = null;
 
-      GlobalMarkRecorder markRecorder0 = null;
+      MarkRecorder markRecorder0 = null;
       if (!isNoop) {
         try {
           Class<?> clz =
-              Class.forName("io.perfmark.java9.Reflect9$VarHandleGlobalMarkRecorder");
-          markRecorder0 = clz.asSubclass(GlobalMarkRecorder.class).getConstructor().newInstance();
+              Class.forName("io.perfmark.java9.SecretMarkRecorder$VarHandleMarkRecorder");
+          markRecorder0 = clz.asSubclass(MarkRecorder.class).getConstructor().newInstance();
         } catch (Throwable t) {
           problems[0] = t;
         }
         if (markRecorder0 == null) {
           try {
             Class<?> clz =
-                Class.forName("io.perfmark.java6.SecretSynchronizedGlobalMarkRecorder$SynchronizedGlobalMarkRecorder");
-            markRecorder0 = clz.asSubclass(GlobalMarkRecorder.class).getConstructor().newInstance();
+                Class.forName("io.perfmark.java6.SecretMarkRecorder$SynchronizedMarkRecorder");
+            markRecorder0 = clz.asSubclass(MarkRecorder.class).getConstructor().newInstance();
           } catch (Throwable t) {
             problems[1] = t;
           }
         }
       }
       if (markRecorder0 == null) {
-        markRecorder0 = new GlobalMarkRecorder();
+        markRecorder0 = new MarkRecorder();
       }
       markRecorder = markRecorder0;
     }

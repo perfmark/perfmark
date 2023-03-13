@@ -17,7 +17,6 @@
 package io.perfmark.testing;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.GlobalMarkRecorder;
 import io.perfmark.impl.MarkRecorder;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -52,14 +51,14 @@ public class MarkHolderRecorder {
       "-XX:PrintAssemblyOptions=syntax",
       "-XX:PrintAssemblyOptions=intel");
 
-  protected GlobalMarkRecorder markRecorder;
+  protected MarkRecorder markRecorder;
 
   private String tagName = "tag";
   private long tagId = 0xf0f0;
   private long nanoTime = 0xf1f1;
   private long linkId = 0xf2f2;
 
-  public GlobalMarkRecorder getMarkRecorder() {
+  public MarkRecorder getMarkRecorder() {
     throw new UnsupportedOperationException("not implemented");
   }
 

@@ -19,7 +19,7 @@ package io.perfmark.testing;
 import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.GlobalMarkRecorder;
+import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.Mark;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
@@ -42,7 +42,7 @@ public abstract class MarkHolderTest {
     throw new UnsupportedOperationException("not implemented");
   }
 
-  protected GlobalMarkRecorder getMarkRecorder() {
+  protected MarkRecorder getMarkRecorder() {
     throw new UnsupportedOperationException("not implemented");
   }
 
