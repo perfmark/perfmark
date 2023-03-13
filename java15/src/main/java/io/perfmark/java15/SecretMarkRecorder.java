@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package io.perfmark.java9;
+package io.perfmark.java15;
 
-import io.perfmark.impl.GlobalMarkRecorder;
+import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.impl.Storage;
 
-final class Reflect9 {
-
-  public static final class VarHandleGlobalMarkRecorder extends GlobalMarkRecorder {
+final class SecretMarkRecorder {
+  public static final class HiddenClassMarkRecorder extends MarkRecorder {
 
     private static final LocalHolder localMarkHolder = new LocalHolder();
 
-    // Used Reflectively
-    public VarHandleGlobalMarkRecorder() {}
 
     @Override
     public void start(long gen, String taskName) {
@@ -162,7 +159,7 @@ final class Reflect9 {
     }
 
     // VisibleForTesting
-    static VarHandleMarkHolder getLocalMarkHolder() {
+    static MarkHolderRecorder getLocalMarkHolder() {
       return localMarkHolder.getNoInit();
     }
 
@@ -172,28 +169,33 @@ final class Reflect9 {
     }
 
     // VisibleForTesting
-    static void setLocalMarkHolder(VarHandleMarkHolder holder) {
+    static void setLocalMarkHolder(MarkHolderRecorder holder) {
       localMarkHolder.set(holder);
     }
 
-    private static final class LocalHolder extends ThreadLocal<VarHandleMarkHolder> {
+    private static final class LocalHolder extends ThreadLocal<MarkHolderRecorder> {
 
       @Override
-      protected VarHandleMarkHolder initialValue() {
-        VarHandleMarkHolder holder =
-            new VarHandleMarkHolder(MarkRecorderRef.newRef(), 32768);
-        Storage.registerMarkHolder(holder);
-        return holder;
+      protected MarkHolderRecorder initialValue() {
+        try  {
+          MarkHolderRecorder instance =
+              Loader.getHiddenClass(32768)
+                  .getDeclaredConstructor(MarkRecorderRef.class)
+                  .newInstance(MarkRecorderRef.newRef());
+          Storage.registerMarkHolder(instance);
+          return instance;
+        } catch (ReflectiveOperationException e) {
+          throw new RuntimeException(e);
+        }
       }
 
       // VisibleForTesting
-      VarHandleMarkHolder getNoInit() {
+      MarkHolderRecorder getNoInit() {
         return super.get();
       }
 
       LocalHolder() {}
     }
   }
-
-  private Reflect9() {}
+  private SecretMarkRecorder() {}
 }

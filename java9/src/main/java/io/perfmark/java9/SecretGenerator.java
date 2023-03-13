@@ -20,7 +20,7 @@ import io.perfmark.impl.Generator;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
-final class SecretVarHandleGenerator {
+final class SecretGenerator {
 
   /**
    * This class let's PerfMark have fairly low overhead detection if it is enabled, with reasonable
@@ -67,5 +67,5 @@ final class SecretVarHandleGenerator {
     }
   }
 
-  private SecretVarHandleGenerator() {}
+  private SecretGenerator() {}
 }

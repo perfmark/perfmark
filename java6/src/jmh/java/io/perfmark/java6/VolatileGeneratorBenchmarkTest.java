@@ -52,7 +52,7 @@ public class VolatileGeneratorBenchmarkTest {
   public static class VolatileGeneratorBenchmark extends GeneratorBenchmark {
     @Override
     protected Generator getGenerator() {
-      return new SecretVolatileGenerator.VolatileGenerator();
+      return new SecretGenerator.VolatileGenerator();
     }
   }
 }

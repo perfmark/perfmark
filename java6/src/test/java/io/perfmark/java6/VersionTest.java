@@ -31,7 +31,7 @@ public class VersionTest {
 
   @Test
   public void checkVersion() throws Exception {
-    Class<?> clz = SecretSynchronizedGlobalMarkRecorder.SynchronizedGlobalMarkRecorder.class;
+    Class<?> clz = SecretMarkRecorder.SynchronizedMarkRecorder.class;
     try (InputStream stream =
         clz.getClassLoader().getResourceAsStream(clz.getName().replace('.', '/') + ".class")) {
       byte[] data = stream.readAllBytes();

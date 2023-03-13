@@ -19,12 +19,11 @@ package io.perfmark.java9;
 import static org.junit.Assert.assertEquals;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.impl.GlobalMarkRecorder;
+import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkList;
-import io.perfmark.impl.MarkRecorder;
 import io.perfmark.impl.MarkRecorderRef;
-import io.perfmark.java9.Reflect9.VarHandleGlobalMarkRecorder;
+import io.perfmark.java9.SecretMarkRecorder.VarHandleMarkRecorder;
 import io.perfmark.testing.MarkHolderTest;
 import java.util.List;
 import org.junit.After;
@@ -41,28 +40,28 @@ public class VarHandleMarkRecorderTest extends MarkHolderTest {
 
   @Before
   public void setUp() {
-    VarHandleGlobalMarkRecorder.setLocalMarkHolder(
+    VarHandleMarkRecorder.setLocalMarkHolder(
         new VarHandleMarkHolder(MarkRecorderRef.newRef(), 32768));
   }
 
   @After
   public void tearDown() {
-    VarHandleGlobalMarkRecorder.clearLocalMarkHolder();
+    VarHandleMarkRecorder.clearLocalMarkHolder();
   }
 
   @Override
-  protected GlobalMarkRecorder getMarkRecorder() {
-    return new Reflect9.VarHandleGlobalMarkRecorder();
+  protected MarkRecorder getMarkRecorder() {
+    return new VarHandleMarkRecorder();
   }
 
   @Override
   protected MarkHolder getMarkHolder() {
-    return VarHandleGlobalMarkRecorder.getLocalMarkHolder();
+    return VarHandleMarkRecorder.getLocalMarkHolder();
   }
 
   @Test
   public void read_getsAllButLastIfNotWriter() {
-    GlobalMarkRecorder mr = getMarkRecorder();
+    MarkRecorder mr = getMarkRecorder();
     int events = getMarkHolder().maxMarks() - 1;
     for (int i = 0; i < events; i++) {
       mr.startAt(gen, "task", 3);
@@ -75,7 +74,7 @@ public class VarHandleMarkRecorderTest extends MarkHolderTest {
 
   @Test
   public void read_getsAllIfNotWriterButNoWrap() {
-    GlobalMarkRecorder mr = getMarkRecorder();
+    MarkRecorder mr = getMarkRecorder();
 
     int events = getMarkHolder().maxMarks() - 2;
     for (int i = 0; i < events; i++) {

@@ -16,37 +16,117 @@
 
 package io.perfmark.impl;
 
-public abstract class MarkRecorder {
+/**
+ * A MarkRecorder records tracing events from {@link io.perfmark.PerfMark} calls.  Instances
+ * of this class can be called concurrently by multiple threads.
+ */
+public class MarkRecorder {
 
   protected MarkRecorder() {}
 
-  public abstract void start(long gen, String taskName, String tagName, long tagId, long nanoTime);
+  public void start(long gen, String taskName, String tagName, long tagId) {
+    unimplemented();
+  }
 
-  public abstract void start(long gen, String taskName, long nanoTime);
+  public void start(long gen, String taskName) {
+    unimplemented();
+  }
 
-  public abstract void start(long gen, String taskName, String subTaskName, long nanoTime);
+  public void start(long gen, String taskName, String subTaskName) {
+    unimplemented();
+  }
 
-  public abstract void link(long gen, long linkId);
+  public void startAt(long gen, String taskName, String tagName, long tagId, long nanoTime) {
+    unimplemented();
+  }
 
-  public abstract void stop(long gen, long nanoTime);
+  public void startAt(long gen, String taskName, long nanoTime) {
+    unimplemented();
+  }
 
-  public abstract void stop(long gen, String taskName, String tagName, long tagId, long nanoTime);
+  public void startAt(long gen, String taskName, String subTaskName, long nanoTime) {
+    unimplemented();
+  }
 
-  public abstract void stop(long gen, String taskName, long nanoTime);
+  public void link(long gen, long linkId) {
+    unimplemented();
+  }
 
-  public abstract void stop(long gen, String taskName, String subTaskName, long nanoTime);
+  public void stop(long gen) {
+    unimplemented();
+  }
 
-  public abstract void event(long gen, String eventName, String tagName, long tagId, long nanoTime);
+  public void stop(long gen, String taskName, String tagName, long tagId) {
+    unimplemented();
+  }
 
-  public abstract void event(long gen, String eventName, long nanoTime);
+  public void stop(long gen, String taskName) {
+    unimplemented();
+  }
 
-  public abstract void event(long gen, String eventName, String subEventName, long nanoTime);
+  public void stop(long gen, String taskName, String subTaskName) {
+    unimplemented();
+  }
 
-  public abstract void attachTag(long gen, String tagName, long tagId);
+  public void stopAt(long gen, long nanoTime) {
+    unimplemented();
+  }
 
-  public abstract void attachKeyedTag(long gen, String name, String value);
+  public void stopAt(long gen, String taskName, String tagName, long tagId, long nanoTime) {
+    unimplemented();
+  }
 
-  public abstract void attachKeyedTag(long gen, String name, long value0);
+  public void stopAt(long gen, String taskName, long nanoTime) {
+    unimplemented();
+  }
 
-  public abstract void attachKeyedTag(long gen, String name, long value0, long value1);
+  public void stopAt(long gen, String taskName, String subTaskName, long nanoTime) {
+    unimplemented();
+  }
+
+  public void event(long gen, String eventName, String tagName, long tagId) {
+    unimplemented();
+  }
+
+  public void event(long gen, String eventName) {
+    unimplemented();
+  }
+
+  public void event(long gen, String eventName, String subEventName) {
+    unimplemented();
+  }
+
+  public void eventAt(long gen, String eventName, String tagName, long tagId, long nanoTime) {
+    unimplemented();
+  }
+
+  public void eventAt(long gen, String eventName, long nanoTime) {
+    unimplemented();
+  }
+
+  public void eventAt(long gen, String eventName, String subEventName, long nanoTime) {
+    unimplemented();
+  }
+
+  public void attachTag(long gen, String tagName, long tagId) {
+    unimplemented();
+  }
+
+  public void attachKeyedTag(long gen, String name, String value) {
+    unimplemented();
+  }
+
+  public void attachKeyedTag(long gen, String name, long value0) {
+    unimplemented();
+  }
+
+  public void attachKeyedTag(long gen, String name, long value0, long value1) {
+    unimplemented();
+  }
+
+  /**
+   * This method exists for subclasses to add custom behavior to unimplemented method calls.
+   * All the other methods in this class invoke this method.
+   */
+  public void unimplemented() {}
 }

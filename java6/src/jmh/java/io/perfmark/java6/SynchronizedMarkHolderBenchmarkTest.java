@@ -16,10 +16,7 @@
 
 package io.perfmark.java6;
 
-import io.perfmark.impl.GlobalMarkRecorder;
-import io.perfmark.impl.MarkHolder;
 import io.perfmark.impl.MarkRecorder;
-import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.testing.MarkHolderRecorder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,8 +66,8 @@ public class SynchronizedMarkHolderBenchmarkTest {
   @State(Scope.Thread)
   public static class SynchronizedMarkHolderBenchmark extends MarkHolderRecorder {
     @Override
-    public GlobalMarkRecorder getMarkRecorder() {
-      return new SecretSynchronizedGlobalMarkRecorder.SynchronizedGlobalMarkRecorder();
+    public MarkRecorder getMarkRecorder() {
+      return new SecretMarkRecorder.SynchronizedMarkRecorder();
     }
   }
 }

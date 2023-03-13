@@ -17,17 +17,10 @@
 package io.perfmark.java9;
 
 import io.perfmark.impl.Generator;
-import io.perfmark.testing.GarbageCollector;
 import io.perfmark.testing.GeneratorBenchmark;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.GroupThreads;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.runner.Runner;
@@ -61,7 +54,7 @@ public class VarHandleGeneratorBenchmarkTest {
   public static class VarHandleGeneratorBenchmark extends GeneratorBenchmark {
     @Override
     protected Generator getGenerator() {
-      return new SecretVarHandleGenerator.VarHandleGenerator();
+      return new SecretGenerator.VarHandleGenerator();
     }
   }
 }

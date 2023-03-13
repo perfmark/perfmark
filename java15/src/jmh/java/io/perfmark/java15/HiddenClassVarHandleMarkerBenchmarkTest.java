@@ -16,9 +16,7 @@
 
 package io.perfmark.java15;
 
-import io.perfmark.impl.GlobalMarkRecorder;
 import io.perfmark.impl.MarkRecorder;
-import io.perfmark.impl.MarkRecorderRef;
 import io.perfmark.testing.MarkHolderRecorder;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
@@ -63,8 +61,8 @@ public class HiddenClassVarHandleMarkerBenchmarkTest {
   @State(Scope.Thread)
   public static class SecretHiddenClassMarkRecorderBenchmark extends MarkHolderRecorder {
     @Override
-    public GlobalMarkRecorder getMarkRecorder() {
-      return new Reflect15.HiddenClassVarHandleGlobalMarkRecorder();
+    public MarkRecorder getMarkRecorder() {
+      return new SecretMarkRecorder.HiddenClassMarkRecorder();
     }
 
     @Benchmark

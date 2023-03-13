@@ -70,8 +70,8 @@ public class SynchronizedGlobalMarkHolderBenchmarkTest {
   @State(Scope.Thread)
   public static class SynchronizedMarkHolderBenchmark {
 
-    private static final SecretSynchronizedGlobalMarkRecorder.SynchronizedGlobalMarkRecorder mr
-        = new SecretSynchronizedGlobalMarkRecorder.SynchronizedGlobalMarkRecorder();
+    private static final SecretMarkRecorder.SynchronizedMarkRecorder mr
+        = new SecretMarkRecorder.SynchronizedMarkRecorder();
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
