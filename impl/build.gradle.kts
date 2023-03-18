@@ -30,7 +30,6 @@ tasks.named<JavaCompile>("compileJava") {
 
 dependencies {
     implementation(project(":perfmark-api"))
-    compileOnly(libs.jsr305)
     compileOnly(libs.errorprone)
     testImplementation(libs.truth)
     testCompileOnly(libs.errorprone)

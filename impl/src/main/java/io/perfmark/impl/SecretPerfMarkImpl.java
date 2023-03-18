@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 
 final class SecretPerfMarkImpl {
 
@@ -449,7 +448,7 @@ final class SecretPerfMarkImpl {
     }
 
     @Override
-    protected Tag createTag(@Nullable String tagName, long tagId) {
+    protected Tag createTag(String tagName, long tagId) {
       if (!isEnabled(getGen())) {
         return NO_TAG;
       }

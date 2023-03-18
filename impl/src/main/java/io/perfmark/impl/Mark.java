@@ -17,7 +17,6 @@
 package io.perfmark.impl;
 
 import java.util.Arrays;
-import javax.annotation.Nullable;
 
 public final class Mark {
   // TODO: make sure these match the values in Impl
@@ -34,9 +33,12 @@ public final class Mark {
   private final long n2;
   private final long n3;
 
-  @Nullable private final String s1;
-  @Nullable private final String s2;
-  @Nullable private final String s3;
+  /** {@code Nullable} */
+  private final String s1;
+  /** {@code Nullable} */
+  private final String s2;
+  /** {@code Nullable} */
+  private final String s3;
 
   private final Operation operation;
 
@@ -138,13 +140,14 @@ public final class Mark {
     throw new AssertionError();
   }
 
+  /** s1, s2, and s3 are {@code Nullable} */
   private Mark(
       long n1,
       long n2,
       long n3,
-      @Nullable String s1,
-      @Nullable String s2,
-      @Nullable String s3,
+      String s1,
+      String s2,
+      String s3,
       long generation,
       Operation operation) {
     if (operation == null) {

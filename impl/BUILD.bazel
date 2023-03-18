@@ -1,18 +1,42 @@
 java_library(
     name = "impl",
     srcs = [
-        "src/main/java/io/perfmark/impl/NoopGenerator.java",
         "src/main/java/io/perfmark/impl/SecretPerfMarkImpl.java",
     ],
     deps = [
         ":generator",
         ":mark",
+        ":mark-recorder",
         ":storage",
         "//api:impl",
         "//api:link",
         "//api:tag",
         "//api:stringfunction",
-        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+java_library(
+    name = "mark-recorder",
+    srcs = ["src/main/java/io/perfmark/impl/MarkRecorder.java"],
+    visibility = ["//:__subpackages__"],
+)
+
+java_library(
+    name = "thread-info",
+    srcs = ["src/main/java/io/perfmark/impl/ThreadInfo.java"],
+    visibility = ["//:__subpackages__"],
+)
+
+java_library(
+    name = "mark-recorder-ref",
+    srcs = [
+      "src/main/java/io/perfmark/impl/MarkRecorderRef.java",
+      "src/main/java/io/perfmark/impl/ThreadRef.java",
+      "src/main/java/io/perfmark/impl/ThreadRefInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+      ":thread-info",
     ],
 )
 
@@ -20,15 +44,11 @@ java_library(
     name = "generator",
     srcs = ["src/main/java/io/perfmark/impl/Generator.java"],
     visibility = ["//:__subpackages__"],
-    deps = [
-        "@maven//:com_google_code_findbugs_jsr305",
-    ],
 )
 
 java_library(
     name = "storage",
     srcs = [
-        "src/main/java/io/perfmark/impl/NoopMarkHolderProvider.java",
         "src/main/java/io/perfmark/impl/Storage.java",
     ],
     visibility = ["//:__subpackages__"],
@@ -36,9 +56,7 @@ java_library(
         ":generator",
         ":mark",
         ":mark-holder",
-        ":mark-holder-provider",
         ":mark-list",
-        "@maven//:com_google_code_findbugs_jsr305",
     ],
 )
 
@@ -47,16 +65,7 @@ java_library(
     srcs = ["src/main/java/io/perfmark/impl/MarkHolder.java"],
     visibility = ["//:__subpackages__"],
     deps = [
-        ":mark",
-    ],
-)
-
-java_library(
-    name = "mark-holder-provider",
-    srcs = ["src/main/java/io/perfmark/impl/MarkHolderProvider.java"],
-    visibility = ["//:__subpackages__"],
-    deps = [
-        ":mark-holder",
+        ":mark-list",
     ],
 )
 
@@ -66,7 +75,6 @@ java_library(
     visibility = ["//:__subpackages__"],
     deps = [
         ":generator",
-        "@maven//:com_google_code_findbugs_jsr305",
     ],
 )
 
