@@ -23,16 +23,15 @@ sourceSets {
 compileJmhJava {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
-    javaCompiler = javaToolchains.compilerFor({
+    javaCompiler.set(javaToolchains.compilerFor({
         languageVersion = JavaLanguageVersion.of("17")
-    })
+    }))
     options.errorprone.enabled = true
     options.errorprone.excludedPaths.set(".*/build/generated/sources/annotationProcessor/.*")
 }
 
 dependencies {
     implementation project(':perfmark-impl')
-    compileOnly libs.jsr305
 
     testImplementation(project(":perfmark-api"))
     testImplementation(project(':perfmark-testing'))

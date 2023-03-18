@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
-@javax.annotation.CheckReturnValue
-@javax.annotation.ParametersAreNonnullByDefault
+/**
+ * Java 7 based generator
+ */
 package io.perfmark.java7;

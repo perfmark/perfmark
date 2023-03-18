@@ -35,7 +35,6 @@ val jmhAnnotationProcessor by configurations.getting {
 
 dependencies {
     implementation(project(":perfmark-impl"))
-    compileOnly(libs.jsr305)
 
     testImplementation(project(":perfmark-api"))
     testImplementation(project(":perfmark-testing"))

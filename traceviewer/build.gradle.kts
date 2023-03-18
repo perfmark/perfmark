@@ -9,7 +9,6 @@ description = "PerfMark Trace Viewer"
 val jdkVersion = JavaVersion.VERSION_1_8
 
 dependencies {
-    compileOnly(libs.jsr305)
     compileOnly(libs.errorprone)
     implementation(project(":perfmark-tracewriter"))
     testImplementation(project(":perfmark-api"))

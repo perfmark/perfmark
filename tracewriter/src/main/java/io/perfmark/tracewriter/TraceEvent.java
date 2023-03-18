@@ -26,10 +26,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.CheckReturnValue;
-import javax.annotation.Nullable;
 
-@CheckReturnValue
 final class TraceEvent implements Cloneable {
 
   private TraceEvent() {}
@@ -42,31 +39,31 @@ final class TraceEvent implements Cloneable {
   @SuppressWarnings("unused")
   String name;
 
-  @Nullable
+  /** {@code Nullable} */
   @SuppressWarnings("unused")
   String categories;
 
-  @Nullable
+  /** {@code Nullable} */
   @SuppressWarnings("unused")
   Double traceClockMicros;
 
-  @Nullable
+  /** {@code Nullable} */
   @SuppressWarnings("unused")
   Long pid;
 
-  @Nullable
+  /** {@code Nullable} */
   @SuppressWarnings("unused")
   Long tid;
 
-  @Nullable
+  /** {@code Nullable} */
   @SuppressWarnings("unused")
   Long id;
 
-  @Nullable
+  /** {@code Nullable} */
   @SuppressWarnings("unused")
   TagMap args = null;
 
-  @Nullable
+  /** {@code Nullable} */
   @SuppressWarnings("unused")
   String colorName = null;
 
@@ -188,7 +185,8 @@ final class TraceEvent implements Cloneable {
       this.unkeyedValues = unkeyedValues;
     }
 
-    TagMap withUnkeyed(@Nullable String tagName, long tagId) {
+    /** tagName is {@code Nullable} */
+    TagMap withUnkeyed(String tagName, long tagId) {
       List<Object> unkeyedValues = null;
       if (tagName != null && !Mark.NO_TAG_NAME.equals(tagName)) {
         unkeyedValues = new ArrayList<>(this.unkeyedValues);
@@ -205,13 +203,15 @@ final class TraceEvent implements Cloneable {
       }
     }
 
-    TagMap withKeyed(@Nullable String tagName, Object tagValue) {
+    /** tagName is {@code Nullable} */
+    TagMap withKeyed(String tagName, Object tagValue) {
       List<Entry<String, ?>> keyedValues = new ArrayList<>(this.keyedValues);
       keyedValues.add(new SimpleImmutableEntry<>(String.valueOf(tagName), tagValue));
       return new TagMap(Collections.unmodifiableList(keyedValues), unkeyedValues);
     }
 
-    TagMap withKeyed(@Nullable String tagName, long tagValue0, long tagValue1) {
+    /** tagName is {@code Nullable} */
+    TagMap withKeyed(String tagName, long tagValue0, long tagValue1) {
       List<Entry<String, ?>> keyedValues = new ArrayList<>(this.keyedValues);
       keyedValues.add(
           new SimpleImmutableEntry<>(String.valueOf(tagName), tagValue0 + ":" + tagValue1));
