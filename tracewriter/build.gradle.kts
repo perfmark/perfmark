@@ -19,7 +19,6 @@ dependencies {
     runtimeOnly(project(":perfmark-java6"))
 
     implementation(project(":perfmark-api"))
-    compileOnly(libs.jsr305)
     compileOnly(libs.errorprone)
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
 }

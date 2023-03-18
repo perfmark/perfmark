@@ -19,7 +19,6 @@ package io.perfmark.traceviewer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.perfmark.tracewriter.TraceEventWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,7 +32,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 
 /**
  * This class converts from the Trace Event json data into a full HTML page. It includes the trace
@@ -76,7 +74,6 @@ public final class TraceEventViewer {
    * @return the Path of the written file.
    * @throws IOException if it can't write to the destination.
    */
-  @CanIgnoreReturnValue
   public static Path writeTraceHtml() throws IOException {
     Path path = Files.createTempFile("perfmark-trace-", ".html");
     try (OutputStream os = Files.newOutputStream(path, TRUNCATE_EXISTING);
@@ -138,7 +135,7 @@ public final class TraceEventViewer {
    * data as a top level text/plain script.
    */
   private static String replaceIndexTraceImport(
-      String index, String replacement, @Nullable String inlineTraceData64) {
+      String index, String replacement, String inlineTraceData64) {
     int start = index.indexOf("IO_PERFMARK_TRACE_IMPORT");
     if (start == -1) {
       throw new IllegalArgumentException("index doesn't contain IO_PERFMARK_TRACE_IMPORT");

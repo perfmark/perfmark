@@ -18,6 +18,4 @@
  * The Trace Writer package reads the PerfMark recorded tasks, and converts them into the Chrome
  * Trace Viewer format.
  */
-@javax.annotation.CheckReturnValue
-@javax.annotation.ParametersAreNonnullByDefault
 package io.perfmark.tracewriter;

@@ -13,7 +13,6 @@ plugins {
 val jdkVersion = JavaVersion.VERSION_1_6
 
 dependencies {
-    compileOnly(libs.jsr305)
     compileOnly(libs.errorprone)
 
     implementation("org.ow2.asm:asm:9.1")

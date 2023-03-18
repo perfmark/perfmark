@@ -26,7 +26,6 @@ compileJmhJava {
 
 dependencies {
     implementation project(':perfmark-impl')
-    compileOnly libs.jsr305
 
     jmhImplementation project(':perfmark-api'),
             project(':perfmark-impl'),

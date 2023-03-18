@@ -15,6 +15,4 @@
  */
 
 /** Java 9+ enabled generator and mark-holder. */
-@javax.annotation.CheckReturnValue
-@javax.annotation.ParametersAreNonnullByDefault
 package io.perfmark.java9;

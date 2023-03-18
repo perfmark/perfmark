@@ -17,7 +17,6 @@ maven_install(
     artifacts = [
         "junit:junit:4.13.2",
         "com.google.errorprone:error_prone_annotations:2.7.1",
-        "com.google.code.findbugs:jsr305:3.0.2",
         "com.google.truth:truth:1.1.3",
     ],
     repositories = [

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
-@javax.annotation.CheckReturnValue
-@javax.annotation.ParametersAreNonnullByDefault
+/**
+ * Java 6 based recorder and generator implementation.
+ */
 package io.perfmark.java6;
