@@ -26,11 +26,8 @@ import java.lang.reflect.Method;
  * be traced using the start and stop methods. For example:
  *
  * <pre>{@code
- * PerfMark.startTask("parseMessage");
- * try {
+ * try (var close = PerfMark.traceTask("parseMessage")) {
  *   message = parse(bytes);
- * } finally {
- *   PerfMark.stopTask("parseMessage");
  * }
  * }</pre>
  *
@@ -60,21 +57,15 @@ import java.lang.reflect.Method;
  * example:
  *
  * <pre>{@code
- * PerfMark.startTask("handleMessage");
- * try {
+ * try (var close = PerfMark.traceTask("handleMessage")) {
  *   Link link = PerfMark.linkOut();
- *   message = parse(bytes);
+ *   var message = parse(bytes);
  *   executor.execute(() -> {
- *     PerfMark.startTask("processMessage");
- *     try {
+ *     try (var closeInner = PerfMark.traceTask("processMessage")) {
  *       PerfMark.linkIn(link);
  *       handle(message);
- *     } finally {
- *       PerfMark.stopTask("processMessage");
  *     }
  *   });
- * } finally {
- *   PerfMark.stopTask("handleMessage");
  * }
  * }</pre>
  *
@@ -419,10 +410,11 @@ public final class PerfMark {
    * <p>Recording the amount of work done in a task:
    *
    * <pre>
-   *   PerfMark.startTask("read");
-   *   byte[] data = file.read();
-   *   PerfMark.attachTag(PerfMark.createTag("bytes read", data.length));
-   *   PerfMark.stopTask("read");
+   *   byte[] data;
+   *   try (var close = PerfMark.traceTask("read")) {
+   *     data = file.read();
+   *     PerfMark.attachTag(PerfMark.createTag("bytes read", data.length));
+   *   }
    * </pre>
    *
    * <p>Recording a tag which may be absent on an exception:

@@ -18,7 +18,7 @@ tracing function calls to their code to see how long each part takes.
     wakes up and executes work on another thread.  PerfMark allows users to express this 
     relationship explicitly, making for a clear picture of how code flows.
 
-*   **Small Library Size**: The PerfMark tracing API is only *5 KB* in size, and has minimal 
+*   **Small Library Size**: The PerfMark tracing API is only *7 KB* in size, and has minimal 
     dependencies making it easy to include in other projects.  If no backend for recording the trace
     is present, the library safely disables itself.
 
@@ -93,7 +93,7 @@ To view the traces in your browser, generate the HTML:
 
 The output looks like:
 
-![PerfMark Hummingbird](doc/screenshot.png "PerfMark")
+![PerfMark Trace View](doc/screenshot.png "PerfMark")
 
 ## Configuration 
 PerfMark provides some System Properties that allow controlling how it initializes.  These can be set
