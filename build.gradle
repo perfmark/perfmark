@@ -134,7 +134,7 @@ subprojects {
 
     if (rootProject.properties.get('errorProne', true)) {
         dependencies {
-            errorprone 'com.google.errorprone:error_prone_core:2.20.0'
+            errorprone 'com.google.errorprone:error_prone_core:2.21.0'
             errorproneJavac 'com.google.errorprone:javac:9+181-r4173-1'
         }
     } else {
