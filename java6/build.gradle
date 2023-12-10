@@ -1,6 +1,6 @@
 description = "PerfMark Java6 API"
 ext.moduleName = "io.perfmark.javasix"
-ext.jdkVersion = JavaVersion.VERSION_1_6
+ext.jdkVersion = JavaVersion.VERSION_1_8
 
 java {
     toolchain {

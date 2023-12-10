@@ -22,11 +22,6 @@ tracing function calls to their code to see how long each part takes.
     dependencies making it easy to include in other projects.  If no backend for recording the trace
     is present, the library safely disables itself.
 
-*   **Multiple Java Versions**: The PerfMark API supports Java 6, making it easy to include on 
-    older or constrained environments.  Additionally, PerfMark includes optimized backends for 
-    Java 6, Java 7, and Java 9.  Each of these backends is automatically loaded at runtime 
-    (if possible) and uses advanced JVM features for maximum speed. 
-
 *   **Chrome Trace Viewer Integration**: PerfMark can export to the Chrome Trace Event Format, 
     making it easy to view in your Web Browser.
     

@@ -27,7 +27,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class VersionTest {
 
-  private static final short JAVA_VERSION_6 = 50;
+  private static final short JAVA_VERSION_6 = 52; // Java 8, now.
 
   @Test
   public void checkVersion() throws Exception {

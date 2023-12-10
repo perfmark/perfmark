@@ -466,29 +466,28 @@ public final class TraceEventWriter {
       TaskStart taskStart = taskStack.peekLast();
       TraceEvent taskEvent = traceEvents.get(taskStart.traceEventIdx);
       TraceEvent.TagMap args = taskEvent.args();
-      out:
       {
         switch (mark.getOperation()) {
           case TAG_N0S1:
             args = args.withUnkeyed(mark.getTagStringValue(), Mark.NO_TAG_ID);
-            break out;
+            break;
           case TAG_N1S0:
             args = args.withUnkeyed(Mark.NO_TAG_NAME, mark.getTagFirstNumeric());
-            break out;
+            break;
           case TAG_N1S1:
             args = args.withUnkeyed(mark.getTagStringValue(), mark.getTagFirstNumeric());
-            break out;
+            break;
           case TAG_KEYED_N0S2:
             args = args.withKeyed(mark.getTagKey(), mark.getTagStringValue());
-            break out;
+            break;
           case TAG_KEYED_N1S1:
             args = args.withKeyed(mark.getTagKey(), mark.getTagFirstNumeric());
-            break out;
+            break;
           case TAG_KEYED_N2S1:
             args =
                 args.withKeyed(
                     mark.getTagKey(), mark.getTagFirstNumeric(), mark.getTagSecondNumeric());
-            break out;
+            break;
           case NONE:
           case TASK_START_N1S1:
           case TASK_START_N1S2:
@@ -501,8 +500,9 @@ public final class TraceEventWriter {
           case EVENT_N2S3:
           case LINK:
             break;
+          default:
+            throw new AssertionError(mark.getOperation());
         }
-        throw new AssertionError(mark.getOperation());
       }
       traceEvents.set(taskStart.traceEventIdx, taskEvent.args(args));
     }
@@ -510,16 +510,15 @@ public final class TraceEventWriter {
     @Override
     protected void onEvent(Mark mark) {
       TraceEvent.TagMap tagMap = TraceEvent.TagMap.EMPTY;
-      out:
       {
         switch (mark.getOperation()) {
           case EVENT_N1S1:
           case EVENT_N1S2:
-            break out;
+            break;
           case EVENT_N2S2:
           case EVENT_N2S3:
             tagMap = tagMap.withUnkeyed(mark.getTagStringValue(), mark.getTagFirstNumeric());
-            break out;
+            break;
           case NONE:
           case TASK_START_N1S1:
           case TASK_START_N1S2:
@@ -534,8 +533,9 @@ public final class TraceEventWriter {
           case TAG_KEYED_N1S1:
           case TAG_KEYED_N2S1:
             break;
+          default:
+            throw new AssertionError(mark.getOperation());
         }
-        throw new AssertionError(mark.getOperation());
       }
       TraceEvent traceEvent =
           TraceEvent.EVENT

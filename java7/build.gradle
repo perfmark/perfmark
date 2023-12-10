@@ -1,7 +1,7 @@
 
 description = "PerfMark Java7 API"
 ext.moduleName = "io.perfmark.javaseven"
-ext.jdkVersion = JavaVersion.VERSION_1_7
+ext.jdkVersion = JavaVersion.VERSION_1_8
 
 compileJava {
     sourceCompatibility = jdkVersion
