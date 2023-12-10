@@ -11,7 +11,7 @@ plugins {
 
 description = "PerfMark Tracer Output"
 
-val jdkVersion = JavaVersion.VERSION_1_7
+val jdkVersion = JavaVersion.VERSION_1_8
 
 dependencies {
     api(project(":perfmark-impl"))

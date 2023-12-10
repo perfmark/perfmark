@@ -12,7 +12,7 @@ buildscript {
 }
 
 
-val jdkVersion = JavaVersion.VERSION_1_6
+val jdkVersion = JavaVersion.VERSION_1_8
 
 description = "PerfMark API"
 
