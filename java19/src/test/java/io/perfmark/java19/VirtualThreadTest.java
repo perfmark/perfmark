@@ -38,9 +38,7 @@ public class VirtualThreadTest {
 
     var tf =
         Thread.ofVirtual()
-            .allowSetThreadLocals(false)
             .name("bla")
-            .inheritInheritableThreadLocals(false)
             .factory();
     var exec = Executors.newThreadPerTaskExecutor(tf);
     PerfMark.setEnabled(true);
