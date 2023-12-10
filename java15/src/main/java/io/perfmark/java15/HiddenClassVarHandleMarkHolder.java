@@ -112,6 +112,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     this.ref = Objects.requireNonNull(ref);
   }
 
+  @Override
   void startAt(long gen, String taskName, String tagName, long tagId, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -124,6 +125,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void startAt(long gen, String taskName, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -134,6 +136,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void startAt(long gen, String taskName, String subTaskName, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -145,6 +148,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void link(long gen, long linkId) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -154,6 +158,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void stopAt(long gen, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -163,6 +168,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void stopAt(long gen, String taskName, String tagName, long tagId, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -175,6 +181,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void stopAt(long gen, String taskName, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -185,6 +192,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void stopAt(long gen, String taskName, String subTaskName, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -196,6 +204,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void eventAt(long gen, String eventName, String tagName, long tagId, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -208,6 +217,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void eventAt(long gen, String eventName, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -218,6 +228,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void eventAt(long gen, String eventName, String subEventName, long nanoTime) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -229,6 +240,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void attachTag(long gen, String tagName, long tagId) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -239,6 +251,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void attachKeyedTag(long gen, String name, long value) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -249,6 +262,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void attachKeyedTag(long gen, String name, long value0, long value1) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
@@ -260,6 +274,7 @@ final class HiddenClassVarHandleMarkHolder extends MarkHolderRecorder {
     VarHandle.storeStoreFence();
   }
 
+  @Override
   void attachKeyedTag(long gen, String name, String value) {
     long localIdx = (long) IDX.get();
     int i = (int) (localIdx & MAX_EVENTS_MASK);
