@@ -36,10 +36,7 @@ public class VirtualThreadTest {
   public void run() throws Exception {
     Thread.currentThread().isVirtual();
 
-    var tf =
-        Thread.ofVirtual()
-            .name("bla")
-            .factory();
+    var tf = Thread.ofVirtual().name("bla").factory();
     var exec = Executors.newThreadPerTaskExecutor(tf);
     PerfMark.setEnabled(true);
 
