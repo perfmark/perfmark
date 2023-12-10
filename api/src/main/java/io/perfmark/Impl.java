@@ -19,6 +19,7 @@ package io.perfmark;
 public class Impl {
   static final String NO_TAG_NAME = "";
   static final long NO_TAG_ID = Long.MIN_VALUE;
+
   /**
    * This value is current {@link Long#MIN_VALUE}, but it could also be {@code 0}. The invariant
    * {@code NO_LINK_ID == -NO_LINK_ID} must be maintained to work when PerfMark is disabled.

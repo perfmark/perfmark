@@ -13,11 +13,11 @@ buildscript {
 }
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(19))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
-val jdkVersion = JavaVersion.VERSION_19
+val jdkVersion = JavaVersion.VERSION_21
 
 description = "PerfMark Java19 API"
 

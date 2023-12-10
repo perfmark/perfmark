@@ -35,11 +35,9 @@ public final class VirtualExecutor implements ExecutorService {
   private final ExecutorService delegate;
 
   public VirtualExecutor(int maxThread, String prefix) {
-    boolean threadLocalsAllowed = !Boolean.getBoolean(THREAD_LOCALS_DISABLED_PROP);
     this.runnables = new LinkedBlockingQueue<>();
     this.delegate =
-        Executors.newThreadPerTaskExecutor(
-            Thread.ofVirtual().name(prefix, 1).allowSetThreadLocals(threadLocalsAllowed).factory());
+        Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name(prefix, 1).factory());
     for (int i = 0; i < maxThread; i++) {
       delegate.execute(new Worker());
     }
