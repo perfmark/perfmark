@@ -17,7 +17,7 @@ java {
     }
 }
 
-val jdkVersion = JavaVersion.VERSION_19
+val jdkVersion = JavaVersion.VERSION_21
 
 description = "PerfMark Java19 API"
 
