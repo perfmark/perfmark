@@ -21,6 +21,9 @@ import io.perfmark.Link;
 import io.perfmark.StringFunction;
 import io.perfmark.Tag;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -251,8 +254,16 @@ final class SecretPerfMarkImpl {
       markRecorder.start(gen, taskName, subTaskName);
     }
 
-    @Override
+    /**
+     * This method is needed to work with old version of perfmark-api.
+     */
     protected <T> void startTask(T taskNameObject, StringFunction<? super T> stringFunction) {
+      Function<? super T, String> function = stringFunction;
+      startTask(taskNameObject, function);
+    }
+
+    @Override
+    protected <T> void startTask(T taskNameObject, Function<? super T, String> stringFunction) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -349,9 +360,18 @@ final class SecretPerfMarkImpl {
       markRecorder.attachKeyedTag(gen, tagName, tagValue);
     }
 
+    /**
+     * This method is needed to work with old version of perfmark-api.
+     */
+    public <T> void attachTag(
+        String tagName, T tagObject, StringFunction<? super T> stringFunction) {
+      Function<? super T, ? extends String> function = stringFunction;
+      attachTag(tagName, tagObject, function);
+    }
+
     @Override
     protected <T> void attachTag(
-        String tagName, T tagObject, StringFunction<? super T> stringFunction) {
+        String tagName, T tagObject, Function<? super T, ? extends String> stringFunction) {
       final long gen = getGen();
       if (!isEnabled(gen)) {
         return;
@@ -360,8 +380,30 @@ final class SecretPerfMarkImpl {
       markRecorder.attachKeyedTag(gen, tagName, tagValue);
     }
 
+    @Override
+    protected <T> void attachTag(
+        String tagName, T tagObject, ToIntFunction<? super T> intFunction) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      long tagValue = deriveTagValue(tagName, tagObject, intFunction);
+      markRecorder.attachKeyedTag(gen, tagName, tagValue);
+    }
+
+    @Override
+    protected <T> void attachTag(
+        String tagName, T tagObject, ToLongFunction<? super T> longFunction) {
+      final long gen = getGen();
+      if (!isEnabled(gen)) {
+        return;
+      }
+      long tagValue = deriveTagValue(tagName, tagObject, longFunction);
+      markRecorder.attachKeyedTag(gen, tagName, tagValue);
+    }
+
     static <T> String deriveTagValue(
-        String tagName, T tagObject, StringFunction<? super T> stringFunction) {
+        String tagName, T tagObject, Function<? super T, ? extends String> stringFunction) {
       try {
         return stringFunction.apply(tagObject);
       } catch (Throwable t) {
@@ -370,7 +412,28 @@ final class SecretPerfMarkImpl {
       }
     }
 
-    static <T> String deriveTaskValue(T taskNameObject, StringFunction<? super T> stringFunction) {
+    static <T> long deriveTagValue(
+        String tagName, T tagNameObject, ToIntFunction<? super T> intFunction) {
+      try {
+        // implicit cast
+        return intFunction.applyAsInt(tagNameObject);
+      } catch (Throwable t) {
+        handleTagValueFailure(tagName, tagNameObject, intFunction, t);
+        return Mark.NO_TAG_ID;
+      }
+    }
+
+    static <T> long deriveTagValue(
+        String tagName, T tagNameObject, ToLongFunction<? super T> longFunction) {
+      try {
+        return longFunction.applyAsLong(tagNameObject);
+      } catch (Throwable t) {
+        handleTagValueFailure(tagName, tagNameObject, longFunction, t);
+        return Mark.NO_TAG_ID;
+      }
+    }
+
+    static <T> String deriveTaskValue(T taskNameObject, Function<? super T, String> stringFunction) {
       try {
         return stringFunction.apply(taskNameObject);
       } catch (Throwable t) {
@@ -380,7 +443,7 @@ final class SecretPerfMarkImpl {
     }
 
     static <T> void handleTagValueFailure(
-        String tagName, T tagObject, StringFunction<? super T> stringFunction, Throwable cause) {
+        String tagName, T tagObject, Object stringFunction, Throwable cause) {
       if (logger == null) {
         return;
       }
@@ -407,7 +470,7 @@ final class SecretPerfMarkImpl {
     }
 
     static <T> void handleTaskNameFailure(
-        T taskNameObject, StringFunction<? super T> stringFunction, Throwable cause) {
+        T taskNameObject, Object function, Throwable cause) {
       if (logger == null) {
         return;
       }
@@ -416,8 +479,8 @@ final class SecretPerfMarkImpl {
         if (localLogger.isLoggable(Level.FINE)) {
           LogRecord lr =
               new LogRecord(
-                  Level.FINE, "PerfMark.startTask failed: taskObject={0}, stringFunction={1}");
-          lr.setParameters(new Object[] {taskNameObject, stringFunction});
+                  Level.FINE, "PerfMark.startTask failed: taskObject={0}, function={1}");
+          lr.setParameters(new Object[] {taskNameObject, function});
           lr.setThrown(cause);
           localLogger.log(lr);
         }

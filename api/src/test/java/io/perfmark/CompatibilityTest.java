@@ -420,6 +420,26 @@ public class CompatibilityTest {
     assertThat(marks).hasSize(3);
   }
 
+  @Test
+  public void implOverride() throws Exception {
+    Assume.assumeTrue(minorVersion >= 17);
+
+    Class<?> implClass = Class.forName("io.perfmark.Impl", false, perfMarkClz.getClassLoader());
+    Class<?> secretImplClass =
+        Class.forName(
+            "io.perfmark.impl.SecretPerfMarkImpl$PerfMarkImpl",
+            false,
+            perfMarkClz.getClassLoader());
+
+    for (Method method : implClass.getDeclaredMethods()) {
+      if ((method.getModifiers() & Modifier.STATIC) != 0) {
+        continue;
+      }
+      Method m2 = secretImplClass.getDeclaredMethod(method.getName(), method.getParameterTypes());
+      assertThat(m2).isNotNull();
+    }
+  }
+
   private final class ApiOverrideClassLoader extends ClassLoader {
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {

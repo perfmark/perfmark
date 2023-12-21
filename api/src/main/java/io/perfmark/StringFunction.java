@@ -16,6 +16,8 @@
 
 package io.perfmark;
 
+import java.util.function.Function;
+
 /**
  * This interface is equivalent to {@code java.util.function.Function}. It is here as a
  * compatibility shim to make PerfMark compatible with Java 6. This will likely be removed if
@@ -24,7 +26,8 @@ package io.perfmark;
  * @since 0.22.0
  * @param <T> The type to turn into a String.
  */
-public interface StringFunction<T> {
+@FunctionalInterface
+public interface StringFunction<T> extends Function<T, String> {
 
   /**
    * Takes the given argument and produces a String.
@@ -33,5 +36,6 @@ public interface StringFunction<T> {
    * @param t the subject to Stringify
    * @return the String
    */
+  @Override
   String apply(T t);
 }
