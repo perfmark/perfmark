@@ -51,7 +51,6 @@
  * no-allocation. See the documentation in README.md in the root directory for more info.
  *
  * @author Carl Mastrangelo
- * @see io.perfmark.tracewriter
  * @see <a href="https://www.perfmark.io/">PerfMark.io</a>
  * @see <a href="https://github.com/perfmark/perfmark">https://github.com/perfmark</a>
  */
