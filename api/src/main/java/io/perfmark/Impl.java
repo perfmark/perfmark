@@ -16,6 +16,10 @@
 
 package io.perfmark;
 
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
+
 public class Impl {
   static final String NO_TAG_NAME = "";
   static final long NO_TAG_ID = Long.MIN_VALUE;
@@ -42,7 +46,7 @@ public class Impl {
     return false;
   }
 
-  protected <T> void startTask(T taskNameObject, StringFunction<? super T> taskNameFunc) {}
+  protected <T> void startTask(T taskNameObject, Function<? super T, String> taskNameFunc) {}
 
   protected void startTask(String taskName, Tag tag) {}
 
@@ -79,7 +83,12 @@ public class Impl {
   protected void attachTag(String tagName, long tagValue0, long tagValue1) {}
 
   protected <T> void attachTag(
-      String tagName, T tagObject, StringFunction<? super T> stringFunction) {}
+      String tagName, T tagObject, Function<? super T, ? extends String> stringFunction) {}
+
+  protected <T> void attachTag(String tagName, T tagObject, ToIntFunction<? super T> intFunction) {}
+
+  protected <T> void attachTag(
+      String tagName, T tagObject, ToLongFunction<? super T> longFunction) {}
 
   protected Tag createTag(String tagName, long tagId) {
     return NO_TAG;

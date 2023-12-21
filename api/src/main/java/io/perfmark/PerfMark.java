@@ -20,6 +20,9 @@ import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.DoNotCall;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.lang.reflect.Method;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 /**
  * PerfMark is a very low overhead tracing library. To use PerfMark, annotate the code that needs to
@@ -546,13 +549,69 @@ public final class PerfMark {
    *
    * @param tagName The name of the value being attached
    * @param tagObject The tag object which will passed to the stringFunction.
-   * @param stringFunction The function that will convert the object to
+   * @param stringFunction The function that will convert the object to a tag
+   * @param <T> the type of tag object to be stringified
+   * @since 0.27.0
+   */
+  public static <T> void attachStringTag(
+      String tagName, T tagObject, Function<? super T, ? extends String> stringFunction) {
+    impl.attachTag(tagName, tagObject, stringFunction);
+  }
+
+  /**
+   * Attaches an additional keyed tag to the current active task. The tag provided is independent of
+   * the tag used with {@code startTask} and {@code stopTask}. This tag operation is different than
+   * {@link Tag} in that the tag value has an associated name (also called a key). The tag name and
+   * value are attached to the most recently started task, and don't have to match any other tags.
+   * This method is useful for when you have the tag information after the task is started.
+   *
+   * <p>Prefer {@link #attachStringTag(String, Object, Function)} over this one.
+   *
+   * @param tagName The name of the value being attached
+   * @param tagObject The tag object which will passed to the stringFunction.
+   * @param stringFunction The function that will convert the object to a tag
    * @param <T> the type of tag object to be stringified
    * @since 0.22.0
    */
   public static <T> void attachTag(
       String tagName, T tagObject, StringFunction<? super T> stringFunction) {
     impl.attachTag(tagName, tagObject, stringFunction);
+  }
+
+  /**
+   * Attaches an additional keyed tag to the current active task. The tag provided is independent of
+   * the tag used with {@code startTask} and {@code stopTask}. This tag operation is different than
+   * {@link Tag} in that the tag value has an associated name (also called a key). The tag name and
+   * value are attached to the most recently started task, and don't have to match any other tags.
+   * This method is useful for when you have the tag information after the task is started.
+   *
+   * @param tagName The name of the value being attached
+   * @param tagObject The tag object which will passed to the intFunction.
+   * @param intFunction The function that will convert the object to a tag
+   * @param <T> the type of tag object to mapped to in.
+   * @since 0.27.0
+   */
+  public static <T> void attachIntTag(
+      String tagName, T tagObject, ToIntFunction<? super T> intFunction) {
+    impl.attachTag(tagName, tagObject, intFunction);
+  }
+
+  /**
+   * Attaches an additional keyed tag to the current active task. The tag provided is independent of
+   * the tag used with {@code startTask} and {@code stopTask}. This tag operation is different than
+   * {@link Tag} in that the tag value has an associated name (also called a key). The tag name and
+   * value are attached to the most recently started task, and don't have to match any other tags.
+   * This method is useful for when you have the tag information after the task is started.
+   *
+   * @param tagName The name of the value being attached
+   * @param tagObject The tag object which will passed to the intFunction.
+   * @param longFunction The function that will convert the object to a tag
+   * @param <T> the type of tag object to mapped to in.
+   * @since 0.27.0
+   */
+  public static <T> void attachLongTag(
+      String tagName, T tagObject, ToLongFunction<? super T> longFunction) {
+    impl.attachTag(tagName, tagObject, longFunction);
   }
 
   private static final Impl impl;

@@ -114,6 +114,9 @@ public class PerfMarkTest {
     PerfMark.startTask("task5", String::valueOf);
     PerfMark.attachTag(PerfMark.createTag("extra"));
     PerfMark.attachTag("name", "extra2", String::valueOf);
+    PerfMark.attachStringTag("name", "extra3", String::valueOf);
+    PerfMark.attachIntTag("name", List.of(), List::size);
+    PerfMark.attachLongTag("name", 2d, Double::longValue);
     Link link = PerfMark.linkOut();
     PerfMark.linkIn(link);
     PerfMark.stopTask();
@@ -127,7 +130,7 @@ public class PerfMarkTest {
 
     List<Mark> marks = new ArrayList<>(Storage.readForTest());
 
-    Truth.assertThat(marks).hasSize(24);
+    Truth.assertThat(marks).hasSize(27);
     List<Mark> expected =
         Arrays.asList(
             Mark.taskStart(gen, marks.get(0).getNanoTime(), "task1"),
@@ -140,20 +143,23 @@ public class PerfMarkTest {
             Mark.taskStart(gen, marks.get(7).getNanoTime(), "task5"),
             Mark.tag(gen, "extra", NO_TAG_ID),
             Mark.keyedTag(gen, "name", "extra2"),
+            Mark.keyedTag(gen, "name", "extra3"),
+            Mark.keyedTag(gen, "name", 0),
+            Mark.keyedTag(gen, "name", 2),
             Mark.link(gen, link.linkId),
             Mark.link(gen, -link.linkId),
-            Mark.taskEnd(gen, marks.get(12).getNanoTime()),
-            Mark.taskEnd(gen, marks.get(13).getNanoTime(), "task4"),
+            Mark.taskEnd(gen, marks.get(15).getNanoTime()),
+            Mark.taskEnd(gen, marks.get(16).getNanoTime(), "task4"),
             Mark.tag(gen, tag3.tagName, tag3.tagId),
-            Mark.taskEnd(gen, marks.get(15).getNanoTime(), "task3"),
+            Mark.taskEnd(gen, marks.get(18).getNanoTime(), "task3"),
             Mark.tag(gen, tag2.tagName, tag2.tagId),
-            Mark.taskEnd(gen, marks.get(17).getNanoTime(), "task2"),
+            Mark.taskEnd(gen, marks.get(20).getNanoTime(), "task2"),
             Mark.tag(gen, tag1.tagName, tag1.tagId),
-            Mark.taskEnd(gen, marks.get(19).getNanoTime(), "task1"),
-            Mark.taskStart(gen, marks.get(20).getNanoTime(), "task6"),
-            Mark.taskStart(gen, marks.get(21).getNanoTime(), "task7"),
-            Mark.taskEnd(gen, marks.get(22).getNanoTime()),
-            Mark.taskEnd(gen, marks.get(23).getNanoTime()));
+            Mark.taskEnd(gen, marks.get(22).getNanoTime(), "task1"),
+            Mark.taskStart(gen, marks.get(23).getNanoTime(), "task6"),
+            Mark.taskStart(gen, marks.get(24).getNanoTime(), "task7"),
+            Mark.taskEnd(gen, marks.get(25).getNanoTime()),
+            Mark.taskEnd(gen, marks.get(26).getNanoTime()));
     assertEquals(expected, marks);
   }
 
@@ -162,7 +168,8 @@ public class PerfMarkTest {
     Storage.resetForThread();
     PerfMark.setEnabled(true);
 
-    PerfMark.attachTag("name", "extra2", null);
+    StringFunction<String> nullFunction = null;
+    PerfMark.attachTag("name", "extra2", nullFunction);
 
     List<Mark> marks = Storage.readForTest();
     Truth.assertThat(marks).hasSize(1);
