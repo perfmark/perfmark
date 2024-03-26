@@ -34,7 +34,7 @@ dependencyResolutionManagement {
 
             library("junit", "junit:junit:4.13.2")
             library("errorprone", "com.google.errorprone:error_prone_annotations:2.26.1")
-            library("truth", "com.google.truth:truth:1.4.0")
+            library("truth", "com.google.truth:truth:1.4.2")
 
             library("jmhcore", "org.openjdk.jmh", "jmh-core").versionRef("jmh")
             library("jmhanno", "org.openjdk.jmh", "jmh-generator-annprocess").versionRef("jmh")
