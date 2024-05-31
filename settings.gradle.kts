@@ -33,7 +33,7 @@ dependencyResolutionManagement {
             version("jmh", "1.36")
 
             library("junit", "junit:junit:4.13.2")
-            library("errorprone", "com.google.errorprone:error_prone_annotations:2.27.1")
+            library("errorprone", "com.google.errorprone:error_prone_annotations:2.28.0")
             library("truth", "com.google.truth:truth:1.4.2")
 
             library("jmhcore", "org.openjdk.jmh", "jmh-core").versionRef("jmh")
