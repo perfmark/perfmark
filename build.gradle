@@ -1,5 +1,5 @@
 plugins {
-    id "net.ltgt.errorprone" version "4.2.0" apply false
+    id "net.ltgt.errorprone" version "4.3.0" apply false
 }
 
 subprojects {
