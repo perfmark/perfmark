@@ -3,7 +3,6 @@ import net.ltgt.gradle.errorprone.errorprone
 @Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     alias(libs.plugins.jcstress)
-    alias(libs.plugins.spotless)
 }
 
 buildscript {
@@ -50,13 +49,6 @@ dependencies {
     jmhImplementation(libs.jmhcore)
     jmhAnnotationProcessor(libs.jmhanno)
 }
-
-spotless {
-    java {
-        googleJavaFormat(libs.versions.gjf.get())
-    }
-}
-
 
 tasks.named<JavaCompile>("compileJava") {
     sourceCompatibility = jdkVersion.toString()

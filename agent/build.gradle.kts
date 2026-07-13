@@ -7,7 +7,7 @@ buildscript {
 }
 
 plugins {
-    id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("com.gradleup.shadow") version "9.5.1"
 }
 
 val jdkVersion = JavaVersion.VERSION_1_6

@@ -34,17 +34,17 @@ dependencyResolutionManagement {
 
             library("junit", "junit:junit:4.13.2")
             library("errorprone", "com.google.errorprone:error_prone_annotations:2.44.0")
-            library("truth", "com.google.truth:truth:1.4.4")
+            library("truth", "com.google.truth:truth:1.4.5")
 
             library("jmhcore", "org.openjdk.jmh", "jmh-core").versionRef("jmh")
             library("jmhanno", "org.openjdk.jmh", "jmh-generator-annprocess").versionRef("jmh")
 
-            version("gjf", "1.18.1")
+            version("gjf", "1.35.0")
 
-            plugin("spotless", "com.diffplug.spotless").version("6.15.0")
+            // plugin("spotless", "com.diffplug.spotless").version("8.8.0")
             plugin("errorprone", "net.ltgt.errorprone").version("3.0.1")
-            plugin("jmh", "me.champeau.jmh").version("0.6.8")
-            plugin("jcstress", "io.github.reyerizo.gradle.jcstress").version("0.8.15")
+            plugin("jmh", "me.champeau.jmh").version("0.7.3")
+            plugin("jcstress", "io.github.reyerizo.gradle.jcstress").version("0.9.0")
 
         }
     }
