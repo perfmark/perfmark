@@ -94,6 +94,7 @@ final class ThreadRef extends WeakReference<Thread> {
     if (this == IDENTITY) {
       isEqual = Thread.currentThread() == that.get();
     } else {
+      // Switch to using refersTo in Java 16
       isEqual = this.get() == that.get();
     }
     return isEqual;
