@@ -1,10 +1,5 @@
 import net.ltgt.gradle.errorprone.errorprone
 
-@Suppress("DSL_SCOPE_VIOLATION") // See https://github.com/gradle/gradle/issues/22797
-plugins {
-    alias(libs.plugins.spotless)
-}
-
 buildscript {
     extra.apply{
         set("moduleName", "io.perfmark")
@@ -54,12 +49,6 @@ dependencies {
     jmhImplementation(libs.junit)
     jmhImplementation(libs.jmhcore)
     jmhAnnotationProcessor(libs.jmhanno)
-}
-
-spotless {
-    java {
-        googleJavaFormat(libs.versions.gjf.get())
-    }
 }
 
 tasks.named<JavaCompile>("compileTestJava") {

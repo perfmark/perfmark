@@ -4,11 +4,6 @@ buildscript {
     }
 }
 
-@Suppress("DSL_SCOPE_VIOLATION") // See https://github.com/gradle/gradle/issues/22797
-plugins {
-    alias(libs.plugins.spotless)
-}
-
 description = "PerfMark Tracer Output"
 
 val jdkVersion = JavaVersion.VERSION_1_8
@@ -21,12 +16,6 @@ dependencies {
     implementation(project(":perfmark-api"))
     compileOnly(libs.errorprone)
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.14.2")
-}
-
-spotless {
-    java {
-        googleJavaFormat(libs.versions.gjf.get())
-    }
 }
 
 tasks.getByName<JavaCompile>("compileJava") {
