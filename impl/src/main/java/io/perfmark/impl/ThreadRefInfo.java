@@ -16,9 +16,13 @@
 
 package io.perfmark.impl;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.util.Objects;
+
 final class ThreadRefInfo extends ThreadInfo {
   private final ThreadRef threadRef;
-  private volatile String threadName;
+  private volatile SoftReference<String> threadNameRef;
   private volatile long threadId;
 
   @SuppressWarnings("deprecation")
@@ -28,25 +32,30 @@ final class ThreadRefInfo extends ThreadInfo {
     if (thread == null) {
       throw new IllegalArgumentException("can't use terminated thread");
     }
-    this.threadName = thread.getName();
+    this.threadNameRef = new SoftReference<>(thread.getName());
     this.threadId = thread.getId();
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @SuppressWarnings("deprecation") // thread id is only recently deprecated
   public String getName() {
-    String localThreadName = this.threadName;
+    final SoftReference<String> localThreadNameRef = this.threadNameRef;
+    final String threadName;
     Thread t = threadRef.get();
-    if (t == null) {
-      return localThreadName;
-    } else {
-      localThreadName = maybeUpdateThreadName(t.getName(), localThreadName);
+    if (t != null) {
+      threadName = t.getName();
+      maybeUpdateThreadName(threadName, localThreadNameRef);
       if (t.getState() == Thread.State.TERMINATED) {
         maybeUpdateThreadId(t.getId(), this.threadId);
         threadRef.enqueueSafe();
       }
+    } else if ((threadName = localThreadNameRef.get()) == null) {
+      return "Thread name GCed";
     }
-    return localThreadName;
+    return threadName;
   }
 
   @Override
@@ -59,19 +68,17 @@ final class ThreadRefInfo extends ThreadInfo {
     } else {
       localThreadId = maybeUpdateThreadId(t.getId(), localThreadId);
       if (t.getState() == Thread.State.TERMINATED) {
-        maybeUpdateThreadName(t.getName(), this.threadName);
+        maybeUpdateThreadName(t.getName(), this.threadNameRef);
         threadRef.enqueueSafe();
       }
     }
     return localThreadId;
   }
 
-  private String maybeUpdateThreadName(String tName, String localThreadName) {
-    if (!tName.equals(localThreadName)) {
-      this.threadName = tName;
-      return tName;
-    } else {
-      return localThreadName;
+  private void maybeUpdateThreadName(String threadName, Reference<String> localThreadNameRef) {
+    if (!Objects.equals(threadName, localThreadNameRef.get())) {
+      localThreadNameRef.enqueue();
+      this.threadNameRef = new SoftReference<>(threadName);
     }
   }
 
@@ -94,5 +101,10 @@ final class ThreadRefInfo extends ThreadInfo {
   public boolean isCurrentThread() {
     Thread t = threadRef.get();
     return t == Thread.currentThread();
+  }
+
+  // For Testing
+  void clearThreadNameRef() {
+    threadNameRef.enqueue();
   }
 }
