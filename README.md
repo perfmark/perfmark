@@ -121,3 +121,7 @@ calls become No-ops.  In such cases, it will remain safe to call these functions
 
 PerfMark was designed originally for [gRPC](https://github.com/grpc/grpc-java). It is also used
 by [Zuul](https://github.com/Netflix/zuul).
+
+## Author
+PerfMark is hosted at [https://www.perfmark.io/](https://www.perfmark.io/) and originally written
+by [Carl Mastrangelo](https://carl.fun).
