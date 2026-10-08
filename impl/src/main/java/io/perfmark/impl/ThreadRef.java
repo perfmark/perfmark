@@ -19,7 +19,6 @@ package io.perfmark.impl;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 final class ThreadRef extends WeakReference<Thread> {
   private static final ThreadRef IDENTITY = new ThreadRef();
