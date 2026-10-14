@@ -16,7 +16,7 @@ description = "PerfMark Implementation API"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -27,6 +27,10 @@ tasks.named<JavaCompile>("compileJava") {
     options.compilerArgs.add("-Xlint:-options")
 }
 
+tasks.named<JavaCompile>("compileTestJava") {
+    sourceCompatibility = JavaVersion.VERSION_21.toString()
+    targetCompatibility = JavaVersion.VERSION_21.toString()
+}
 
 dependencies {
     implementation(project(":perfmark-api"))
